@@ -2,7 +2,7 @@
 
 """
     Program            : refer to run_info.sh 
-    Function           : This code concatenate all the article measures and change the time to NY
+    Function           : This code combine all the article measures and change the time to NY
 """
 
 import pandas as pd
