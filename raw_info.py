@@ -12,22 +12,18 @@ import sys
 import csv
 
 
+import pandas as pd
+import json
+import unicodedata
+import sys
+import csv
+
 def get_info_article(JSON):    
     # ID
     Id = JSON['data']['id']
     
     # TIMESTAMP 
-    TimeStamps = JSON['timestamps']
-    TimeStamp = ''
-    for i in range(len(TimeStamps)):
-        TimeStamp = TimeStamp + ',' + TimeStamps[i]['timestamp']
-    TimeStamp = TimeStamp[1:]
-
-    # versionCreated 
-    versionCreated =  JSON['data']['versionCreated']  
-    
-    # firstCreated
-    firstCreated =  JSON['data']['firstCreated']
+    TimeStamp = JSON['timestamps'][0]['timestamp']
     
     # PNAC
     PNAC = JSON['data']['altId']
@@ -61,7 +57,7 @@ def get_info_article(JSON):
     else:
         augmentedbody = headline
     # Output data structure, each row contains the information of one article
-    info = (Id,TimeStamp,PNAC,headline,urgency,lan,sub_list,body,augmentedbody,versionCreated,firstCreated)
+    info = (Id,TimeStamp,PNAC,headline,urgency,lan,sub_list,body,augmentedbody)
     return info 
 
 
@@ -98,7 +94,7 @@ def gen_info(raw_file):
          
     # Output the data structure of article information.
     Temp1 = pd.DataFrame(data1, columns = ['Id', 'TimeStamp', 'PNAC', 'headline', 'urgency', 
-        'lan', 'subject', 'body', 'augbod', 'versionCreated', 'firstCreated'])
+        'lan', 'subject', 'body', 'augbod'])
 
     Temp1 = Temp1[Temp1['augbod'].notnull()].reset_index()
     Temp1 = Temp1.drop(['urgency','lan','body'],axis=1) 
@@ -111,8 +107,6 @@ outputpath= '/NOBACKUP/scratch/ra2826/oil-project/raw_info'
 path1 = '/share/share1/share_mamaysky-glasserman/data/TRNewsArchive'
 
 raw_file = sys.argv[1]
-#raw_file = '2019/News.RTRS.201905.0214.txt'
-
 YYYYMM = raw_file[-15:-9]
 Temp = gen_info(path1 + '/' + raw_file)
 Temp.to_csv(outputpath + '/' + 'RTRS-' + YYYYMM + 'proc.csv', encoding = 'utf-8', index=False)
