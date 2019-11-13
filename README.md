@@ -3,7 +3,7 @@
 Contains codes for Energy Project
 
 
-*** to run the code ***
+*** to run the code for info files***
 
 1. Generate monthly csv info files (raw info files)
 ```
@@ -90,5 +90,8 @@ chmod u+x date_fixed_measures.py
 sge_run --grid_mem=32G --grid_ncpus=1 --grid_submit=batch ./date_fixed_measures.py
 ```
 
+*** to run the code for cosine file and clustering***
+1. 
+2. louvain.R is used for clustering.
 
 
