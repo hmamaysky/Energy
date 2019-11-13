@@ -32,7 +32,7 @@ chmod u+x run_dtm.sh
 ./run_dtm.sh 
 
 ```
-4.  Calculate the entropy.
+4.  Calculate the entropy
 ```
 chmod u+x ngram.py
 
@@ -47,7 +47,7 @@ chmod u+x run_entropy.sh
 
 ./run_entropy.sh
 ```
-5.  Calculate the sentiments.
+5.  Calculate the sentiments
 ```
 chmod u+x sentcode.py
 
@@ -56,7 +56,7 @@ chmod u+x run_sent.sh
 ./run_sent.sh 
 
 ```
-6.  Count the total number of words in each article after cleaning.
+6.  Count the total number of words in each article after cleaning
 ```
 chmod u+x total.py
 
@@ -65,7 +65,7 @@ chmod u+x run_total.sh
 ./run_total.sh  
 
 ```
-7.  Calculates the allocation of the topics for each article.
+7.  Calculates the allocation of the topics for each article
 ```
 chmod u+x topic_allocation.py
 
@@ -84,6 +84,7 @@ chmod u+x run_info.sh
 
 ```
 9. Concatenate all the files at '/NOBACKUP/scratch/ra2826/oil-project/info' for the next step
+
 10. Fix the dates on info files based on the oil price eastern closing time 
 
 ```
@@ -109,6 +110,6 @@ chmod u+x cosine.py
 
 sge_run --grid_mem=128G --grid_ncpus=2 --grid_submit=batch ./cosine.py
 ```
-3. louvain.R is used for clustering.
+3. louvain.R is used for clustering
 
 
