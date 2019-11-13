@@ -92,7 +92,21 @@ sge_run --grid_mem=32G --grid_ncpus=1 --grid_submit=batch ./date_fixed_measures.
 
 *** to run the code for cosine file and clustering***
 
-1. 
-2. louvain.R is used for clustering.
+1. Prepare the dtm file for the cosine code 
+```
+chmod u+x dtm_numeric.py
+
+chmod u+x run_dtm_numeric.sh
+
+./run_dtm_numeric.sh
+
+```
+2. Prepare the cosine file
+```
+chmod u+x cosine.py
+
+sge_run --grid_mem=128G --grid_ncpus=2 --grid_submit=batch ./cosine.py
+```
+3. louvain.R is used for clustering.
 
 
