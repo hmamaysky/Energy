@@ -91,6 +91,7 @@ sge_run --grid_mem=32G --grid_ncpus=1 --grid_submit=batch ./date_fixed_measures.
 ```
 
 *** to run the code for cosine file and clustering***
+
 1. 
 2. louvain.R is used for clustering.
 
