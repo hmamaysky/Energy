@@ -7,9 +7,11 @@ Contains codes for Energy Project
 
 1. Generate monthly csv info files (raw info files)
 ```
-chmod u+x 
+chmod u+x raw_info.py
 
-./
+chmod u+x run_raw_info.sh
+
+./run_raw_info.sh
 
 ```
 2. Select the oil articles and generate the oil-related monthly info files
@@ -72,7 +74,7 @@ chmod u+x run_topic.sh
 ./run_topic.sh 
 
 ```
-8.  Combine all the article measures and change the time to NY.
+8.  Combine all the article measures and change the time to NY to create final info files
 ```
 chmod u+x info.py
 
