@@ -14,7 +14,7 @@ chmod u+x run_raw_info.sh
 ./run_raw_info.sh
 
 ```
-2. Select the oil articles and generate the oil-related monthly info files
+2. Select the oil articles and generate the oil-related monthly raw info files
 ```
 chmod u+x oil_article_selection.py
 
