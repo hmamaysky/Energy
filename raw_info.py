@@ -1,7 +1,7 @@
 #!/apps/anaconda2/bin/python
 
 """
-Program   : refer to run_raw_info 
+Program   : refer to run_raw_info.sh 
 Function  : parse the raw JSON file.
 Return    : data frame of article information (raw info)
 """  
