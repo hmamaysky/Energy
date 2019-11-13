@@ -22,7 +22,7 @@ energyq = map(lambda x: 'N2:'+x.upper(),energyq)
 
 
 
-inputpath= '/NOBACKUP/scratch/ra2826/oil-project/info'  
+inputpath= '/NOBACKUP/scratch/ra2826/oil-project/raw_info'  
 outputpath= '/NOBACKUP/scratch/ra2826/oil-project/oil_RTRS'  
 
 j = sys.argv[1]
