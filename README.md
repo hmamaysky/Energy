@@ -95,7 +95,7 @@ sge_run --grid_mem=32G --grid_ncpus=1 --grid_submit=batch ./date_fixed_measures.
 
 *** to run the code for cosine file and clustering***
 
-1. Prepare the dtm file for the cosine code 
+1. Process the dtm files for the cosine code 
 ```
 chmod u+x dtm_numeric.py
 
