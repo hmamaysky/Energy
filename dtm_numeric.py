@@ -13,7 +13,8 @@ import sys
 j= sys.argv[1]
 dtmpath= '/NOBACKUP/scratch/ra2826/oil-project/dtm_Clustering_C'
 df = pd.read_csv(dtmpath + '/' + j)
-
+df = pd.melt(df, id_vars=list(df)[:2], value_vars=list(df)[2:], var_name='words', value_name='freq')
+df = df[df['freq']!=0]
 
 word_column = df.words.tolist()
 id_column = df.Id.tolist()
