@@ -19,7 +19,6 @@ chmod u+x Forward_Model.py
 chmod u+x run_Forward_Model.sh
 
 ./run_Forward_Model.sh
-
 ```
 2. OLS Updating Model
 ```
@@ -30,7 +29,6 @@ chmod u+x OLS_Model.py
 chmod u+x run_OLS_Model.sh
 
 ./run_OLS_Model.sh
-
 ```
 3. Lasso Updating Model
 ```
@@ -41,5 +39,4 @@ chmod u+x Lasso_Model.py
 chmod u+x run_Lasso_Model.sh
 
 ./run_Lasso_Model.sh
-
 ```
