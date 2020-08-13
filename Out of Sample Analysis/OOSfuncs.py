@@ -7,8 +7,8 @@ Created on Tue Apr 28 16:59:34 2020
 
 This file defines all the functions used in the OOS analysis.
 The functions varies from data reader to model selector, all commented
-in detail. The main function in each specific code will call them, some 
-would be modified a little. 
+in detail. The main function in other OOS codes will call them, and some 
+would be modified a little catering to the situation. 
 """
 
 # %% 0. Importing Pachages
@@ -251,3 +251,245 @@ def select_significant(d_var, forecast_start, wk=8, window=5, ns=1):
     selected_textual = text_var.copy()
         
     return selected, selected_non_textual, selected_textual
+
+# %% 2. Main algorithms for each week
+### 2.1 Custom Rolling Diff function for OLS Updating method
+def rolling_diff_OLS(d_var, ind_vars, forecast_start, wk=8, window=5):
+    '''
+    Inputs:
+        1. d_var: dependent variable
+        2. ind_vars: prescribed model
+        3. forecaset_start: current week which we base on to forecast 
+        4. wk: 8 or 4 according to which vars we are interested in
+        5. zero: True if 0 Specification model
+        6. window: The backward looking length for coefficient updating
+    Outputs:
+        1. diff: difference between forecast and real observation
+    '''
+
+    ### We need to update and then forecast
+    data=data_set(d_var)
+    
+    ### Get update and forecast window
+    date_update_range,date_test_range, date_pca_range=get_test_row_range(data['date'], forecast_start, wk=wk, update_window=window)
+    
+    ### Shift x to match y and set Newey-West max lag
+    lag_vars = ind_var_list(d_var, weeks=wk)
+    lag_vars.remove('trend')
+    lag_vars.remove('WIPIyoy')
+    data_x=data.copy()
+    if wk == 8:
+        data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
+        lag=8
+
+    else:
+        data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(4)
+        lag=4
+    
+    ### train suffix is the update window, test suffix is the forecast window
+    data_ytrain= data[date_update_range]
+    data_ytest = data[date_test_range]
+    
+    ### Update PCA values        
+    data_x_pca = data_x[date_pca_range]
+    data_x_pca = PCA_augment(data_x_pca)
+    
+    data_xtrain= data_x_pca.iloc[:np.sum(date_update_range),:]
+    data_xtest = data_x_pca.iloc[[-1],:]   
+    
+    ### Run regression and update, here, sm.add_constant adds a constant to RHS
+    x_train=data_xtrain.loc[:,ind_vars]
+    X_train=sm.add_constant(x_train)
+    if wk==8:
+        y_train=data_ytrain[d_var+'_t8']
+    else:
+        y_train=data_ytrain[d_var]
+    model=lm.OLS(y_train, X_train, missing='drop')
+    reg=model.fit(cov_type='HAC', cov_kwds={'maxlags':lag})
+    x_test=data_xtest.loc[:,ind_vars]
+    X_test=sm.add_constant(x_test, has_constant='add')
+    
+    ### Predict and record the difference
+    if wk==8:
+        y_test=data_ytest[d_var+'_t8']
+    else:
+        y_test=data_ytest[d_var]
+    diff = reg.predict(X_test) - y_test
+
+    return diff
+
+
+### 2.2 Custom Rolling Diff function for Lasso Updating method
+def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
+    '''
+    This function calculates the weekly prediction error of the Lasso Model.
+    Inputs:
+        1. d_var: dependent variable
+        2. ind_vars: prescribed model
+        3. forecaset_start: current week which we base on to forecast 
+        4. wk: 8 or 4 according to which vars we are interested in
+        5. zero: True if 0 Specification model
+        6. window: The backward looking length for coefficient updating
+    Outputs:
+        1. diff: difference between forecast and real observation
+    '''
+
+
+    ### 0. Read the dataset
+    data=data_set(d_var)
+    
+    ### 1. Get update and forecast window
+    date_update_range, date_test_range, date_pca_range=get_test_row_range(data['date'], forecast_start, wk=wk, update_window=window)
+    
+    ### 2. Shift x to match the lag 
+    lag_vars = ind_var_list(d_var, weeks=wk)
+    # trend and WIPIyoy will not lag
+    lag_vars.remove('trend')
+    lag_vars.remove('WIPIyoy')
+    data_x=data.copy()
+    if wk == 8:
+        data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
+
+    else:
+        data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(4)
+    
+    ### 3. Prepare LHS data for training and testing
+    data_ytrain= data[date_update_range]
+    data_ytest = data[date_test_range]
+    
+    ### 4. Prepare RHS data for training and testing   
+    # 4.1 Add PCA series
+    data_x_pca = data_x[date_pca_range]
+    data_x_pca = PCA_augment(data_x_pca)
+
+    # 4.2 Select the train set (first few rows) and the test set (the last row)
+    data_xtrain= data_x_pca.iloc[:np.sum(date_update_range),:]
+    data_xtest = data_x_pca.iloc[[-1],:]   
+    
+    ### 5. Lasso Update and Prediction Process
+    # 5.1 First, use grid search to choose the best Penalty 
+    #     Then, run lasso using that panalty regression and update, 
+    #     here, sm.add_constant adds a constant to RHS
+    x_train=data_xtrain.loc[:,ind_vars]
+    X_train=sm.add_constant(x_train)
+    ## Choose the correct LHS var according to forecasting duration
+    if wk==8:
+        y_train=data_ytrain[d_var+'_t8']
+    else:
+        y_train=data_ytrain[d_var]
+    ## Set up Lasso instance and grid search for penalty coefficient
+    pre_model=Lasso()
+    param_grid=[{'alpha':np.linspace(0,2,40)}]
+    grid_search = GridSearchCV(pre_model, param_grid, cv=cvs, scoring='neg_mean_squared_error')
+    train_xy=pd.concat([X_train,y_train],axis=1).dropna()
+    y_train=train_xy.iloc[:,-1]
+    X_train=train_xy.iloc[:,0:-1]
+    grid_search.fit(X_train, y_train)
+    best_lambda=grid_search.best_params_['alpha']
+    ## Update the coefficients using the selected penalty 
+    reg=Lasso(alpha=best_lambda)
+    reg.fit(X_train,y_train)
+    x_test=data_xtest.loc[:,ind_vars]
+    X_test=sm.add_constant(x_test, has_constant='add')
+    
+    ## Predict and record the difference
+    # Choose the correct LHS var according to forecasting duration
+    if wk==8:
+        y_test=data_ytest[d_var+'_t8']
+    else:
+        y_test=data_ytest[d_var]
+    # Prepare proper test data and predict   
+    test_xy=pd.concat([X_test,y_test],axis=1).dropna()
+    y_test=test_xy.iloc[:,-1]
+    X_test=test_xy.iloc[:,0:-1]
+    
+    ### 6. Return if valid o/w return np.nan
+    if len(y_test)==0:
+        return [np.nan]
+    else:
+        diff = reg.predict(X_test) - y_test
+
+    return diff
+
+### 2.3 Custom Rolling Diff function for Forward Model 
+def rolling_diff_forward(data, d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
+    '''
+    Inputs:
+        1. d_var: dependent variable
+        2. ind_vars: prescribed model
+        3. forecaset_start: current week which we base on to forecast 
+        4. wk: 8 or 4 according to which vars we are interested in
+        5. zero: True if 0 Specification model
+        6. window: The backward looking length for coefficient updating
+    Outputs:
+        1. diff: difference between forecast and real observation
+        2. coef list: list of the coefficients for the forward selected variables
+    '''
+    
+    ### Get update and forecast window
+    date_update_range, date_test_range, date_pca_range=get_test_row_range(data['date'], forecast_start, wk=wk, update_window=window)
+    
+    ### Shift x to match y and set Newey-West max lag
+    lag_vars = ind_var_list(d_var, weeks=wk)
+    lag_vars.remove('trend')
+    lag_vars.remove('WIPIyoy')
+    data_x=data.copy()
+    if wk == 8:
+        data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
+
+    else:
+        data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(4)
+    
+    ### train suffix is the update window, test suffix is the forecast window
+    data_ytrain= data[date_update_range]
+    data_ytest = data[date_test_range]
+    
+    ### Update PCA series in current lookback window   
+    data_x_pca = data_x[date_pca_range]
+    data_x_pca = PCA_augment(data_x_pca)
+
+    ### Get the training data with PCA series augmented
+    data_xtrain= data_x_pca.iloc[:np.sum(date_update_range),:]
+    data_xtest = data_x_pca.iloc[[-1],:]   
+    
+    ### First, use grid search to choose the best Penalty 
+    ### Then, run lasso using that panalty regression and update, here, sm.add_constant adds a constant to RHS
+    x_train = data_xtrain.loc[:,ind_vars]
+    X_train = sm.add_constant(x_train)
+    if wk==8:
+        y_train=data_ytrain[d_var+'_t8']
+    else:
+        y_train=data_ytrain[d_var]
+    pre_model=Lasso()
+    param_grid=[{'alpha':np.linspace(0,2,40)}]
+    grid_search = GridSearchCV(pre_model, param_grid, cv=cvs, scoring='neg_mean_squared_error')
+    
+    train_xy=pd.concat([X_train,y_train],axis=1).dropna()
+    y_train=train_xy.iloc[:,-1]
+    X_train=train_xy.iloc[:,0:-1]
+    grid_search.fit(X_train, y_train)
+
+    best_lambda=grid_search.best_params_['alpha']
+        
+    reg=Lasso(alpha=best_lambda)
+    reg.fit(X_train,y_train)
+    x_test=data_xtest.loc[:,ind_vars]
+    X_test=sm.add_constant(x_test, has_constant='add')
+    
+    ### Predict and record the difference
+    if wk==8:
+        y_test=data_ytest[d_var+'_t8']
+    else:
+        y_test=data_ytest[d_var]
+        
+    test_xy=pd.concat([X_test,y_test],axis=1).dropna()
+    y_test=test_xy.iloc[:,-1]
+    X_test=test_xy.iloc[:,0:-1]
+    
+    ### Return the prediction error and the coefficients
+    if len(y_test)==0:
+        return [np.nan], reg.coef_.tolist()
+    else:
+        diff = reg.predict(X_test) - y_test
+
+    return diff, reg.coef_.tolist()
