@@ -52,7 +52,7 @@ chmod u+x Lasso_Model.py
 
 chmod u+x run_Fixed*
 
-./run_Fixed*
+sge_run --grid_submit=batch ./run_Fixed*
 ```
 5. Subsequent Processing for the Fixed Model
 ```
