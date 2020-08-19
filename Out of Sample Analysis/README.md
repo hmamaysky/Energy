@@ -8,6 +8,10 @@ Notes:
 - Forward_Model.py tests the OOS performance of the in-sample Forward Selection Model
 - OLS_Model.py tests the performance of the model with R2 based var selection and OLS coefficient update
 - Lasso_Model.py tests the performance of the model with R2 based var selection and Lasso coefficient update
+- Fixed_Model*.py tests the performance of the fixed models, there are three parts, covering all the 1-1 pairs from the combined (text and base) var pool
+- best_oneandone.py extracts the winning fixed models for each dependent variable and save them in .csv
+- best_ratio.py calculate the MSE ratios of the winning models
+- matrix_plots.py plots the summary matrix for the fixed model. Please refer to the comments in the file for details.
 
 Procedures:
 1. OOS test of the Forward Selection Model
@@ -39,4 +43,28 @@ chmod u+x Lasso_Model.py
 chmod u+x run_Lasso_Model.sh
 
 ./run_Lasso_Model.sh
+```
+4. Fixed Model 
+```
+chmod u+x Fixed*
+
+chmod u+x Lasso_Model.py
+
+chmod u+x run_Fixed*
+
+./run_Fixed*
+```
+5. Subsequent Processing for the Fixed Model
+```
+chmod u+x best_oneandone.py
+
+sge_run --grid_mem=10G --grid_submit=batch './best_oneandone.py'
+
+chmod u+x best_ratio.py
+
+sge_run --grid_mem=10G --grid_submit=batch './best_ratio.py'
+
+chmod u+x matrix_plots.py
+
+sge_run --grid_mem=10G --grid_submit=batch './matrix_plots.py'
 ```
