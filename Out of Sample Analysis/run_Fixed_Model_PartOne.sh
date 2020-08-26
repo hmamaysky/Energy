@@ -18,7 +18,7 @@ for w in 8; do
         for v in 1; do
             for l in 10; do
                 for x in ${baselist[@]}; do
-                    sge_run --grid_mem=32G --grid_ncpus=8 --grid_submit=batch --grid_quiet "${FS}/Fixed_Model_PartThree.py $w $f $v $l $x";
+                    sge_run --grid_mem=32G --grid_ncpus=8 --grid_submit=batch --grid_quiet "${FS}/Fixed_Model_PartOne.py $w $f $v $l $x";
                 done
             done
         done
