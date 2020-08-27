@@ -102,7 +102,8 @@ def get_clean4(sample):
 
 
 if __name__ == "__main__":
-    stemmer=stem.snowball.EnglishStemmer()
+    #stemmer=stem.snowball.EnglishStemmer()
+    stemmer=PorterStemmer()
     stop = stopwords.words('english')
     j = sys.argv[1]
     a = j[-10:-4]
@@ -123,8 +124,8 @@ if __name__ == "__main__":
     gram3 = pd.DataFrame(gram3_dict.items(),columns = ['word','freq'])
     gram4 = pd.DataFrame(gram4_dict.items(),columns = ['word','freq'])
     
-    outputpath1 = '/NOBACKUP/scratch/ra2826/oil-project/3gram'
-    outputpath2 = '/NOBACKUP/scratch/ra2826/oil-project/4gram'
+    outputpath1 = '/work/hw2676/Energy/3gram'
+    outputpath2 = '/work/hw2676/Energy/4gram'
 
     gram3.to_csv(outputpath1 + '/' + a +'_3gram.csv')
     gram4.to_csv(outputpath2 + '/' + a +'_4gram.csv')

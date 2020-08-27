@@ -33,10 +33,10 @@ from os.path import isfile, join
 # 
 ########################################################
 
-ng3 = '/NOBACKUP/scratch/ra2826/oil-project/3gram'
-ng4 = '/NOBACKUP/scratch/ra2826/oil-project/4gram'
-info = '/NOBACKUP/scratch/ra2826/oil-project/oil_RTRS'
-output = '/NOBACKUP/scratch/ra2826/oil-project/entropy'
+ng3 = '/work/hw2676/Energy/3gram'
+ng4 = '/work/hw2676/Energy/4gram'
+info = '/work/hw2676/Energy/oil_RTRS'
+output = '/work/hw2676/Energy/entropy'
 
 
 
@@ -189,9 +189,6 @@ if __name__ == "__main__":
     jj=datas2[fnum]
     aa=jj[-10:-4]
     entpd.to_csv(output+SS+aa+'_entropy.csv',index=False)
-
-
-
 
 
 
