@@ -94,7 +94,7 @@ def main(d_var):
                 test_week_list = [time for time in time_col if time>=time_lower+pd.Timedelta(str(7*updating_window*52)+'days')][::frequency]
                 # Get the coefficients for each week and save them
                 for week in test_week_list:
-                    _, var_coeff = rolling_diff(data, d_var, model, week, wk=weeks, window=updating_window, cvs=cv)
+                    _, var_coeff = rolling_diff_stability_coef(data, d_var, model, week, wk=weeks, window=updating_window, cvs=cv)
                     var_coef_dict[model[0]+', '+model[1]][week]=var_coeff
         # 1.2 Save the results
         ### Each key corresponds to a DF with time points as columns and Intercept, var1, var2, R2 as row names
