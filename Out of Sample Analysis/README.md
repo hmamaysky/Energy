@@ -3,7 +3,7 @@
 
 Contains codes for OOS analysis for the Energy Project
 
-Descriptions:
+### Descriptions
 - OOSfuncs.py includes all the functions needed for the OOS analysis. 
 - Forward_Model.py tests the OOS performance of the in-sample Forward Selection Model
 - OLS_Model.py tests the performance of the model with R2 based var selection and OLS coefficient update
@@ -13,12 +13,13 @@ Descriptions:
 - best_ratio.py calculate the MSE ratios of the winning models
 - matrix_plots.py plots the summary matrix for the fixed model. Please refer to the comments in the file for details.
 - Stability Checked Model contains all the codes for an alternative fixed model, please refer to the README file there for further details.
-Notes:
+
+### Notes
 - Please change the working directory and the saving directory in each file before running the program.
 - The previous info and dtm files are saved by the transcript releasing date, but the current outputs will be saved by the event date. A monthly matching check shows that after aggregating all the previous outcomes, the new method covers most of them （1391/157849 < 1% are missing). The major loss occurs in July, August, October and November of the year 2017 (103, 275, 249, 499 missing respectively).
 - The contents of the precious and current results match well. Minor discrepancies occur in the word countings. A manual check shows that the SP transcript directly downloaded from web did not record words like "that's", "it's" well, they appeared to be "thats", "its" in some occasions. However, the corresponding excerts in the WRDS file handle those words properly, and the new results are more trustworthy.
 
-Procedures:
+### Procedures
 1. OOS test of the Forward Selection Model
 ```
 chmod u+x OOSfuncs.py
