@@ -22,6 +22,8 @@ from nltk.util import ngrams
 from sklearn.feature_extraction.text import TfidfVectorizer
 import os
 
+from nltk.stem import PorterStemmer  
+
 ######################################################## 
 # 
 # File Paths 
@@ -54,11 +56,11 @@ import csv
 
 
 if __name__ == "__main__":
-    
-    stemmer=stem.snowball.EnglishStemmer()
+    stemmer=PorterStemmer()
+    #stemmer=stem.snowball.EnglishStemmer()
     stop = stopwords.words('english')
 
-    inputpath = '/NOBACKUP/scratch/ra2826/oil-project/oil_RTRS' 
+    inputpath = '/work/hw2676/Energy/oil_RTRS' 
     j = sys.argv[1]
     a = j[-10:-4]
     Temp=pd.read_csv(inputpath +'/'+j,sep=',')
@@ -72,7 +74,7 @@ if __name__ == "__main__":
 
 
     df = pd.DataFrame(Final,columns = ['Id','total'])  
-    outputpath= '/NOBACKUP/scratch/ra2826/oil-project/total'  
+    outputpath= '/work/hw2676/Energy/total'  
     df.to_csv(outputpath+'/'+ a +'total.csv',index=False)
 
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-DATA1='/NOBACKUP/scratch/ra2826/oil-project/oil_RTRS'
-FS='/user/user1/ra2826/oil_project/article_measures/total'
+DATA1='/work/hw2676/Energy/oil_RTRS'
+FS='/user/hw2676/code/Energy/DataProcessing/article_measure/total'
 
 
 cd $DATA1
