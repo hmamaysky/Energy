@@ -12,12 +12,6 @@ import sys
 import csv
 
 
-import pandas as pd
-import json
-import unicodedata
-import sys
-import csv
-
 def get_info_article(JSON):    
     # ID
     Id = JSON['data']['id']
@@ -42,10 +36,10 @@ def get_info_article(JSON):
     
     # Body text
     body = JSON['data']['body']
-    if type(body) == unicode:
+    if type(body) == 'unicode':
         # If the body is encoded in unicode
         body = unicodedata.normalize('NFKD', body).encode('ascii','ignore')
-    if type(headline) == unicode:
+    if type(headline) == 'unicode':
         # If the headline is encoded in unicode.
         headline = unicodedata.normalize('NFKD', headline).encode('ascii','ignore')
     # Augment the body text with headline.
@@ -102,9 +96,9 @@ def gen_info(raw_file):
      
 
 
-outputpath= '/NOBACKUP/scratch/ra2826/oil-project/raw_info' 
+outputpath= '/work/hw2676/Energy/raw' 
 
-path1 = '/share/share1/share_mamaysky-glasserman/data/TRNewsArchive'
+path1 = '/shared/share_mamaysky-glasserman/data/TRNewsArchive'
 
 raw_file = sys.argv[1]
 YYYYMM = raw_file[-15:-9]

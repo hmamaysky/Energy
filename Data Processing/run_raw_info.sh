@@ -1,13 +1,12 @@
 #!/bin/bash
 
-DATA1='/share/share1/share_mamaysky-glasserman/data/TRNewsArchive'
-FS='/user/user1/ra2826/oil_project/raw_info'
+DATA1='/shared/share_mamaysky-glasserman/data/TRNewsArchive'
+FS='/user/hw2676/code/Energy/DataProcessing/raw_info'
 
 
 
 
 cd $DATA1
-for f in */*.txt;
-do
+for f in */*.txt; do
 	sge_run --grid_mem=32G --grid_ncpus=2 --grid_submit=batch --grid_quiet "${FS}/raw_info.py ${f}"
 done	 
