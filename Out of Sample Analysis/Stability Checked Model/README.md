@@ -56,7 +56,9 @@ To perform the analysis, run the files in following order:
     if there isn't a valid prediction candidate. 
     
     The reported results are presented in an excel file with the RMSE ratios of the constant and time varying model.
-
+    
+    Please refer to the word file "Notes on MSE ratio calculation" for more details.
+    
     ```
     chmod u+x Time_varying_model.py
     chmod u+x run_Time_varying_model.sh
