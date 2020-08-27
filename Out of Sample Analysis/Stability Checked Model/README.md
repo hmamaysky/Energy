@@ -11,6 +11,7 @@ To perform the analysis, run the files in following order:
 1. shuffle_model_groups.py
     
     This file separate all possible combinations of the 39 (20 text + 19 baseline) RHS variables into 30 groups.
+    
     The separation will speed up the next step by leveraging the parallelization techniques.
     
     ```
@@ -22,6 +23,7 @@ To perform the analysis, run the files in following order:
 2. run_generate_model_coefs.sh
     
     This file kicks off 30 generate_model_coefs_v1.0.py in parallel, which calculate all the Lasso 5yr lookback coefficients.
+    
     The results are saved in 30 separated .p files for further usage.
     
     ```
@@ -34,7 +36,9 @@ To perform the analysis, run the files in following order:
     
     This file runs select_models.py, which aggregates all the 30 .p files above and selects the ones that
     qualify as a stable or nonzero model.
+    
     The outputs are dictionaries with LHS vars as keys, with some dictionaries as values. 
+    
     These dictionaries have weektime as key and another layer of dict storing all the selected models and their coefs as values.
 
     ```
@@ -47,8 +51,10 @@ To perform the analysis, run the files in following order:
     
     This file calls Time_varying_model.py, which performs prediction weekly using the selected models
     and their coefficients. Constant models of the same period are calculated as well.
+    
     Two models are tested here: 1. the plain time varying model, 2. time varying model filled with the constant prediction 
     if there isn't a valid prediction candidate. 
+    
     The reported results are presented in an excel file with the RMSE ratios of the constant and time varying model.
 
     ```
