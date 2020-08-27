@@ -1,7 +1,7 @@
 #!/bin/bash
 
-DATA1='/NOBACKUP/scratch/ra2826/oil-project/dtm_Clustering_C'
-FS='/user/user1/ra2826/oil_project/article_measures/dtm'
+DATA1='/work/hw2676/Energy/dtm_Clustering_C'
+FS='/user/hw2676/code/Energy/article_measure/dtm'
 
 
  

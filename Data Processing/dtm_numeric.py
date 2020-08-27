@@ -11,22 +11,22 @@ import sys
 
 
 j= sys.argv[1]
-dtmpath= '/NOBACKUP/scratch/ra2826/oil-project/dtm_Clustering_C'
+dtmpath= '/work/hw2676/Energy/dtm_Clustering_C'
 df = pd.read_csv(dtmpath + '/' + j)
 df = pd.melt(df, id_vars=list(df)[:2], value_vars=list(df)[2:], var_name='words', value_name='freq')
-df = df[df['freq']!=0]
+df = df[df['freq']!=0]  
 
 word_column = df.words.tolist()
 id_column = df.Id.tolist()
 freq_column = df.freq.tolist()
 
 
-words_test = pd.read_csv('/user/user1/ra2826/oil_project/article_measures/dtm/clustering_C.csv', sep=',')
-word_set = words_test.word.tolist()
+words_test = pd.read_csv('/user/hw2676/code/Energy/DataProcessing/article_measure/dtm/clustering_C.csv', sep=',',names=['word','Topic','freq'])
+word_set = words_test['word'][1:].tolist()
 
 
-idpath = '/NOBACKUP/scratch/ra2826/oil-project/concat'
-df_selected = pd.read_csv(idpath + '/' + 'oil_articles.csv',sep=',')
+idpath = '/work/hw2676/Energy/concat'
+df_selected = pd.read_csv(idpath + '/' + 'Info_concat.csv',sep=',')
 id_set = df_selected.Id.tolist()
 
 
@@ -50,7 +50,7 @@ df_out['freq'] = V
 df_out['Id'] = I
 df_out['words'] = J
 
-outputpath= '/NOBACKUP/scratch/ra2826/oil-project/dtm_numeric'
+outputpath= '/work/hw2676/Energy/dtm_numeric'
 df_out.to_csv(outputpath + '/' + j,index=False)
 
 

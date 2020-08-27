@@ -134,7 +134,7 @@ stop = stopwords.words('english')
 
 j = sys.argv[1]
 a = j[-10:-4]
-inputwords= '/user/user1/ra2826/oil_project/article_measures/dtm'
+inputwords= '/user/hw2676/code/Energy/DataProcessing/article_measure/dtm'
 words_test = pd.read_csv(inputwords +'/'+'clustering_C.csv',sep=',')
 
 words_test1 = words_test.word.tolist()
@@ -144,7 +144,7 @@ words_test1 = map(lambda x: x ,words_test1)
 my_dict = dict.fromkeys(words_test1,0)
 
 
-inputpath = '/NOBACKUP/scratch/ra2826/oil-project/oil_RTRS'
+inputpath = '/work/hw2676/Energy/oil_RTRS'
 
 os.chdir(inputpath)
 
@@ -200,7 +200,7 @@ df1 = pd.DataFrame({'Id':data1, 'TimeStamp':data2, 'countwords':data5})
 df1[f1] = pd.DataFrame(df1.countwords.values.tolist(), index= df1.index)
 df1 = df1.drop(['countwords'],axis=1)
 a = j[-10:-4]
-outputpath= '/NOBACKUP/scratch/ra2826/oil-project/dtm_Clustering_C'
+outputpath= '/work/hw2676/Energy/dtm_Clustering_C'
 df1.to_csv(outputpath+'/'+ a +'dtm.csv',index=False)
 
 
