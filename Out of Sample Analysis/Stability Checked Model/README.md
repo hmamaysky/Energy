@@ -1,11 +1,13 @@
 # Stability Checked Model
 ## A Variation from the Fixed Model
 
-This fixed model deals with the time variation of selected models.
-A model become a prediction candidate only if it has stable and nonzero coefficients over
+This fixed model deals with the time variation of the coefficients of the selected models.
+
+A model becomes a prediction candidate on a forecastting date only if it has stable and nonzero coefficients over
 the past few years. (being stable means no switch of sign)
 
 To perform the analysis, run the files in following order:
+
 1. shuffle_model_groups.py
     
     This file separate all possible combinations of the 39 (20 text + 19 baseline) RHS variables into 30 groups.
