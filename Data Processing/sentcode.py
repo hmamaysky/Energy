@@ -122,7 +122,7 @@ class NGRAM(object):
             f.writerow(row)
 
 if __name__ == "__main__":
-    FS='/user/user1/ra2826/oil_project/article_measures/sentiment'
+    FS='/user/hw2676/code/Energy/DataProcessing/article_measure/sentiment'
     os.chdir(FS)
     with open('2014.txt', 'r') as f:
         content = f.readlines()
@@ -150,10 +150,11 @@ if __name__ == "__main__":
     stop = stopwords.words('english')
     stop_final = [stemmer.stem(l) for l in stop]
 
-    inputpath = '/NOBACKUP/scratch/ra2826/oil-project/oil_RTRS' 
+    inputpath = '/work/hw2676/Energy/oil_RTRS' 
     j = sys.argv[1]
+    # j = 'oil_RTRS_202002.csv'
     a = j[-10:-4]
-    Temp=pd.read_csv(inputpath +'/'+j,sep=',')
+    Temp=pd.read_csv(inputpath +'/'+j,sep=',',encoding = "ISO-8859-1")
     Temp['body_stem'] = Temp['augbod'].apply(get_clean1)
     Temp['body_negation'] = Temp['augbod'].apply(get_clean)
     Temp['body_Neg'] = Temp['body_negation'].apply(get_Neg)
@@ -183,7 +184,7 @@ if __name__ == "__main__":
 
 
     df = pd.DataFrame(Final,columns = ['Id','sent'])  
-    outputpath= '/NOBACKUP/scratch/ra2826/oil-project/sentiment'  
+    outputpath= '/work/hw2676/Energy/sentiment'  
     df.to_csv(outputpath+'/'+ a +'sent.csv',index=False)
 
 
