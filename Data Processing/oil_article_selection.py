@@ -22,8 +22,8 @@ energyq = map(lambda x: 'N2:'+x.upper(),energyq)
 
 
 
-inputpath= '/NOBACKUP/scratch/ra2826/oil-project/raw_info'  
-outputpath= '/NOBACKUP/scratch/ra2826/oil-project/oil_RTRS'  
+inputpath= '/work/hw2676/Energy/raw'  
+outputpath= '/work/hw2676/Energy/oil_RTRS'  
 
 j = sys.argv[1]
 Temp = pd.read_csv(inputpath + '/' + 'RTRS-' + j + 'proc.csv', sep=',')
