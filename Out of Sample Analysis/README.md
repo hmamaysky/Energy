@@ -16,8 +16,6 @@ Contains codes for OOS analysis for the Energy Project
 
 ### Notes
 - Please change the working directory and the saving directory in each file before running the program.
-- The previous info and dtm files are saved by the transcript releasing date, but the current outputs will be saved by the event date. A monthly matching check shows that after aggregating all the previous outcomes, the new method covers most of them （1391/157849 < 1% are missing). The major loss occurs in July, August, October and November of the year 2017 (103, 275, 249, 499 missing respectively).
-- The contents of the precious and current results match well. Minor discrepancies occur in the word countings. A manual check shows that the SP transcript directly downloaded from web did not record words like "that's", "it's" well, they appeared to be "thats", "its" in some occasions. However, the corresponding excerts in the WRDS file handle those words properly, and the new results are more trustworthy.
 
 ### Procedures
 1. OOS test of the Forward Selection Model
