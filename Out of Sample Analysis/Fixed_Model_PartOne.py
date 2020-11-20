@@ -92,7 +92,7 @@ def main(var):
                 print(week)
 
                 # Update, Forecast and get the prediction error
-                constant_diff = rolling_diff(d_var, [], week, wk=weeks, window=updating_window, cvs=cv)
+                constant_diff = rolling_diff_Lasso(d_var, [], week, wk=weeks, window=updating_window, cvs=cv)
                 for t_var in textual_vars:
                     full_vars = [base_var, t_var]
                     full_diff = rolling_diff_Lasso(d_var, full_vars, week, wk=weeks, window=updating_window, cvs=cv)
