@@ -16,8 +16,12 @@ as the first fixed model var and setting the second var in turn using all the te
 import pandas as pd
 import sys
 import concurrent.futures
+import pickle
+import os
+import statsmodels.api as sm
+import statsmodels.regression.linear_model as lm
 from OOSfuncs import *
-
+__out_dir__ = '/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/fixed_model/'
 # %% 1. Defining Functions
 ### See OOSfuncs.py for all the functions ###
 
@@ -39,7 +43,12 @@ def main(var):
     no_varibles=int(sys.argv[3])
     cv=int(sys.argv[4])
     base_var=sys.argv[5]
-    
+
+    # weeks=8
+    # frequency=1
+    # no_varibles=1
+    # cv=10
+    # base_var="WIPImom_8wk"
     # d_var list
     d_vars = [var]
 
@@ -56,6 +65,9 @@ def main(var):
     # a dictionary with each dependent variable as key,
     # and a list of rmses for each model as value
     rmse_result={}
+    # Get the dictionary saving all the pre-generated coefficients
+    os.chdir(__out_dir__)
+    coeffs = pickle.load(open('time_varying_model/processed/integrated_var_coefs.p','rb'))[var]
     
     ### 1. Main Algorithm
     for d_var in d_vars:
@@ -66,9 +78,15 @@ def main(var):
         #     Model names are suggested by the var name
         constant_diff_list =[]
         full_diff_list ={}
+        model_coef = {}
         for t_var in textual_vars:
-            full_diff_list[base_var+', '+t_var]=[]        
-
+            full_diff_list[base_var+', '+t_var]=[]  
+            model = base_var+', '+t_var
+            if model in coeffs.keys():
+                model_coef[model] = coeffs[model]
+            else:
+                model_coef[model] = coeffs[t_var+', '+base_var]
+        
         # 1.2 Get the exact date of each window (monthly)
         #     Here, we ensure everytime we train, there are enough observations for backward looking
         #     Note that if a model has ovx_cl1 or sdf variables, the starting time point should be modified accordingly
@@ -85,19 +103,19 @@ def main(var):
         # First, at each window, update coefficients of each specifications (model)
         # Second, forecast and get its difference from real observations
         # Finally, record them in a list
-        
+        data=data_set(d_var)
         ## if the baseline var is a valid RHS var for the dependent variable
         if base_var in ind_var_list(d_var,weeks):
             for week in test_week_list:
                 print(week)
-
                 # Update, Forecast and get the prediction error
-                constant_diff = rolling_diff_Lasso(d_var, [], week, wk=weeks, window=updating_window, cvs=cv)
+                constant_diff = [rolling_diff(data, d_var, [], week)]
                 for t_var in textual_vars:
-                    full_vars = [base_var, t_var]
-                    full_diff = rolling_diff_Lasso(d_var, full_vars, week, wk=weeks, window=updating_window, cvs=cv)
+                    print(t_var)
+                    model = base_var+', '+t_var
+                    full_diff, _ = prediction_one_week(data, d_var, model, model_coef[model], week)
                     # Save the result of the fixed model to corresponding lists
-                    full_diff_list[base_var+', '+t_var].extend(full_diff)
+                    full_diff_list[model].extend(full_diff)
                 
                 
                 # Save error of const model to list             
@@ -112,7 +130,7 @@ def main(var):
                 print(week)
                 
                 # Calculate MSE and RMSE
-                constant_diff = rolling_diff_Lasso(d_var, [], week, wk=weeks, window=updating_window, cvs=cv)           
+                constant_diff = [rolling_diff(data, d_var, [], week)]         
                 
                 # Append results to lists              
                 constant_diff_list.extend(constant_diff)                
@@ -140,6 +158,11 @@ if __name__ == '__main__':
     cv_fold=int(sys.argv[4])
     base_var=sys.argv[5]
 
+    # forecasting_week=8
+    # update_frequency=1
+    # no_variables=1
+    # cv_fold=10
+    # base_var="WIPImom_8wk"
     ### 3.2 File Naming Strings
     if      forecasting_week == 4: file_suffix = '4wk'
     else:   file_suffix = '8wk'
@@ -167,5 +190,5 @@ if __name__ == '__main__':
             rmse = pd.concat([rmse, result], axis=1)
             
     ### 3.4 Save the results to proper directory
-    rmse.to_excel('/user/hw2676/files/Energy/outputs/model_selection/fixed_model/'
+    rmse.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/fixed_model/'
                     +file+'/'+file_start+'/'+base_var+'_Lasso_'+cv+'_'+file_suffix+'_1.xlsx')
