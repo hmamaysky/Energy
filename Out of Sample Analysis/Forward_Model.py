@@ -48,14 +48,14 @@ def main(d_var):
     cv=int(sys.argv[4])
     
     ### 1. The vars of the forward selection models from the in-sample analysis
-    forward_selected_models={'FutRet':['FutRet', 'DInv', 'DFX', 'basis', 'WIPIyoy', 'VIX', 'PCAsent', 'DOilVol'],
-                             'xomRet':['xomRet', 'sp500Ret', 'WIPIyoy', 'tnote_10y', 'DInv', 'VIX', 'DFX', 'sRpc'],
+    forward_selected_models={'FutRet':['FutRet', 'DInv', 'WIPImom_8wk', 'OilVol', 'DOilVol', 'DFX', 'basis', 'sEnv'],
+                             'xomRet':['xomRet', 'sp500Ret', 'sGom', 'tnote_10y', 'DFX', 'WIPImom_8wk', 'sRpc', 'DInv'],
                              'bpRet':['bpRet', 'sp500Ret', 'sEp', 'DFX', 'DSpot', 'fEp', 'sGom', 'tnote_10y'],
-                             'rdsaRet':['rdsaRet', 'fBbl', 'sEnv', 'fGom', 'sEp', 'DInv', 'sCo', 'VIX'],
-                             'DSpot':['DSpot', 'fRpc', 'fBbl', 'basis', 'sp500Ret', 'sEnv', 'sGom', 'entropy'],
+                             'rdsaRet':['rdsaRet', 'WIPImom_8wk', 'VIX', 'sEnv', 'fBbl', 'fGom', 'DInv', 'sEp'],
+                             'DSpot':['DSpot', 'fRpc', 'fBbl', 'basis', 'WIPImom_8wk', 'sp500Ret', 'sEnv', 'entropy'],
                              'DOilVol':['DOilVol', 'OilVol', 'DSpot', 'VIX', 'entropy', 'fGom', 'fCo', 'PCAsent'],
-                             'DInv':['DInv', 'DProd', 'artcount', 'fRpc', 'WIPIyoy', 'entropy', 'sEp', 'vix_spx'],
-                             'DProd':['DProd', 'sEp', 'DInv', 'sBbl', 'fRpc', 'DOilVol', 'WIPIyoy', 'VIX']}
+                             'DInv':['DInv', 'DProd', 'artcount', 'fRpc', 'VIX', 'entropy', 'vix_spx', 'sEp'],
+                             'DProd':['DProd', 'sEp', 'DInv', 'sBbl', 'fRpc', 'DOilVol', 'artcount', 'sp500Ret']}
 
     ### 2. Data Preparation
     # 2.1 Full Dependent Variable List for later loop
@@ -147,7 +147,7 @@ if __name__ == '__main__':
         except:
             pass
     # Save the outputs to certain directory
-    rmse_df.to_excel('/user/hw2676/files/Energy/outputs/model_selection/parsimonious/forward_models/Lasso_10fold_'
+    rmse_df.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/parsimonious/forward_models/Lasso_10fold_'
                     +file_suffix+str(no_variables)+'vars_forward.xlsx')
-    pickle.dump(var_coef_dict, open('/user/hw2676/files/Energy/outputs/model_selection/parsimonious/forward_models/var_coef_'
+    pickle.dump(var_coef_dict, open('/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/parsimonious/forward_models/var_coef_'
                                 +str(no_variables)+'vars_forward.p','wb'))
