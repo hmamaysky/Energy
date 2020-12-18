@@ -1,5 +1,6 @@
 ******************************************************************************
 * Risk premia following Thursday EOP for Fride EOP timing convention
+* Last Version: 2020-11-22
 ******************************************************************************
 ********** Risk premia 
 * Thursday
