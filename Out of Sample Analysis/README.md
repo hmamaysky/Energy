@@ -16,6 +16,7 @@ Contains codes for OOS analysis for the Energy Project
 
 ### Notes
 - Please change the working directory and the saving directory in each file before running the program.
+- Please find the data (v14 for the latest analysis) on the research grid under folder shared/energy_drivers/2020-11-16/data
 
 ### Procedures
 1. OOS test of the Forward Selection Model
