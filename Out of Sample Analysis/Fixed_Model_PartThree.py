@@ -17,8 +17,12 @@ as the first fixed model var and setting the second var in turn using all the ba
 import pandas as pd
 import sys
 import concurrent.futures
+import pickle
+import os
+import statsmodels.api as sm
+import statsmodels.regression.linear_model as lm
 from OOSfuncs import *
-
+__out_dir__ = '/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/fixed_model/'
 
 # %% 1. Defining Functions
 ### See OOSfuncs.py for all the functions ###
@@ -51,7 +55,7 @@ def main(var):
     # all the var combinations are based on the baseline var list in this part
     textual_vars = ["FutRet", "xomRet", "bpRet", "rdsaRet", "DOilVol",
                     "OilVol", "DInv", "DProd", "DSpot", "tnote_10y",
-                    "DFX", "sp500Ret", "basis", "WIPIyoy", "trend", "RPsdf_growing",
+                    "DFX", "sp500Ret", "basis", "WIPImom_{}wk".format(weeks), "trend", "RPsdf_growing",
                     "RPsdf_rolling", "vix_spx", "ovx_cl1"]
     # remove the first var from the list for the second var to avoid invalid model
     try:
@@ -63,7 +67,9 @@ def main(var):
     # a dictionary with each dependent variable as key,
     # and a list of rmses for each model as value
     rmse_result={}
-    
+    # Get the dictionary saving all the pre-generated coefficients
+    os.chdir(__out_dir__)
+    coeffs = pickle.load(open('time_varying_model/processed/integrated_var_coefs.p','rb'))[var]    
     ### 1. Main Algorithm
     for d_var in d_vars:
         print('-------------------')
@@ -75,28 +81,34 @@ def main(var):
         # 1.2 Result holder for the prediction differences
         #     Model names are suggested by the var name
         full_diff_list ={}
+        model_coef = {}
+        model_dict = {} # coef has order, this is crucial in prediction process (multiply the correct coef)
         for t_var in textual_vars:
-            full_diff_list[base_var+', '+t_var]=[]    
-            
+            full_diff_list[base_var+', '+t_var]=[]   
+            model = base_var+', '+t_var
+            if model in coeffs.keys():
+                model_coef[model] = coeffs[model]
+                model_dict[model] = model
+            else:
+                model_coef[model] = coeffs[t_var+', '+base_var]  
+                model_dict[model] = t_var+', '+base_var
         # 1.3 Get the exact date of each window (monthly)
         #     Here, we ensure everytime we train, there are enough observations for backward looking
         #     Note that if a model has ovx_cl1 or sdf variables, the starting time point should be modified accordingly
-        time_col = data_set(d_var)['date'] 
-        time_lower = time_col[0]
-        
-        # Modifying starting date accordingly
-        if (base_var =='ovx_cl1') |(t_var == 'ovx_cl1'):
-            time_lower = pd.Timestamp('2007-05-11')
-        elif (base_var == 'RPsdf_growing') | (base_var == 'RPsdf_rolling') | (t_var == 'RPsdf_growing') | (t_var == 'RPsdf_rolling'):
-            time_lower = pd.Timestamp('2002-04-08')
-        test_week_list = [time for time in time_col if time>=time_lower+pd.Timedelta(str(7*updating_window*52)+'days')][::frequency]
+        time_col = data_set(d_var)['date']         
         
         # 1.4 Main algorithm
         # First, at each window, update coefficients of each specifications (model)
         # Second, forecast and get its difference from real observations
         # Finally, record them in a list
+        data=data_set(d_var)
         for t_var in textual_vars:
-            
+            # Modifying starting date accordingly
+            time_lower = time_col[0]
+            if (base_var == 'RPsdf_growing') | (base_var == 'RPsdf_rolling') | (t_var == 'RPsdf_growing') | (t_var == 'RPsdf_rolling'):
+                time_lower = pd.Timestamp('2002-04-08')
+            elif (base_var =='ovx_cl1') |(t_var == 'ovx_cl1'):
+                time_lower = pd.Timestamp('2007-05-11')
             # Get time horizon first, because the second element in a pair may have different time horizon than others
             test_week_list = [time for time in time_col if time>=time_lower+pd.Timedelta(str(7*updating_window*52)+'days')][::frequency]
             
@@ -104,8 +116,8 @@ def main(var):
             if base_var in ind_var_list(d_var,weeks):
                 for week in test_week_list:
                     print(week)
-                    full_vars = [base_var, t_var]
-                    full_diff = rolling_diff_Lasso(d_var, full_vars, week, wk=weeks, window=updating_window, cvs=cv)
+                    model = base_var+', '+t_var
+                    full_diff, _ = prediction_one_week(data, d_var, model_dict[model], model_coef[model], week)
                     full_diff_list[base_var+', '+t_var].extend(full_diff)
         # 1.5 Save the results
         rmse_result[d_var]=[]
@@ -157,5 +169,5 @@ if __name__ == '__main__':
             rmse = pd.concat([rmse, result], axis=1)
             
     ### 3.4 Save the results to proper directory
-    rmse.to_excel('/user/hw2676/files/Energy/outputs/model_selection/fixed_model/'
+    rmse.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/fixed_model/'
                     +file+'/'+file_start+'/'+base_var+'_Lasso_'+cv+'_'+file_suffix+'_3.xlsx')
