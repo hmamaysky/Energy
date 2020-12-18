@@ -52,11 +52,11 @@ def data_set(d_var):
     prices_var = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol']
 
     if d_var in prices_var:
-        data = pd.read_stata('data/transformed_data_prices_v12_v4.dta')
+        data = pd.read_stata('data/transformed_data_prices_v14.dta')
         SDFpremium_growing = pd.read_excel('data/SDFgrowing_fut_thurs.xls')
         SDFpremium_rolling = pd.read_excel('data/SDF756rolling_fut_thurs.xls')
     else:
-        data = pd.read_stata('data/transformed_data_physical_v12_v4.dta')
+        data = pd.read_stata('data/transformed_data_physical_v14.dta')
         SDFpremium_growing = pd.read_excel('data/SDFgrowing_fut_tues.xls')
         SDFpremium_rolling = pd.read_excel('data/SDF756rolling_fut_tues.xls')
         
@@ -116,7 +116,7 @@ def ind_var_list(d_var,weeks):
     """
     ### All candidates of RHS vars
     full_list=['DOilVol', 'OilVol', 'DInv', 'DProd', 'DSpot',
-              'tnote_10y', 'DFX', 'sp500Ret', 'basis', 'WIPIyoy', 'trend', 'VIX', 'vix_spx', 'ovx_cl1', 'RPsdf_growing', 'RPsdf_rolling',
+              'tnote_10y', 'DFX', 'sp500Ret', 'basis', 'WIPImom_{}wk'.format(weeks), 'trend', 'VIX', 'vix_spx', 'ovx_cl1', 'RPsdf_growing', 'RPsdf_rolling',
               'artcount', 'entropy', 'sent', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
               'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp']
     ### Price vars will not be included on the RHS for physical dependent vars
@@ -222,7 +222,7 @@ def select_significant(d_var, forecast_start, wk=8, window=5, ns=1):
     # we should move each RHS value 8(4) wk forward to match it with the LHS one.
     lag_vars = ind_vars.copy()
     lag_vars.remove('trend')
-    lag_vars.remove('WIPIyoy')
+    lag_vars.remove('WIPImom_{}wk'.format(wk))
     data_x=data.copy()
     if wk == 8:
         data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
@@ -261,7 +261,8 @@ def rolling_diff_OLS(d_var, ind_vars, forecast_start, wk=8, window=5):
         2. ind_vars: prescribed model
         3. forecaset_start: current week which we base on to forecast 
         4. wk: 8 or 4 according to which vars we are interested in
-        5. window: The backward looking length for coefficient updating
+        5. zero: True if 0 Specification model
+        6. window: The backward looking length for coefficient updating
     Outputs:
         1. diff: difference between forecast and real observation
     '''
@@ -275,7 +276,7 @@ def rolling_diff_OLS(d_var, ind_vars, forecast_start, wk=8, window=5):
     ### Shift x to match y and set Newey-West max lag
     lag_vars = ind_var_list(d_var, weeks=wk)
     lag_vars.remove('trend')
-    lag_vars.remove('WIPIyoy')
+    lag_vars.remove('WIPImom_{}wk'.format(wk))
     data_x=data.copy()
     if wk == 8:
         data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
@@ -327,7 +328,8 @@ def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
         2. ind_vars: prescribed model
         3. forecaset_start: current week which we base on to forecast 
         4. wk: 8 or 4 according to which vars we are interested in
-        5. window: The backward looking length for coefficient updating
+        5. zero: True if 0 Specification model
+        6. window: The backward looking length for coefficient updating
     Outputs:
         1. diff: difference between forecast and real observation
     '''
@@ -343,7 +345,7 @@ def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
     lag_vars = ind_var_list(d_var, weeks=wk)
     # trend and WIPIyoy will not lag
     lag_vars.remove('trend')
-    lag_vars.remove('WIPIyoy')
+    lag_vars.remove('WIPImom_{}wk'.format(wk))
     data_x=data.copy()
     if wk == 8:
         data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
@@ -417,7 +419,8 @@ def rolling_diff_forward(data, d_var, ind_vars, forecast_start, wk=8, window=5, 
         2. ind_vars: prescribed model
         3. forecaset_start: current week which we base on to forecast 
         4. wk: 8 or 4 according to which vars we are interested in
-        5. window: The backward looking length for coefficient updating
+        5. zero: True if 0 Specification model
+        6. window: The backward looking length for coefficient updating
     Outputs:
         1. diff: difference between forecast and real observation
         2. coef list: list of the coefficients for the forward selected variables
@@ -429,7 +432,7 @@ def rolling_diff_forward(data, d_var, ind_vars, forecast_start, wk=8, window=5, 
     ### Shift x to match y and set Newey-West max lag
     lag_vars = ind_var_list(d_var, weeks=wk)
     lag_vars.remove('trend')
-    lag_vars.remove('WIPIyoy')
+    lag_vars.remove('WIPImom_{}wk'.format(wk))
     data_x=data.copy()
     if wk == 8:
         data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
@@ -515,7 +518,7 @@ def rolling_diff_stability_coef(data, d_var, ind_vars, forecast_start, wk=8, win
     lag_vars = ind_var_list(d_var, weeks=wk)
     # trend and WIPIyoy will not lag
     lag_vars.remove('trend')
-    lag_vars.remove('WIPIyoy')
+    lag_vars.remove('WIPImom_{}wk'.format(wk))
     data_x=data.copy()
     if wk == 8:
         data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
