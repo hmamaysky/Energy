@@ -144,5 +144,5 @@ if __name__ == '__main__':
             rmse = pd.concat([rmse, result], axis=1)
             
     ### 3.4 Save the results to proper directory
-    rmse.to_excel('/user/hw2676/files/Energy/outputs/model_selection/fixed_model/'
+    rmse.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/fixed_model/'
                     +file+'/'+file_start+'/'+base_var+'_Lasso_'+cv+'_'+file_suffix+'_2.xlsx')
