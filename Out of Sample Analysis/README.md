@@ -17,7 +17,7 @@ Contains codes for OOS analysis for the Energy Project
 - matrix_plots.py plots the summary matrix for the fixed model. Please refer to the comments in the file for details.
 
 
-### Notes
+### Notes before Running Analysis
 - Please change the working directory and the saving directory in each file before running the program.
 - Please find the data (v14 for the latest analysis) on the research grid under folder shared/energy_drivers/2020-11-16/data
 
