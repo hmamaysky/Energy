@@ -57,7 +57,7 @@ detrended.prices <- dplyr::select(detrended.prices, -c(trend))
 # Dataset for DInv and DProd
 # Includes risk premia measures and VIX
 data.physical <- read.dta13("/Users/billwu/Dropbox/ncm_research/forwardSelection/transformed_data_physical_v14.dta") 
-data.physical.pca <- read.dta13("/Users/billwu/Dropbox/ncm_research/forwardSelection/transformed_data_physical_pca_v11.1.dta") 
+data.physical.pca <- read.dta13("/Users/billwu/Dropbox/ncm_research/forwardSelection/transformed_data_physical_v14.dta") 
 
 subset.physical <- dplyr::select(data.physical, c(DInv_t4, DInv_t8, DProd_t4, DProd_t8, DSpot, DOilVol, OilVol, DInv, 
                                            DProd, tnote_10y, DFX, sp500Ret, basis, WIPImom_4wk, WIPImom_8wk, trend, artcount, 
