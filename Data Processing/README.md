@@ -1,6 +1,6 @@
 # Energy
 
-Contains codes for Energy Project
+Contains codes for textual data processing in Energy Project. Please make sure the read through the contents of each code and change the directories to proper ones before running the analysis.
 
 
 *** to run the code for info files***
