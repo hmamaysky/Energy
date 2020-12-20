@@ -19,6 +19,10 @@ Contains codes for In Sample analysis for the Energy Project
 
 ### Procedures
 1. In Sample Forward Selection Model
+Please run following file from R studio, because we need to collect the standardized coeficients. (Next step: automize this process)
+```
+stepwiseForwardSelection.R
+```
 
 2. Monte Carlo Simulation
 
