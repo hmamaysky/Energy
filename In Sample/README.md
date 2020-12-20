@@ -18,22 +18,6 @@ Contains codes for In Sample analysis for the Energy Project
 
 ### Procedures
 1. In Sample Forward Selection Model
-```
-chmod u+x OOSfuncs.py
 
-chmod u+x Forward_Model.py
-
-chmod u+x run_Forward_Model.sh
-
-./run_Forward_Model.sh
-```
 2. Monte Carlo Simulation
-```
-chmod u+x OOSfuncs.py
 
-chmod u+x OLS_Model.py
-
-chmod u+x run_OLS_Model.sh
-
-./run_OLS_Model.sh
-```
