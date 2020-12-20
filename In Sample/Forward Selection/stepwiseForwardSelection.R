@@ -25,7 +25,7 @@ setwd(dir)
 # Dataset for FutRet, DSpot, DOilVol, xomRet, bpRet, and rdsaRet
 # Includes risk premia measures and VIX
 data.prices <- read.dta13("/Users/billwu/Dropbox/ncm_research/forwardSelection/transformed_data_prices_v14.dta") 
-data.prices.pca <- read.dta13("/Users/billwu/Dropbox/ncm_research/forwardSelection/transformed_data_prices_pca_v14.dta") 
+data.prices.pca <- read.dta13("/Users/billwu/Dropbox/ncm_research/forwardSelection/transformed_data_prices_v14.dta") 
 
 subset.prices <- dplyr::select(data.prices, c(FutRet_t4, FutRet_t8, DSpot_t4, DSpot_t8, DOilVol_t4, DOilVol_t8, 
                                        xomRet_t4, xomRet_t8, bpRet_t4, bpRet_t8, rdsaRet_t4, rdsaRet_t8,
