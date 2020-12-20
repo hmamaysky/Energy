@@ -3,7 +3,7 @@
 
 Contains codes for OOS analysis for the Energy Project
 
-### Descriptions
+### Descriptions for Codes
 #### Codes for Analysis
 - OOSfuncs.py includes all the functions needed for the OOS analysis. 
 - Forward_Model.py tests the OOS performance of the in-sample Forward Selection Model
