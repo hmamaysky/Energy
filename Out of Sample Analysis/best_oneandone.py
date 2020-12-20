@@ -13,20 +13,13 @@ This model fixed the 1-1 pair between text and baseline variables at first,
 
 @author: Hongyu Wu
 """
-# %% 0. Importing Packages
-import pandas as pd
 import numpy as np
 import os
 
-# %% 1. Defining Functions
 
-## 1.1 Concatenating all the results in the fixed model implementation.
 def data_concat():
-    ''' This function concat all the results. '''
-    ## Take the last file as the starting rows
-    ## The Constant row is not needed for the other ones because they are identical
-    ## Special cases involving sdf and ovx vars wil be handled later
     data = pd.read_excel(files[-1])
+
     for i in range(len(files)-1):
         temp = pd.read_excel(files[i])
         data = pd.concat([data, temp.iloc[1:,:]])
@@ -34,7 +27,6 @@ def data_concat():
     data=data[data['model']!='Constant']
     return data
 
-## 1.2 Extract all the models that beats their corresponding constant model.
 def less_than_const():
     '''
     This function output the models that beats the constant model and their MSE ratios against the constant.
@@ -44,9 +36,9 @@ def less_than_const():
     '''
     # Save the constant model rmse into a dictionary for different cases
     constmodel_RMSEs=dict()
-    constmodel_RMSEs['ovx'] = pd.read_excel('ovx_cl1_Lasso_10fold_8wk_M.xlsx').loc[0,:]
-    constmodel_RMSEs['sdf'] = pd.read_excel('RPsdf_growing_Lasso_10fold_8wk_M.xlsx').loc[0,:]
-    constmodel_RMSEs['regular'] = pd.read_excel('trend_Lasso_10fold_8wk_M.xlsx').loc[0,:]
+    constmodel_RMSEs['ovx'] = pd.read_excel('ovx_cl1_Lasso_10fold_8wk_1.xlsx').loc[0,:]
+    constmodel_RMSEs['sdf'] = pd.read_excel('RPsdf_growing_Lasso_10fold_8wk_1.xlsx').loc[0,:]
+    constmodel_RMSEs['regular'] = pd.read_excel('trend_Lasso_10fold_8wk_1.xlsx').loc[0,:]
     # Read all the data
     data = data_concat()
     # Separate data into ovx related, sdf related and regular models
@@ -68,9 +60,9 @@ def less_than_const():
         # integrate all the results
         temp = pd.concat([temp_ovx, temp_sdf, temp_reg], axis=0)
         # drop duplicates by utilizing frozenset
-        temp['set'] = temp.loc[:,'model'].apply(lambda x: frozenset(x))
+        temp['set'] = temp.loc[:,'model'].apply(lambda x: frozenset(x.split(', ')))
         temp = temp.drop_duplicates(subset='set')
-        temp = temp.drop('set', axis=1)
+        temp = temp.drop('set',axis=1)
         # Sort the df by MSE ratio
         temp.sort_values(by='ratio', ascending=True, inplace=True)
         # output the results
@@ -78,20 +70,20 @@ def less_than_const():
         # output the results for Yearly Diff calculation
         temp.loc[:,['model','ratio']].to_csv('../summary/'+var+'.csv',index=False)
 
-# %% 2. Executing the whole process
 if __name__ == "__main__":
-    ## Set the proper directory (the one containing all the raw results of the Part 1-3 of the fixed model implementation)
-    wkdir = 'Please set your results'
+    wkdir = '/Users/billwu/Desktop/2020 Spring/2020 RA/Prof. Harry Mamaysky/Energy Project/Analysis/Prediction Power of textual'
+    wkdir += '/outcome/model selection results/20201116 WIPImom Updates/wipimom_updated/final_codes_test/fixed_model/oneandone/weekly/raw'
     os.chdir(wkdir)
-    ## Get all the files
+    
     files = os.listdir()
-#    ## remove irrelevant files if necessary
-#    remove_list = ['results', 'code', 'prediction_real',
-#                   'pred_and_real.p', 'pred_and_real_new.p',
-#                   'summary', '.DS_Store']
-#    for i in remove_list:
-#        try:     files.remove(i)
-#        except:  pass
-    ## The "main" process
+    remove_list = ['results', 'code', 'prediction_real',
+                   'pred_and_real.p', 'pred_and_real_new.p',
+                   'summary', '.DS_Store']
+    for i in remove_list:
+        try:
+            files.remove(i)
+        except:
+            pass
+    
     less_than_const()
     
