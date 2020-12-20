@@ -83,7 +83,7 @@ chmod u+x run_info.sh
 ./run_info.sh
 
 ```
-9. Concatenate all the files at '/NOBACKUP/scratch/ra2826/oil-project/info' for the next step
+9. Concatenate all the files at '/work/hw2676/Energy/DataProcessing/info' for the next step
 
 10. Fix the dates on info files based on the oil price eastern closing time 
 
