@@ -65,10 +65,6 @@ chmod u+x best_oneandone.py
 
 sge_run --grid_mem=10G --grid_submit=batch './best_oneandone.py'
 
-chmod u+x best_ratio.py
-
-sge_run --grid_mem=10G --grid_submit=batch './best_ratio.py'
-
 chmod u+x matrix_plots.py
 
 sge_run --grid_mem=10G --grid_submit=batch './matrix_plots.py'
