@@ -85,12 +85,19 @@ chmod u+x run_info.sh
 ```
 9. Concatenate all the files at '/NOBACKUP/scratch/ra2826/oil-project/info' for the next step
 
- 10. Fix the dates on info files based on the oil price eastern closing time 
+10. Fix the dates on info files based on the oil price eastern closing time 
 
 ```
 chmod u+x date_fixed_measures.py
 
 sge_run --grid_mem=32G --grid_ncpus=1 --grid_submit=batch ./date_fixed_measures.py
+```
+11. Aggregate from transcripts to daily measure (we take weighted average of each measure where the weights are word counts of a transcript)
+
+```
+chmod u+x agg_daily.py
+
+sge_run --grid_mem=32G --grid_ncpus=1 --grid_submit=batch ./agg_daily.py
 ```
 
 *** to run the code for cosine file and clustering***
