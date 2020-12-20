@@ -4,14 +4,14 @@
 Contains codes for OOS analysis for the Energy Project
 
 ### Descriptions
-## Codes for Analysis
+#### Codes for Analysis
 - OOSfuncs.py includes all the functions needed for the OOS analysis. 
 - Forward_Model.py tests the OOS performance of the in-sample Forward Selection Model
 - OLS_Model.py tests the performance of the model with R2 based var selection and OLS coefficient update
 - Lasso_Model.py tests the performance of the model with R2 based var selection and Lasso coefficient update
 - Fixed_Model*.py tests the performance of the fixed models, there are three parts, covering all the 1-1 pairs from the combined (text and base) var pool
 - Stability Checked Model contains all the codes for an alternative fixed model, please refer to the README file there for further details.
-## Codes for Plotting/Interpretation
+#### Codes for Plotting/Interpretation
 - 1-1 plot.py plots the time series of the selected variables in the Lasso Update Model.
 - best_oneandone.py extracts the winning fixed models for each dependent variable, calculate the MSE ratios against the constant models and save them in .csv
 - matrix_plots.py plots the summary matrix for the fixed model. Please refer to the comments in the file for details.
