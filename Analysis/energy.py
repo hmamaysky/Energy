@@ -1,13 +1,93 @@
 import pandas as pd
-import os, re
+import os, re, numpy as np
 from datetime import datetime, timedelta, date
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 __text_dir__ = '/shared/share_mamaysky-glasserman/energy_drivers/2020-11-16'
-__out_dir__ = '/user/hm2646/code/Energy/Analysis/results'
+__out_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/results'
+__sup_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/support'
 
-############################## Read in processed data ##############################
+############################## parse OOS persistence results ##############################
+
+def read_oos_results():
+
+    depnm = 'FutRet'
+
+    ## txt vars
+    txt_vars = {'sent', 'fBbl', 'PCAfreq', 'sGom', 'PCAall', 'fRpc', 'fCo', 'sEpg',
+                'fGom', 'fEp', 'artcount', 'sRpc', 'fEpg', 'sCo', 'entropy', 'fEnv',
+                'sEnv', 'sEp', 'sBbl', 'PCAsent'}
+
+    ## read in the data
+    alld = pd.ExcelFile(__sup_dir__+'/0714 Subperiod details.xls')
+
+    ## go through all the sheets
+    allres = []
+    dups = []
+    for depvar in alld.sheet_names:
+
+        print('Working on:',depvar)
+
+        thed = alld.parse(depvar)
+
+        ## Check #1: check if there are any duplicates
+        assert not thed['model'].duplicated().any()
+        
+        ## parse out the vars
+        thed['rhs1'] = thed['model'].apply(lambda xx: xx.split(', ')[0])
+        thed['rhs2'] = thed['model'].apply(lambda xx: xx.split(', ')[1])
+        thed = thed.drop(columns=['model','Unnamed: 4'])
+
+        ## Check #2: should not have same variable in model twice
+        assert (thed['rhs1'] != thed['rhs2']).all()
+
+        ## under assumption each variable gets selected at least once
+        all_vars = set([*thed.rhs1,*thed.rhs2])
+        tot_mods = len(all_vars)*(len(all_vars)-1)/2
+        tot_txt_mods = len(all_vars) * len(txt_vars) + len(txt_vars)*(len(txt_vars)-1)/2
+
+        ## Check #3: see if any pairs exists where {a,b} shows up as {b,a}
+        combos = (thed.rhs1+thed.rhs2).to_list()
+        for ii, jj in zip(thed.rhs1,thed.rhs2):
+            if jj+ii in combos:
+                idx1 = combos.index(ii+jj)
+                idx2 = combos.index(jj+ii)
+                dups.append({'Y':depvar,'v1':ii,'v2':jj,'idx1':idx1,'idx2':idx2})
+
+        ## calculate the statistics for the current variable
+        res = {'Dep Var':depvar,
+               'All Runs':thed.shape[0],
+               #'%All':np.round(thed.shape[0]/tot_mods*100,1),
+               'Txt Runs':thed.text.sum()#,
+               #'%Txt':np.round(thed.text.sum()/tot_txt_mods*100,1)
+        }
+
+        ## number of occurrences of diff length runs
+        counts = thed.win_max_consec.value_counts()
+        res.update(counts)
+
+        ## store results
+        allres.append(res)
+
+    ## check dups
+    dups = pd.DataFrame(dups)
+    ## convert to reference Excel rows
+    dups.idx1 += 2
+    dups.idx2 += 2
+    fname = __out_dir__+'/oos_duplicates.csv'
+    print('Saving to',fname)
+    dups.to_csv(fname)
+
+    ## combine all results
+    allres = pd.DataFrame(allres)
+    allres = allres.fillna(0)
+    for ii in range(1,6):
+        allres[ii] = allres[ii].astype('int')
+    return allres, thed
+
+
+############################## Read in text data ##############################
 
 def read_info():
 
