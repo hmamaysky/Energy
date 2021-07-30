@@ -10,6 +10,7 @@ en.find_outliers(serd,txtd)
 en.show_outliers(serd,txtd)
 # %% some text series plots
 en.plot_text_stats(serd)
-
-# %% read in OOS results
-oos, thed = en.read_oos_results()
+# %% read in and process OOS results
+oos = en.OOSResults()
+# %% calculate various stats
+oos.calc()

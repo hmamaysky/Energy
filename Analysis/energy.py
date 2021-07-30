@@ -3,90 +3,183 @@ import os, re, numpy as np
 from datetime import datetime, timedelta, date
 import matplotlib.pyplot as plt
 import seaborn as sns
+from collections import Counter
 
 __text_dir__ = '/shared/share_mamaysky-glasserman/energy_drivers/2020-11-16'
 __out_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/results'
 __sup_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/support'
 
+'''
+Get total count of length k runs.  A run must either be at the right edge and have
+a zero after or at the left edge and have a zero before.  Or it can be in the middle
+but then it has to have zeros around it.
+Prob of observing a run of length k for a given pair (1 or 1128) is
+p = (q**4 * (1-q)**1) * 2 (the corse) + (qq**4 * (1-q)**2) * 2 (the interior)
+If this is the prob of having length k-run in any pair, the prob of seeing m
+runs across 1128 pairs is the binomial pdf (n m) * p**m * (1-p)**(n-m).
+We can then tabulate the prob of each m for each observed LHS variable.
+'''
+
+
 ############################## parse OOS persistence results ##############################
 
-def read_oos_results():
+class OOSResults():
 
-    depnm = 'FutRet'
-
-    ## txt vars
-    txt_vars = {'sent', 'fBbl', 'PCAfreq', 'sGom', 'PCAall', 'fRpc', 'fCo', 'sEpg',
-                'fGom', 'fEp', 'artcount', 'sRpc', 'fEpg', 'sCo', 'entropy', 'fEnv',
-                'sEnv', 'sEp', 'sBbl', 'PCAsent'}
-
-    ## read in the data
-    alld = pd.ExcelFile(__sup_dir__+'/0714 Subperiod details.xls')
-
-    ## go through all the sheets
-    allres = []
-    dups = []
-    for depvar in alld.sheet_names:
-
-        print('Working on:',depvar)
-
-        thed = alld.parse(depvar)
-
-        ## Check #1: check if there are any duplicates
-        assert not thed['model'].duplicated().any()
+    def __init__(self):
         
-        ## parse out the vars
-        thed['rhs1'] = thed['model'].apply(lambda xx: xx.split(', ')[0])
-        thed['rhs2'] = thed['model'].apply(lambda xx: xx.split(', ')[1])
-        thed = thed.drop(columns=['model','Unnamed: 4'])
+        res = []
+        for fname in os.listdir(__sup_dir__+'/OOS-subperiod-results'):
 
-        ## Check #2: should not have same variable in model twice
-        assert (thed['rhs1'] != thed['rhs2']).all()
+            if not '.csv' in fname: continue
 
-        ## under assumption each variable gets selected at least once
-        all_vars = set([*thed.rhs1,*thed.rhs2])
-        tot_mods = len(all_vars)*(len(all_vars)-1)/2
-        tot_txt_mods = len(all_vars) * len(txt_vars) + len(txt_vars)*(len(txt_vars)-1)/2
+            locres = pd.read_csv(__sup_dir__+'/OOS-subperiod-results/'+fname)
+            locres['depvar'] = fname.replace('.csv','')
+            res.append(locres)
 
-        ## Check #3: see if any pairs exists where {a,b} shows up as {b,a}
-        combos = (thed.rhs1+thed.rhs2).to_list()
-        for ii, jj in zip(thed.rhs1,thed.rhs2):
-            if jj+ii in combos:
-                idx1 = combos.index(ii+jj)
-                idx2 = combos.index(jj+ii)
-                dups.append({'Y':depvar,'v1':ii,'v2':jj,'idx1':idx1,'idx2':idx2})
+        ## some cleanups
+        colmap = {"('2003-04-25', '2005-03-31')":'Per1',
+                  "('2005-04-01', '2007-11-30')":'Per2',
+                  "('2007-12-01', '2009-06-30')":'Per3',
+                  "('2009-07-01', '2012-02-29')":'Per4',
+                  "('2012-03-01', '2014-10-31')":'Per5',
+                  "('2014-11-01', '2017-06-30')":'Per6',
+                  "('2017-07-01', '2020-01-31')":'Per7',
+                  'var_1':'var1', 'var_1_text':'var1_text',
+                  'var_2':'var2', 'var_2_text':'var2_text'}
+        self.data = pd.concat(res,axis=0).rename(columns=colmap)
 
-        ## calculate the statistics for the current variable
-        res = {'Dep Var':depvar,
-               'All Runs':thed.shape[0],
-               #'%All':np.round(thed.shape[0]/tot_mods*100,1),
-               'Txt Runs':thed.text.sum()#,
-               #'%Txt':np.round(thed.text.sum()/tot_txt_mods*100,1)
-        }
+        ## find all text vars
+        self.per_cols = [el for el in self.data.columns if re.search('Per[0-9]',el)]
 
-        ## number of occurrences of diff length runs
-        counts = thed.win_max_consec.value_counts()
-        res.update(counts)
+        ## replace -1 observations with NAs
+        self.data[self.data[self.per_cols]==-1] = np.nan
 
-        ## store results
-        allres.append(res)
+        ## check data
+        self.check()
 
-    ## check dups
-    dups = pd.DataFrame(dups)
-    ## convert to reference Excel rows
-    dups.idx1 += 2
-    dups.idx2 += 2
-    fname = __out_dir__+'/oos_duplicates.csv'
-    print('Saving to',fname)
-    dups.to_csv(fname)
+        ## calculate numbers of runs
+        self.calc_runs()
 
-    ## combine all results
-    allres = pd.DataFrame(allres)
-    allres = allres.fillna(0)
-    for ii in range(1,6):
-        allres[ii] = allres[ii].astype('int')
-    return allres, thed
+        
+    def check(self):
+        '''
+        Some sanity checks on the data.
+        '''
+        
+        print('Checking for validity.')
+        
+        ## Check #1: should not have same variable in model twice
+        assert (self.data['var1'] != self.data['var2']).all()
+
+        ## Check #2: see if any pairs exists where {a,b} shows up as {b,a}
+        print('\tDuplicate models? ',end='')
+        for depvar in self.data.depvar.unique():
+
+            print(depvar,end=' ')
+            thed = self.data[self.data.depvar == depvar]
+            dups = []
+            combos = (thed.var1+thed.var2).to_list()
+            for depvar, ii, jj in zip(thed.depvar,thed.var1,thed.var2):
+                if jj+ii in combos:
+                    idx1 = combos.index(ii+jj)
+                    idx2 = combos.index(jj+ii)
+                    dups.append({'Y':depvar,'v1':ii,'v2':jj,'idx1':idx1,'idx2':idx2})
+
+            assert len(dups) == 0
+        print()
 
 
+    def calc_runs(self):
+        '''
+        Calculate how many runs of each type there are for given {depvar,var1,var2}
+        combination.  A run is a series of consecutive 1's.
+        '''
+
+        print('Calculating numbers of runs.')
+        
+        ## get names of indicator columns
+        def num_runs(rr):
+
+            ## If there are any missing values in the period counts, then one of the
+            ## forecasting variables is missing in this period, and we can't use this
+            ## for the OOS runs comparisons since not all periods are observed.  Then
+            ## ignore this row for future analysis of runs, and send back None
+            if rr.isna().any(): return {'drop_row':True}
+            
+            ## convert indicators to a string and then find all runs of 1, i.e.
+            ## 1+ -- which means all instances of 1 occurring 1 or more times
+            strform = ''.join(str(int(el)) for el in rr[self.per_cols])
+            all_runs = re.findall('1+',strform)
+
+            ## now convert run matched strings to lengths, and count them
+            all_runs = [len(el) for el in all_runs]
+            return Counter(all_runs)
+
+        ## calcualte runs in every row, rename and reorder columns
+        runs_counts = self.data.apply(num_runs,axis=1,result_type='expand')
+        runs_counts.columns = [el if not isinstance(el,int) else 'Run'+str(el)
+                               for el in runs_counts.columns]
+        runs_counts = runs_counts[runs_counts.columns.sort_values()]
+        
+        self.data = pd.concat([self.data,runs_counts],axis=1)
+        
+        
+    def calc(self):
+        '''
+        Calculate the statistics.
+        '''
+
+        ## the columns containig the run counts
+        run_cols = [el for el in self.data.columns if re.search('Run[0-9]',el)]
+        
+        ## stats for a single dependent variable
+        print('Working on:',end=' ')
+        def res_for_depvar(thed):
+
+            print(thed.depvar[0],end=' ')
+
+            ## get the cases where the row is not dropped
+            thed = thed[thed.drop_row != True]
+
+            ## get the vars the make it
+            txt_vars = set(thed[thed.var1_text==1].var1).union(thed[thed.var2_text==1].var2)
+            all_vars = set(thed.var1).union(thed.var2)
+
+            ## under assumption each variable gets selected at least once, other than
+            ## those that get dropped
+            ################################################## what set of variables are ever dropped
+            tot_mods = len(all_vars)*(len(all_vars)-1)/2
+            tot_txt_mods = (len(all_vars)-len(txt_vars)) * len(txt_vars) \
+                + len(txt_vars)*(len(txt_vars)-1)/2
+
+            ## calculate the statistics for the current variable
+            num_txt = (thed.var1_text | thed.var2_text).sum()
+            res = {'Dep Var':thed.depvar[0],
+                   'All Runs':thed.shape[0],
+                   'Txt Runs':num_txt,
+                   ## probability of beating is the total number of beats divided by the total
+                   ## number of possible beats (total possible models x number of periods)
+                   'Pr beat':round(thed[self.per_cols].to_numpy().sum() / (tot_mods * len(self.per_cols)),3),
+                   'Num All':len(all_vars),
+                   'Num Txt':len(txt_vars)
+            }
+
+            ## number of occurrences of diff length runs
+            counts = thed[run_cols].sum()
+            res.update(counts)
+
+            return pd.DataFrame(res,index=[0])
+
+        ## get all results
+        allres = self.data.groupby('depvar').apply(res_for_depvar).reset_index(drop=True)
+        
+        ## combine all results
+        allres = allres.fillna(0)
+        print()
+        print(allres)
+
+        return allres
+        
 ############################## Read in text data ##############################
 
 def read_info():
