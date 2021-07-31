@@ -4,21 +4,11 @@ from datetime import datetime, timedelta, date
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import Counter
+from scipy.stats import binom
 
 __text_dir__ = '/shared/share_mamaysky-glasserman/energy_drivers/2020-11-16'
 __out_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/results'
 __sup_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/support'
-
-'''
-Get total count of length k runs.  A run must either be at the right edge and have
-a zero after or at the left edge and have a zero before.  Or it can be in the middle
-but then it has to have zeros around it.
-Prob of observing a run of length k for a given pair (1 or 1128) is
-p = (q**4 * (1-q)**1) * 2 (the corse) + (qq**4 * (1-q)**2) * 2 (the interior)
-If this is the prob of having length k-run in any pair, the prob of seeing m
-runs across 1128 pairs is the binomial pdf (n m) * p**m * (1-p)**(n-m).
-We can then tabulate the prob of each m for each observed LHS variable.
-'''
 
 
 ############################## parse OOS persistence results ##############################
@@ -60,7 +50,6 @@ class OOSResults():
         ## calculate numbers of runs
         self.calc_runs()
 
-        
     def check(self):
         '''
         Some sanity checks on the data.
@@ -123,7 +112,59 @@ class OOSResults():
         
         self.data = pd.concat([self.data,runs_counts],axis=1)
         
+    def prob_of_run(self,qq,kk,nn):
+        '''
+        Params
+        ======
+        qq - probability of a 1 (and 1-qq is probability of zero)
+        kk - run length
+        nn - length of string
+
+        Summary
+        =======
+        This calculates the probability of seeing a run of 1's of length kk in a string of
+        0's and 1's of length nn, when the probability of a 1 is qq.
+        A run must either be at the right edge and have a zero after or at the left edge and have a
+        zero before.  Or it can be in the middle but then it has to have zeros around it.
+        Prob of a corner run of length kk is: q**kk * (1-qq)
+        Prob of an interior run of length kk is: (1-qq) * qq**kk * (1-qq)
+        The only issue is that sometimes later kk-length runs may overlap with prior ones and so
+        their probabilities must be adjusted to preclude a prior kk-length run including the
+        current one to avoid double counting.  This is the role of the cose labeled (*).
+
+        If this is the prob pr of having a length kk-run in any pair, the prob of seeing m
+        runs across (num_vars choose 2) pairs is the binomial pdf: (n m) * pr**m * (1-pr)**(n-m).
+        We can then tabulate the prob of each m for each observed LHS variable.
+        '''
+
+        ## not implemented
+        if kk == 0:
+            return np.nan
         
+        ## the only special case is a run of length nn
+        if kk == nn:
+            return qq**kk
+        
+        ## shorter runs can be at the corners or the interior
+        prs = np.zeros(nn-kk+1)
+
+        ## recursion for probabilities
+        for ii in range(prs.shape[0]):
+
+            ## check if at corner or interior
+            if ii == 0 or ii == prs.shape[0]-1:
+                prs[ii] = qq**kk * (1-qq)          ## the starting left-corner 1's sequence
+            else:
+                prs[ii] = (1-qq) * qq**kk * (1-qq) ## the 0 followed by 1's followed by zero
+
+            ## (*) now decide if needs to modify to exclude overlapping probabilities
+            if ii - (kk+1) >= 0:
+                prs[ii] = (1-prs[0:(ii-kk)].sum()) * prs[ii]
+
+        print(prs)
+        return prs.sum()
+
+            
     def calc(self):
         '''
         Calculate the statistics.
@@ -147,7 +188,6 @@ class OOSResults():
 
             ## under assumption each variable gets selected at least once, other than
             ## those that get dropped
-            ################################################## what set of variables are ever dropped
             tot_mods = len(all_vars)*(len(all_vars)-1)/2
             tot_txt_mods = (len(all_vars)-len(txt_vars)) * len(txt_vars) \
                 + len(txt_vars)*(len(txt_vars)-1)/2
@@ -159,22 +199,42 @@ class OOSResults():
                    'Txt Runs':num_txt,
                    ## probability of beating is the total number of beats divided by the total
                    ## number of possible beats (total possible models x number of periods)
-                   'Pr beat':round(thed[self.per_cols].to_numpy().sum() / (tot_mods * len(self.per_cols)),3),
+                   'q':round(thed[self.per_cols].to_numpy().sum() / (tot_mods * len(self.per_cols)),3),
                    'Num All':len(all_vars),
                    'Num Txt':len(txt_vars)
             }
 
-            ## number of occurrences of diff length runs
-            counts = thed[run_cols].sum()
-            res.update(counts)
+            ## get number of pairs {var1,var2} that have a run on a certain length
+            runs_indic = thed[run_cols].apply(lambda xx: (xx >= 1).sum(),axis=0)
+            res.update(runs_indic)
 
+            ## calculate the p-value for each number
+            for rr in run_cols:
+                qq = res['q']
+                kk = int(re.findall('[0-9]',rr)[0])
+                nrun = res[rr]
+                prun = self.prob_of_run(qq,kk,nn=len(self.per_cols))
+                print(qq,'Prob run of length {} = {}'.format(kk,prun))
+                ##nruns = range(max(0,nrun-100),min(nrun+100,tot_mods))
+                ##plt.plot(nruns,binom.pmf(nruns,tot_mods,prun))
+                pval = 1 - sum(binom.pmf(range(nrun+1),tot_mods,prun))
+                print('Prob > {} runs = {}'.format(nrun,pval))
+                res[rr+'-p'] = '({:.2f})'.format(pval)
+            
             return pd.DataFrame(res,index=[0])
 
         ## get all results
         allres = self.data.groupby('depvar').apply(res_for_depvar).reset_index(drop=True)
-        
-        ## combine all results
-        allres = allres.fillna(0)
+        ## reorder columns
+        cols = ['Dep Var','All Runs','Txt Runs','q','Num All','Num Txt']
+        for ii in range(1,len(run_cols)+1):
+            cols.append('Run'+str(ii))
+            cols.append('Run'+str(ii)+'-p')
+        allres = allres[cols]
+
+        ## transpose table -- result cols becomes rows and cols are LHS vars
+        allres = allres.fillna(0).transpose()
+
         print()
         print(allres)
 

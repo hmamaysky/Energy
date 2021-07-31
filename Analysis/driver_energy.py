@@ -14,3 +14,15 @@ en.plot_text_stats(serd)
 oos = en.OOSResults()
 # %% calculate various stats
 oos.calc()
+# %% probs for runs -- example
+from scipy.stats import binom
+qq = 0.339
+kk = 4
+nrun = 16
+maxruns = 45*22
+prun = oos.prob_of_run(0.282,kk,7)
+print(qq,'Prob run of length {} = {}'.format(kk,prun))
+nruns = range(max(0,nrun-100),min(nrun+100,maxruns))
+plt.plot(nruns,binom.pmf(nruns,maxruns,prun))
+print('Prob > {} runs = {}'.format(nrun,\
+      1-sum(binom.pmf(range(nrun+1),maxruns,prun))))
