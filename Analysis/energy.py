@@ -152,14 +152,17 @@ class OOSResults():
         for ii in range(prs.shape[0]):
 
             ## check if at corner or interior
-            if ii == 0 or ii == prs.shape[0]-1:
+            if ii == 0 or ii == (prs.shape[0]-1):
                 prs[ii] = qq**kk * (1-qq)          ## the starting left-corner 1's sequence
             else:
                 prs[ii] = (1-qq) * qq**kk * (1-qq) ## the 0 followed by 1's followed by zero
 
             ## (*) now decide if needs to modify to exclude overlapping probabilities
             if ii - (kk+1) >= 0:
-                prs[ii] = (1-prs[0:(ii-kk)].sum()) * prs[ii]
+                ## this sums up all probabilities at lags strictly prior to current position
+                ## minus 2, but for pos-2 have to divide by (1-q) to take out the zero that's
+                ## already present in that string
+                prs[ii] = (1-(prs[0:(ii-kk-1)].sum()+prs[ii-kk-1]/(1-qq))) * prs[ii]
 
         print(prs)
         return prs.sum()
@@ -240,65 +243,64 @@ class OOSResults():
 
         return allres
     
-    def compare_sim_data(self, n=7, m=100000):
+    def compare_sim_data(self, str_len=7, num_sims=100000):
         """
         Compares the probability of probability of seeing at least one run of length kk
         with the fraction of rows that have at least one run of length kk calculated by simulation
         """
-        df = self.calc()
-        qlist = df.loc['q']
+        calc_res = self.calc()
+        qlist = calc_res.loc['q']
         klist = [1, 2, 3, 4, 5]
-        size = (m, n)
-
-        def frac_runs(arr, kk=1):
-            """
-            Calculate the fraction of rows that have at least one run of length kk
-            arr - array of binomial distribution
-            kk - length of run to count
-            """
-            str_arr = arr.astype(str) # array of n strings, each of length 1 
-            joined_str = [''.join(row) for row in str_arr] # array of length-n strings
-            
-            ## extract all occurrences of '1's
-            run_lens = [re.findall('1+', str(row)) for row in joined_str]
-
-            count = 0
-            run_str = '1'*kk
-            for run_row in run_lens:
-                if run_str in run_row:
-                    count = count + 1
-
-            n_rows = arr.shape[0]
-            return count / n_rows
 
         ## Create a table that summarizes the comparison results
         columns = []
-        for q in qlist:
-            arr = np.random.binomial(1, q, size)
+        for qq in qlist:
+
+            ## simulate the draws
+            arr = np.random.binomial(1, qq, (num_sims, str_len))
+            str_arr = arr.astype(str)  ## array of n strings, each of length 1 
+            joined_str = [''.join(row) for row in str_arr] ## array of length-n strings
+
+            ## check empirical qq
+            emp_qq = arr.sum() / (num_sims*str_len)
+            print('{} Sims: Target q = {:.4f}  Empirical q = {:.4f}'.format(num_sims,qq,emp_qq))
+            
+            ## extract all occurrences of '1's
+            run_counts = []
+            for row in joined_str:
+                ones = [len(el) for el in re.findall('1+', row)]
+                run_counts.append(Counter(ones))
+
+            run_counts = pd.DataFrame(run_counts)
+
+            ## get probability of runs of at least a certain length
+            sim_probs = run_counts.notna().sum(axis=0) / len(run_counts)
+            sim_probs = sim_probs.sort_index() ## return in increasing order
+
+            ## compare the simulated results to the closed-form results
             rows = []
+            for kk in klist:
+                prun = self.prob_of_run(qq=qq, kk=kk, nn=str_len)
+                diff = prun - sim_probs[kk]
 
-            for k in klist:
-                prun = self.prob_of_run(qq=q, kk=k, nn=n)
-                frac = frac_runs(arr, kk=k)
-                diff = prun - frac
-
-                rows.extend([prun, frac, diff])
+                rows.extend([prun, sim_probs[kk], diff])
 
             columns.append(rows)
 
+        ## collect all the results
         sim_df = pd.DataFrame(columns).transpose()
         
         index_names = []
-        for k in klist:
-            index_names.append('prun'+str(k))
-            index_names.append('frac_sim'+str(k))
-            index_names.append('diff'+str(k))
+        for kk in klist:
+            index_names.extend(['prun'+str(kk),
+                                'frac_sim'+str(kk),
+                                'diff'+str(kk)])
             
         sim_df.index = index_names
-        sim_df.loc['q', :] =qlist
+        sim_df.loc['q', :] = qlist
         
         sim_df = sim_df.loc[['q'] + index_names, :]
-        sim_df.columns = df.loc['Dep Var', :]
+        sim_df.columns = calc_res.loc['Dep Var', :]
         return sim_df
 
 
