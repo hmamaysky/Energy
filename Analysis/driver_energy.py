@@ -26,3 +26,15 @@ nruns = range(max(0,nrun-100),min(nrun+100,maxruns))
 plt.plot(nruns,binom.pmf(nruns,maxruns,prun))
 print('Prob > {} runs = {}'.format(nrun,\
       1-sum(binom.pmf(range(nrun+1),maxruns,prun))))
+
+############################## Run the simulation for oos subperiod analysis and create a comparison table ##############################
+
+import energy as en
+oos = en.OOSResults()
+df = oos.compare_sim_data() # m=100000 is set as default
+df1 = oos.compare_sim_data(m=1000000)
+## save the results as csv files.
+df.to_csv('sim_result.csv')
+df1.to_csv('sim_result1.csv')
+
+
