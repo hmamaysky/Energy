@@ -239,7 +239,71 @@ class OOSResults():
         print(allres)
 
         return allres
+    
+    def compare_sim_data(self, n=7, m=100000):
+        """
+        Compares the probability of probability of seeing at least one run of length kk
+        with the fraction of rows that have at least one run of length kk calculated by simulation
+        """
+        df = self.calc()
+        qlist = df.loc['q']
+        klist = [1, 2, 3, 4, 5]
+        size = (m, n)
+
+        def frac_runs(arr, kk=1):
+            """
+            Calculate the fraction of rows that have at least one run of length kk
+            arr - array of binomial distribution
+            kk - length of run to count
+            """
+            str_arr = arr.astype(str) # array of n strings, each of length 1 
+            joined_str = [''.join(row) for row in str_arr] # array of length-n strings
+            
+            ## extract all occurrences of '1's
+            run_lens = [re.findall('1+', str(row)) for row in joined_str]
+
+            count = 0
+            run_str = '1'*kk
+            for run_row in run_lens:
+                if run_str in run_row:
+                    count = count + 1
+
+            n_rows = arr.shape[0]
+            return count / n_rows
+
+        ## Create a table that summarizes the comparison results
+        columns = []
+        for q in qlist:
+            arr = np.random.binomial(1, q, size)
+            rows = []
+
+            for k in klist:
+                prun = self.prob_of_run(qq=q, kk=k, nn=n)
+                frac = frac_runs(arr, kk=k)
+                diff = prun - frac
+
+                rows.extend([prun, frac, diff])
+
+            columns.append(rows)
+
+        sim_df = pd.DataFrame(columns).transpose()
         
+        index_names = []
+        for k in klist:
+            index_names.append('prun'+str(k))
+            index_names.append('frac_sim'+str(k))
+            index_names.append('diff'+str(k))
+            
+        sim_df.index = index_names
+        sim_df.loc['q', :] =qlist
+        
+        sim_df = sim_df.loc[['q'] + index_names, :]
+        sim_df.columns = df.loc['Dep Var', :]
+        return sim_df
+
+
+    
+    
 ############################## Read in text data ##############################
 
 def read_info():
