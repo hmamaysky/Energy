@@ -13,9 +13,10 @@ en.plot_text_stats(serd)
 # %% read in and process OOS results
 oos = en.OOSResults()
 # %% calculate various stats
-oosres = oos.calc()
+oosatt = oos.calc('All',saveout=True)
+oostxt = oos.calc('Text',saveout=True)
 # %% simulations to verify closed form probs of length-k runs
-df = oos.compare_sim_data(num_sims=1000000)
+df = oos.compare_sim_data(num_sims=100000)
 # %% probs for runs -- example
 prun = oos.prob_of_run(0.282,1,7)
 print(prun)

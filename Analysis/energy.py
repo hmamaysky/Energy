@@ -18,11 +18,14 @@ class OOSResults():
     def __init__(self):
         
         res = []
+        print('Reading in result files:')
         for fname in os.listdir(__sup_dir__+'/OOS-subperiod-results'):
 
             if not '.csv' in fname: continue
 
-            locres = pd.read_csv(__sup_dir__+'/OOS-subperiod-results/'+fname)
+            full_fname = __sup_dir__+'/OOS-subperiod-results/'+fname
+            print('\t'+full_fname)
+            locres = pd.read_csv(full_fname)
             locres['depvar'] = fname.replace('.csv','')
             res.append(locres)
 
@@ -112,7 +115,7 @@ class OOSResults():
         
         self.data = pd.concat([self.data,runs_counts],axis=1)
         
-    def prob_of_run(self,qq,kk,nn):
+    def prob_of_run(self,qq,kk,nn,verbose=False):
         '''
         Params
         ======
@@ -164,47 +167,52 @@ class OOSResults():
                 ## already present in that string
                 prs[ii] = (1-(prs[0:(ii-kk-1)].sum()+prs[ii-kk-1]/(1-qq))) * prs[ii]
 
-        print(prs)
+        if verbose:
+            print(prs)
+
         return prs.sum()
 
             
-    def calc(self):
+    def calc(self,varset,saveout=False):
         '''
         Calculate the statistics.
+
+        varset -- Either 'All' to look at results for all the forecasting variables or 'Text'
+        to look at the results for models that include at least one text variables.
+        saveout -- Save/plot the table form of the results?
         '''
 
+        assert varset in ['All','Text']
+        
         ## the columns containig the run counts
         run_cols = [el for el in self.data.columns if re.search('Run[0-9]',el)]
         
+        ## get the vars which aren't missing in any subperiod
+        thed = self.data[self.data.drop_row != True]
+        txt_vars = set(thed[thed.var1_text==1].var1).union(thed[thed.var2_text==1].var2)
+        all_vars = set(thed.var1).union(thed.var2)
+
         ## stats for a single dependent variable
         print('Working on:',end=' ')
-        def res_for_depvar(thed):
+        def res_for_depvar(dv):
 
-            print(thed.depvar[0],end=' ')
+            thed = self.data[(self.data.depvar==dv) & (self.data.drop_row != True)].copy(deep=True)
+            print(dv,end=' ')
 
-            ## get the cases where the row is not dropped
-            thed = thed[thed.drop_row != True]
+            ## specialize results to those with at least a text var?
+            if varset == 'Text':
+                thed = thed[(thed.var1_text==1) | (thed.var2_text==1)]
+                tot_mods = (len(all_vars)-len(txt_vars))*len(txt_vars) + len(txt_vars)*(len(txt_vars)-1)/2
+            else:
+                tot_mods = len(all_vars)*(len(all_vars)-1)/2
 
-            ## get the vars the make it
-            txt_vars = set(thed[thed.var1_text==1].var1).union(thed[thed.var2_text==1].var2)
-            all_vars = set(thed.var1).union(thed.var2)
-
-            ## under assumption each variable gets selected at least once, other than
-            ## those that get dropped
-            tot_mods = len(all_vars)*(len(all_vars)-1)/2
-            tot_txt_mods = (len(all_vars)-len(txt_vars)) * len(txt_vars) \
-                + len(txt_vars)*(len(txt_vars)-1)/2
-
-            ## calculate the statistics for the current variable
-            num_txt = (thed.var1_text | thed.var2_text).sum()
-            res = {'Dep Var':thed.depvar[0],
-                   'All Runs':thed.shape[0],
-                   'Txt Runs':num_txt,
+            res = {'Dep Var':dv,
+                   'Runs':thed.shape[0],
+                   'Max Runs':int(tot_mods),
                    ## probability of beating is the total number of beats divided by the total
                    ## number of possible beats (total possible models x number of periods)
                    'q':round(thed[self.per_cols].to_numpy().sum() / (tot_mods * len(self.per_cols)),3),
-                   'Num All':len(all_vars),
-                   'Num Txt':len(txt_vars)
+                   '# All/Txt':'{}/{}'.format(len(all_vars),len(txt_vars))
             }
 
             ## get number of pairs {var1,var2} that have a run on a certain length
@@ -217,19 +225,21 @@ class OOSResults():
                 kk = int(re.findall('[0-9]',rr)[0])
                 nrun = res[rr]
                 prun = self.prob_of_run(qq,kk,nn=len(self.per_cols))
-                print(qq,'Prob run of length {} = {}'.format(kk,prun))
-                ##nruns = range(max(0,nrun-100),min(nrun+100,tot_mods))
-                ##plt.plot(nruns,binom.pmf(nruns,tot_mods,prun))
+                ##print(qq,'Prob run of length {} = {}'.format(kk,prun))
                 pval = 1 - sum(binom.pmf(range(nrun+1),tot_mods,prun))
-                print('Prob > {} runs = {}'.format(nrun,pval))
+                ##print('Prob > {} runs = {}'.format(nrun,pval))
                 res[rr+'-p'] = '({:.2f})'.format(pval)
             
             return pd.DataFrame(res,index=[0])
 
         ## get all results
-        allres = self.data.groupby('depvar').apply(res_for_depvar).reset_index(drop=True)
-        ## reorder columns
-        cols = ['Dep Var','All Runs','Txt Runs','q','Num All','Num Txt']
+        allres = []
+        for dv in self.data.depvar.unique():
+            allres.append(res_for_depvar(dv).reset_index(drop=True))
+        allres = pd.concat(allres,axis=0)
+            
+        ## reorder columns (these will become the rows of the table post-transpose)
+        cols = ['Dep Var','Runs','Max Runs','q','# All/Txt']
         for ii in range(1,len(run_cols)+1):
             cols.append('Run'+str(ii))
             cols.append('Run'+str(ii)+'-p')
@@ -237,10 +247,46 @@ class OOSResults():
 
         ## transpose table -- result cols becomes rows and cols are LHS vars
         allres = allres.fillna(0).transpose()
+        allres.columns = allres.loc['Dep Var']
+        
+        ## reorder how dependent variables show up
+        allres = allres[['FutRet','DSpot','DOilVol','xomRet','bpRet','rdsaRet','DInv','DProd']]
 
-        print()
-        print(allres)
+        print('\n',allres)
 
+        ## show/save output?
+        if saveout:
+
+            pltres = allres.reset_index()
+            
+            fig = plt.figure(figsize=(7,0.25*pltres.shape[0]))
+            tbl = plt.table(pltres.round(3).values,
+                            loc='center', colWidths=[1.25] + [1]*(pltres.shape[1]-1),
+                            bbox=[0,0,1,1])
+
+            ## set edges
+            for ii in range(pltres.shape[0]):
+                for jj in range(pltres.shape[1]):
+                    if jj == 0:
+                        fmt = 'LR'
+                    elif jj == pltres.shape[1]-1:
+                        fmt = 'R'
+                    else:
+                        fmt = ''
+                        
+                    if ii == 0:
+                        fmt += 'BT'
+                    elif ii == pltres['index'].to_list().index('Run1'):
+                        fmt += 'T'
+                    elif ii == pltres.shape[0]-1:
+                        fmt += 'B'
+                    tbl[ii,jj].visible_edges = fmt
+
+            plt.axis('tight')
+            plt.axis('off')
+            plt.title('Out-of-sample runs analysis: {} models'.format(varset),
+                      y=0.99,fontsize=12)
+            
         return allres
     
     def compare_sim_data(self, str_len=7, num_sims=100000):
