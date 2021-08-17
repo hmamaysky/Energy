@@ -165,7 +165,7 @@ class OOSResults():
                 ## this sums up all probabilities at lags strictly prior to current position
                 ## minus 2, but for pos-2 have to divide by (1-q) to take out the zero that's
                 ## already present in that string
-                prs[ii] = (1-(prs[0:(ii-kk-1)].sum()+prs[ii-kk-1]/(1-qq))) * prs[ii]
+                prs[ii] = (1 - prs[0:(ii-kk-1)].sum() - prs[ii-kk-1]/(1-qq)) * prs[ii]
 
         if verbose:
             print(prs)
@@ -294,7 +294,7 @@ class OOSResults():
         Compares the probability of probability of seeing at least one run of length kk
         with the fraction of rows that have at least one run of length kk calculated by simulation
         """
-        calc_res = self.calc()
+        calc_res = self.calc(varset='All')
         qlist = calc_res.loc['q']
         klist = [1, 2, 3, 4, 5]
 
