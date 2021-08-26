@@ -259,7 +259,7 @@ class OOSResults():
 
             pltres = allres.reset_index()
             
-            fig = plt.figure(figsize=(7,0.25*pltres.shape[0]))
+            fig = plt.figure(figsize=(7,0.25*pltres.shape[0]),dpi=200)
             tbl = plt.table(pltres.round(3).values,
                             loc='center', colWidths=[1.25] + [1]*(pltres.shape[1]-1),
                             bbox=[0,0,1,1])
