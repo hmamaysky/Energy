@@ -6,7 +6,6 @@ Contains codes for In Sample analysis for the Energy Project
 ### Descriptions for Codes and Data
 - stepwiseForawrdSelection.R 
 - Monte_Carlo_forwardSelection.R 
-- Data Section contains codes for the construction for non-textual data, and the .py file to add PCA series to the textual data. (Need further work)
 
 ### Notes for Further Processing of Results
 - Results for Forward Selection Model is self explanatory. Each specification has an excel for regression stats and the order of selected variables is the same as the row orders.
