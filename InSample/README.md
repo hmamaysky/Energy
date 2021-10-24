@@ -5,7 +5,7 @@ Contains codes for In Sample analysis for the Energy Project
 
 ### Descriptions for Codes and Data
 - In ForwardSelection folder: 
-  - stepwiseForawrdSelection_detrended.R 
+  - stepwiseForwardSelection_detrended.R 
 - In Monte Carlo folder:
   - Monte_Carlo_forwardSelection.R 
 - In Tables folder: 
