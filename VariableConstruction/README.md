@@ -65,9 +65,9 @@ The variable construction code is described here.
 ** Note that these are not the final versions of input data for the regressions because we add additional variables in subsequent .do files.
 
 - va_weekly.do creates the following weekly variables.
-  1. Open Interest
-  2. Liquidity 
-  3. Hedging Pressure     
+  1. OpenInt
+  2. liquidity 
+  3. HedgPres   
 
 	- Output in "./variable augmentation/":	    
 	
@@ -95,8 +95,8 @@ Next, run python code "va_beta" to create InflaBeta and DolBeta
 
 - va_monthly.do creates the following monthly variables.
   1. BE/ME
-  2. Momentum
-  3. Basis Momentum     
+  2. Mom
+  3. BasMom 
 
 
 	- Output in "./variable augmentation/":	     
