@@ -1,7 +1,7 @@
 # Data notes
 
 ## Timing
-- The variables in the csv files are all dated with the end date of the calcuation period.  For example, the *DProd_t8_Wed* variable dated 6/24/1998 calculates the 8 week change in oil production from 4/29/1998 to 6/24/1998.
+- The variables in the .dta files are all dated with the end date of the calcuation period.  For example, the *DProd_t8_Wed* variable dated 6/24/1998 calculates the 8 week change in oil production from 4/29/1998 to 6/24/1998.
 
 ## Details
 - As of 5/31/2021, these are the latest data files with the new timing conventions. Each series has a suffix to indicate when it's calculated. The general philosophy is to take a variable from the prior day if it's not clear that it won't overlap with a day t variable, and to take it from day t if we are sure there is no look-ahead bias. For example, we calculate text-based series to end at 2:30pm on each day, so there is no overlap with these at either the 2:30pm energy market closes or the 4pm stock market closes.
