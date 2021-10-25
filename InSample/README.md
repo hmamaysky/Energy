@@ -9,10 +9,10 @@ Contains codes for In Sample analysis for the Energy Project
 - In Monte Carlo folder:
   - Monte_Carlo_forwardSelection.R performs monte carlo simulation to control for small-sample biases in R-squareds and t-statistics.
 - In Tables folder: 
-  - Table_V.R: Table V "Measuring Instability of In-Sample Forward Selection Results"
-  - Table_A_IV.R: Table A.IV "Count of Selected and Statistically Significant Variables of Forward Selection Model"
-  - Table_A_V.R: Table V "F-test for the Eight-Week Stepwise Forward Selection"
-  - Table_A_VII.R: Table A.VII "Subperiod stepwise forward selection at the eight-week horizon"
+  - Table_V.R: Table V- "Measuring Instability of In-Sample Forward Selection Results"
+  - Table_A_IV.R: Table A.IV- "Count of Selected and Statistically Significant Variables of Forward Selection Model"
+  - Table_A_V.R: Table V- "F-test for the Eight-Week Stepwise Forward Selection"
+  - Table_A_VII.R: Table A.VII- "Subperiod stepwise forward selection at the eight-week horizon"
  
 ### Notes for Further Processing of Results
 - Results for Forward Selection Model is self explanatory. Each specification has a word file for regression stats and the order of selected variables is the same as the row orders. The results are used for creating Table A.VI. 
