@@ -19,7 +19,7 @@ Contains codes for In Sample analysis for the Energy Project
  
 ### Notes for Further Processing of Results
 - Results of Forward Selection Model are self explanatory. Each specification has a word file for regression stats and the order of selected variables is the same as the row orders. The results are used for creating Table IV and Table A.VI. 
-- We utilize results from ```Monte_Carlo_forwardSelection.R``` and ```stepwiseForwardSelection_detrended.R``` to create Table IV.
+- We utilize results of ```Monte_Carlo_forwardSelection.R``` and ```stepwiseForwardSelection_detrended.R``` to create Table IV.
 
 
 ### Notes before running Analysis
