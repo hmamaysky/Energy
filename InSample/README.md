@@ -5,18 +5,19 @@ Contains codes for In Sample analysis for the Energy Project
 
 ### Descriptions for Codes and Data
 - In ForwardSelection folder: 
-  - stepwiseForwardSelection_detrended.R 
+  - stepwiseForwardSelection_detrended.R performs stepwise forward selection to choose seven regressors from all the candidates.
 - In Monte Carlo folder:
-  - Monte_Carlo_forwardSelection.R 
+  - Monte_Carlo_forwardSelection.R performs monte carlo simulation to control for small-sample biases in R-squareds and t-statistics.
 - In Tables folder: 
-  - Table_V.R
-  - Table_A_IV.R
-  - Table_A_V.R
-  - Table_A_VII.R
+  - Table_V.R: Table V "Measuring Instability of In-Sample Forward Selection Results"
+  - Table_A_IV.R: Table A.IV "Count of Selected and Statistically Significant Variables of Forward Selection Model"
+  - Table_A_V.R: Table V "F-test for the Eight-Week Stepwise Forward Selection"
+  - Table_A_VII.R: Table A.VII "Subperiod stepwise forward selection at the eight-week horizon"
  
 ### Notes for Further Processing of Results
-- Results for Forward Selection Model is self explanatory. Each specification has an word file for regression stats and the order of selected variables is the same as the row orders. The results are used for creating Table A.VI. 
-- Graphs and tables from Monte Carlo analysis are well formatted, we can integrate them manually (tiny work as most are done in the code) to create tables and graphs in the paper. (Table IV, Figure 3, Figure 4)
+- Results for Forward Selection Model is self explanatory. Each specification has a word file for regression stats and the order of selected variables is the same as the row orders. The results are used for creating Table A.VI. 
+- Results for Monte Carlo analysis are well formatted. We can combine them with Forward Selection results to create Table IV.
+- Figure 3 and Figure 4 are created in Monte_Carlo_forwardSelection.R.
 - R codes in Tables folder are used to create some tables in the paper. (Table V, Table A.IV, Table A.V, Table A.VII) 
 
 ### Notes before running Analysis
