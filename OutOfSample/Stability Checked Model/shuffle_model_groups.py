@@ -27,7 +27,7 @@ def all_fixed_model(var_list, r=2):
         1. var_list: list of all the variables
         2. # of RHS vars in the model, set default to 2
     Output:
-        1. a dictionary with 30 keys referring to a separate part of the list of all the models
+        1. a dictionary with 50 keys referring to a separate part of the list of all the models
     '''
     # Get list of all the combination of r
     all_list = list(combinations(var_list, r))
@@ -35,17 +35,18 @@ def all_fixed_model(var_list, r=2):
     random.shuffle(all_list)
     # Save the Shuffled results
     shuffled_model_list=dict()
-    for i in range(30):
-        shuffled_model_list[str(i+1).zfill(2)]=all_list[i::30]
+    for i in range(50):
+        shuffled_model_list[str(i+1).zfill(2)]=all_list[i::50]
     return shuffled_model_list
 
 # %% Main Function
 def main():
     # Var list all the text and baseline vars
-    vars_list = ["FutRet", "xomRet", "bpRet", "rdsaRet", "DOilVol",
+    vars_list = ["FutRet", 'StikIdx', 'xomRet', 'bpRet', 'rdsaRet', "DOilVol",
                  "OilVol", "DInv", "DProd", "DSpot", "tnote_10y",
-                 "DFX", "sp500Ret", "basis", "WIPIyoy", "trend", "RPsdf_growing",
-                 "RPsdf_rolling", "vix_spx", "ovx_cl1",
+                 "DFX", "sp500Ret", "basis", "WIPI_8wk", "trend", "RPsdf_growing",
+                 "RPsdf_rolling", "vix_diff", "ovx_diff",
+                 'BEME', 'Mom', 'BasMom', 'DolBeta', 'InflaBeta', 'HedgPres', 'liquidity', 'OpenInt',
                  'artcount', 'entropy', 'sent', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
                  'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp',
                  'PCAfreq','PCAsent', 'PCAall']
@@ -53,7 +54,7 @@ def main():
     # save the result for further usage in parallelizing the coefficient calculation
     shuffled_list = all_fixed_model(vars_list,2)
     # Please change directory before running the code
-    pickle.dump(shuffled_list, open('/user/hw2676/code/Energy/Analysis/Predictive_Power_of_Textual_measures/Fixed_model/6.0Version/shuffled_model_list.p','wb'))
+    pickle.dump(shuffled_list, open('/user/hw2676/code/Energy/Analysis/New_Var/2.0Version/analysis_codes/Stability_Filtered_Model/shuffled_model_list.p','wb'))
 
 # %% Main Process
 if __name__ == '__main__':

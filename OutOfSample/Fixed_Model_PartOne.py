@@ -21,7 +21,7 @@ import os
 import statsmodels.api as sm
 import statsmodels.regression.linear_model as lm
 from OOSfuncs import *
-__out_dir__ = '/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/fixed_model/'
+__out_dir__ = '/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/fixed_model/'
 # %% 1. Defining Functions
 ### See OOSfuncs.py for all the functions ###
 
@@ -48,7 +48,7 @@ def main(var):
     # frequency=1
     # no_varibles=1
     # cv=10
-    # base_var="WIPImom_8wk"
+    # base_var="ovx_diff"
     # d_var list
     d_vars = [var]
 
@@ -60,6 +60,7 @@ def main(var):
     textual_vars = ['artcount', 'entropy', 'sent', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
               'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp',
               'PCAfreq','PCAsent', 'PCAall']
+    # textual_vars = ['artcount']
         
     # Result holder: 
     # a dictionary with each dependent variable as key,
@@ -77,10 +78,13 @@ def main(var):
         # 1.1 Result holder for the prediction differences
         #     Model names are suggested by the var name
         constant_diff_list =[]
+        constant_RMSE_list = []
+        full_RMSE_list ={} 
         full_diff_list ={}
         model_coef = {}
         for t_var in textual_vars:
-            full_diff_list[base_var+', '+t_var]=[]  
+            full_diff_list[base_var+', '+t_var]=[] 
+            full_RMSE_list[base_var+', '+t_var]=[]  
             model = base_var+', '+t_var
             if model in coeffs.keys():
                 model_coef[model] = coeffs[model]
@@ -92,11 +96,13 @@ def main(var):
         #     Note that if a model has ovx_cl1 or sdf variables, the starting time point should be modified accordingly
         time_col = data_set(d_var)['date'] 
         time_lower = time_col[0]
+        # time_lower = pd.Timestamp('2015-02-01')
         # Modifying starting date accordingly
-        if base_var == 'ovx_cl1':
+        if base_var == 'ovx_diff':
             time_lower = pd.Timestamp('2007-05-11')
         elif (base_var == 'RPsdf_growing') | (base_var == 'RPsdf_rolling'):
             time_lower = pd.Timestamp('2002-04-08')
+        # time_lower = pd.Timestamp('2015-01-02')
         test_week_list = [time for time in time_col if time>=time_lower+pd.Timedelta(str(7*updating_window*52)+'days')][::frequency]
         
         # 1.3 Main algorithm
@@ -116,11 +122,12 @@ def main(var):
                     full_diff, _ = prediction_one_week(data, d_var, model, model_coef[model], week)
                     # Save the result of the fixed model to corresponding lists
                     full_diff_list[model].extend(full_diff)
-                
+                    full_RMSE_list[model].append((RMSE(full_diff_list[model])))
                 
                 # Save error of const model to list             
                 constant_diff_list.extend(constant_diff)                
-
+                constant_RMSE_list.append(RMSE(constant_diff_list))
+            
             # Store RMSE of different models for each LHS variable  
             rmse_result[d_var]=[RMSE(constant_diff_list)]
             rmse_result[d_var].extend([RMSE(full_diff_list[base_var+', '+x]) for x in textual_vars])
@@ -145,8 +152,11 @@ def main(var):
     index.extend([base_var+', '+x for x in textual_vars])
     rmse_df.index=index
     final_rmse.append(rmse_df)
+    
+    # 1.5 Save MSE results
+    rmse_dict={d_var+'_fullrmse_1':full_RMSE_list,d_var+'_consrmse':constant_RMSE_list}
 
-    return final_rmse[0]
+    return final_rmse[0], rmse_dict
 
 # %% 3. Main Process
 if __name__ == '__main__':
@@ -162,7 +172,7 @@ if __name__ == '__main__':
     # update_frequency=1
     # no_variables=1
     # cv_fold=10
-    # base_var="WIPImom_8wk"
+    # base_var="HedgPres"
     ### 3.2 File Naming Strings
     if      forecasting_week == 4: file_suffix = '4wk'
     else:   file_suffix = '8wk'
@@ -181,14 +191,19 @@ if __name__ == '__main__':
     ### 3.3 Use concurrent calculation for the main algorithm
     # result holders for each process
     rmse = pd.DataFrame()
+    rmse_dicts={}
     # 8 dependent variables
     d_vars = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']
     # Main algorithm and save the results
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = executor.map(main, d_vars) 
         for result in results:
-            rmse = pd.concat([rmse, result], axis=1)
+            rmse = pd.concat([rmse, result[0]], axis=1)
+            rmse_dicts.update(result[1])
             
     ### 3.4 Save the results to proper directory
-    rmse.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/fixed_model/'
-                    +file+'/'+file_start+'/'+base_var+'_Lasso_'+cv+'_'+file_suffix+'_1.xlsx')
+    rmse.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/fixed_model/'
+                    +file+'/'+file_start+'/raw/'+base_var+'_Lasso_'+cv+'_'+file_suffix+'_1.xlsx')
+    pickle.dump(rmse_dicts,open('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/fixed_model/'
+                    +file+'/'+file_start+'/rmse/'+base_var+'_Lasso_'+cv+'_'+file_suffix+'_1.p','wb'))
+    

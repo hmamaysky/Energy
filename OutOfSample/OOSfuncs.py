@@ -52,14 +52,22 @@ def data_set(d_var):
     prices_var = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol']
 
     if d_var in prices_var:
-        data = pd.read_stata('data/transformed_data_prices_v14.dta')
+        data = pd.read_stata('data/transformed_data_prices_v18.dta').rename(columns={'date_Fri':'date'})
         SDFpremium_growing = pd.read_excel('data/SDFgrowing_fut_thurs.xls')
         SDFpremium_rolling = pd.read_excel('data/SDF756rolling_fut_thurs.xls')
     else:
-        data = pd.read_stata('data/transformed_data_physical_v14.dta')
+        data = pd.read_stata('data/transformed_data_physical_v18.dta').rename(columns={'date_Tue':'date'})
+        data['date'] = data['date'].apply(lambda x:x+pd.Timedelta('3 days'))
         SDFpremium_growing = pd.read_excel('data/SDFgrowing_fut_tues.xls')
         SDFpremium_rolling = pd.read_excel('data/SDF756rolling_fut_tues.xls')
-        
+    
+    # Rename columns, expect the date variables and the trend
+    all_columns = list(data.columns.values)
+    all_columns.remove('trend')
+    all_columns.remove('StikIdx')
+    all_columns = [x for x in all_columns if 'date' not in x]
+    
+    data = data.rename(columns={x:'_'.join(x.split('_')[:-1]) for x in set(all_columns)})
     data = pd.merge(data, SDFpremium_growing, on='date', how='left')
     data = pd.merge(data, SDFpremium_rolling, on='date', how='left')
     
@@ -67,7 +75,7 @@ def data_set(d_var):
     data['sent']=data['sCo']+data['sGom']+data['sEnv']+data['sEpg']+data['sBbl']+data['sRpc']+data['sEp']
     
     ## Drop the top 4 rows because no text vars available there
-    return data.iloc[4:,:].reset_index(drop=True)
+    return data.iloc[3:,:].reset_index(drop=True)
 
 ### 1.3 Get the row range of updating and testing data at each window ###
 def get_test_row_range(date_col, test_wk, wk=8, update_window=5):
@@ -115,18 +123,20 @@ def ind_var_list(d_var,weeks):
     as well as pull all the relevant data from the main dataset.
     """
     ### All candidates of RHS vars
-    full_list=['DOilVol', 'OilVol', 'DInv', 'DProd', 'DSpot',
-              'tnote_10y', 'DFX', 'sp500Ret', 'basis', 'WIPImom_{}wk'.format(weeks), 'trend', 'VIX', 'vix_spx', 'ovx_cl1', 'RPsdf_growing', 'RPsdf_rolling',
+    full_list=['DOilVol', 'OilVol', 'DInv', 'DProd', 'DSpot', 'FutRet', 'StikIdx', 'xomRet', 'bpRet', 'rdsaRet',
+              'tnote_10y', 'DFX', 'sp500Ret', 'basis', 'WIPI_{}wk'.format(weeks), 'trend', 'VIX', 'vix_diff', 'ovx_diff', 'RPsdf_growing', 'RPsdf_rolling',
+              'BEME', 'Mom', 'BasMom', 'DolBeta', 'InflaBeta', 'HedgPres', 'liquidity', 'OpenInt',
               'artcount', 'entropy', 'sent', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
               'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp']
     ### Price vars will not be included on the RHS for physical dependent vars
-    price_list = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol']
-    ### Add d_var if not in RHS list
-    ### Here, we use 4wk var for 8wk var training, so no need to add 8wk version in RHS set
-    if d_var in price_list:
-        full_list.extend(price_list)
-    elif d_var not in full_list:
-        full_list.insert(0,d_var)
+    # price_list = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol']
+    # # price_list = []
+    # ### Add d_var if not in RHS list
+    # ### Here, we use 4wk var for 8wk var training, so no need to add 8wk version in RHS set
+    # if d_var in price_list:
+    #     full_list.extend(price_list)
+    # elif d_var not in full_list:
+    #     full_list.insert(0,d_var)
     
     full_list=list(set(full_list))
 
@@ -201,7 +211,7 @@ def select_significant(d_var, forecast_start, wk=8, window=5, ns=1):
     data=data_set(d_var)
     ind_vars=ind_var_list(d_var, weeks=wk)
     if forecast_start<pd.Timestamp('2012-05-11'):
-        ind_vars.remove('ovx_cl1')
+        ind_vars.remove('ovx_diff')
     if forecast_start<pd.Timestamp('2007-04-06'):
         ind_vars.remove('RPsdf_rolling')
         ind_vars.remove('RPsdf_growing')
@@ -222,7 +232,7 @@ def select_significant(d_var, forecast_start, wk=8, window=5, ns=1):
     # we should move each RHS value 8(4) wk forward to match it with the LHS one.
     lag_vars = ind_vars.copy()
     lag_vars.remove('trend')
-    lag_vars.remove('WIPImom_{}wk'.format(wk))
+    lag_vars.remove('WIPI_{}wk'.format(wk))
     data_x=data.copy()
     if wk == 8:
         data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
@@ -276,7 +286,7 @@ def rolling_diff_OLS(d_var, ind_vars, forecast_start, wk=8, window=5):
     ### Shift x to match y and set Newey-West max lag
     lag_vars = ind_var_list(d_var, weeks=wk)
     lag_vars.remove('trend')
-    lag_vars.remove('WIPImom_{}wk'.format(wk))
+    lag_vars.remove('WIPI_{}wk'.format(wk))
     data_x=data.copy()
     if wk == 8:
         data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
@@ -303,7 +313,7 @@ def rolling_diff_OLS(d_var, ind_vars, forecast_start, wk=8, window=5):
     if wk==8:
         y_train=data_ytrain[d_var+'_t8']
     else:
-        y_train=data_ytrain[d_var]
+        y_train=data_ytrain[d_var+'_t4']
     model=lm.OLS(y_train, X_train, missing='drop')
     reg=model.fit(cov_type='HAC', cov_kwds={'maxlags':lag})
     x_test=data_xtest.loc[:,ind_vars]
@@ -313,7 +323,7 @@ def rolling_diff_OLS(d_var, ind_vars, forecast_start, wk=8, window=5):
     if wk==8:
         y_test=data_ytest[d_var+'_t8']
     else:
-        y_test=data_ytest[d_var]
+        y_test=data_ytest[d_var+'_t4']
     diff = reg.predict(X_test) - y_test
 
     return diff
@@ -345,7 +355,7 @@ def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
     lag_vars = ind_var_list(d_var, weeks=wk)
     # trend and WIPIyoy will not lag
     lag_vars.remove('trend')
-    lag_vars.remove('WIPImom_{}wk'.format(wk))
+    lag_vars.remove('WIPI_{}wk'.format(wk))
     data_x=data.copy()
     if wk == 8:
         data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
@@ -376,7 +386,7 @@ def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
     if wk==8:
         y_train=data_ytrain[d_var+'_t8']
     else:
-        y_train=data_ytrain[d_var]
+        y_train=data_ytrain[d_var+'_t4']
     ## Set up Lasso instance and grid search for penalty coefficient
     pre_model=Lasso()
     param_grid=[{'alpha':np.linspace(0,2,40)}]
@@ -397,7 +407,7 @@ def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
     if wk==8:
         y_test=data_ytest[d_var+'_t8']
     else:
-        y_test=data_ytest[d_var]
+        y_test=data_ytest[d_var+'_t4']
     # Prepare proper test data and predict   
     test_xy=pd.concat([X_test,y_test],axis=1).dropna()
     y_test=test_xy.iloc[:,-1]
@@ -432,7 +442,7 @@ def rolling_diff_forward(data, d_var, ind_vars, forecast_start, wk=8, window=5, 
     ### Shift x to match y and set Newey-West max lag
     lag_vars = ind_var_list(d_var, weeks=wk)
     lag_vars.remove('trend')
-    lag_vars.remove('WIPImom_{}wk'.format(wk))
+    lag_vars.remove('WIPI_{}wk'.format(wk))
     data_x=data.copy()
     if wk == 8:
         data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
@@ -459,7 +469,7 @@ def rolling_diff_forward(data, d_var, ind_vars, forecast_start, wk=8, window=5, 
     if wk==8:
         y_train=data_ytrain[d_var+'_t8']
     else:
-        y_train=data_ytrain[d_var]
+        y_train=data_ytrain[d_var+'_t4']
     pre_model=Lasso()
     param_grid=[{'alpha':np.linspace(0,2,40)}]
     grid_search = GridSearchCV(pre_model, param_grid, cv=cvs, scoring='neg_mean_squared_error')
@@ -480,7 +490,7 @@ def rolling_diff_forward(data, d_var, ind_vars, forecast_start, wk=8, window=5, 
     if wk==8:
         y_test=data_ytest[d_var+'_t8']
     else:
-        y_test=data_ytest[d_var]
+        y_test=data_ytest[d_var+'_t4']
         
     test_xy=pd.concat([X_test,y_test],axis=1).dropna()
     y_test=test_xy.iloc[:,-1]
@@ -511,7 +521,7 @@ def rolling_diff(data, d_var, ind_vars, forecast_start):
     ### Shift x to match y and set Newey-West max lag
     lag_vars = ind_var_list(d_var,weeks=8)
     lag_vars.remove('trend')
-    lag_vars.remove('WIPImom_8wk')
+    lag_vars.remove('WIPI_8wk')
     data_x=data.copy()
     data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
 
@@ -570,7 +580,7 @@ def prediction_one_week(data, d_var, ind_vars, model_coefs, forecast_week):
     ### Shift x to match y and set lag
     lag_vars = ind_var_list(d_var,weeks=8)
     lag_vars.remove('trend')
-    lag_vars.remove('WIPImom_8wk')
+    lag_vars.remove('WIPI_8wk')
     data_x=data.copy()
     data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
 
@@ -604,3 +614,93 @@ def prediction_one_week(data, d_var, ind_vars, model_coefs, forecast_week):
     y_true = y_test.values[0]
     ### Calculate prediction error and the error of the constant model
     return [y_true-prediction], [rolling_diff(data, d_var, [], forecast_week)]
+
+### 2.4 Custom Rolling Diff function for Stability Model (coef generating phase)
+def rolling_diff_stability_coef(data, d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
+    '''
+    Inputs:
+        1. d_var: dependent variable
+        2. ind_vars: prescribed model
+        3. forecaset_start: current week which we base on to forecast 
+        4. wk: 8 or 4 according to which vars we are interested in
+        5. window: The backward looking length for coefficient updating
+    Outputs:
+        1. diff: difference between forecast and real observation
+        2. a list with all the coefficients and R2 value of the current predicting period
+    '''
+    
+    ### 0. Read the dataset
+    data=data_set(d_var)
+    
+    ### 1. Get update and forecast window
+    date_update_range, date_test_range, date_pca_range=get_test_row_range(data['date'], forecast_start, wk=wk, update_window=window)
+    
+    ### 2. Shift x to match the lag 
+    lag_vars = ind_var_list(d_var, weeks=wk)
+    # trend and WIPIyoy will not lag
+    lag_vars.remove('trend')
+    lag_vars.remove('WIPI_{}wk'.format(wk))
+    data_x=data.copy()
+    if wk == 8:
+        data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
+
+    else:
+        data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(4)
+    
+    ### 3. Prepare LHS data for training and testing
+    data_ytrain= data[date_update_range]
+    data_ytest = data[date_test_range]
+    
+    ### 4. Prepare RHS data for training and testing   
+    # 4.1 Add PCA series
+    data_x_pca = data_x[date_pca_range]
+    data_x_pca = PCA_augment(data_x_pca)
+
+    # 4.2 Select the train set (first few rows) and the test set (the last row)
+    data_xtrain= data_x_pca.iloc[:np.sum(date_update_range),:]
+    data_xtest = data_x_pca.iloc[[-1],:]   
+    
+    ### 5. Lasso Update and Prediction Process
+    # 5.1 First, use grid search to choose the best Penalty 
+    #     Then, run lasso using that panalty regression and update, 
+    #     here, sm.add_constant adds a constant to RHS
+    x_train=data_xtrain.loc[:,ind_vars]
+    X_train=sm.add_constant(x_train)
+    ## Choose the correct LHS var according to forecasting duration
+    if wk==8:
+        y_train=data_ytrain[d_var+'_t8']
+    else:
+        y_train=data_ytrain[d_var+'_t4']
+    ## Set up Lasso instance and grid search for penalty coefficient
+    pre_model=Lasso()
+    param_grid=[{'alpha':np.linspace(0,2,40)}]
+    grid_search = GridSearchCV(pre_model, param_grid, cv=cvs, scoring='neg_mean_squared_error')
+    train_xy=pd.concat([X_train,y_train],axis=1).dropna()
+    y_train=train_xy.iloc[:,-1]
+    X_train=train_xy.iloc[:,0:-1]
+    grid_search.fit(X_train, y_train)
+    best_lambda=grid_search.best_params_['alpha']
+    ## Update the coefficients using the selected penalty 
+    reg=Lasso(alpha=best_lambda)
+    reg.fit(X_train,y_train)
+    x_test=data_xtest.loc[:,ind_vars]
+    X_test=sm.add_constant(x_test, has_constant='add')
+    
+    ## Predict and record the difference
+    # Choose the correct LHS var according to forecasting duration
+    if wk==8:
+        y_test=data_ytest[d_var+'_t8']
+    else:
+        y_test=data_ytest[d_var+'_t4']
+    # Prepare proper test data and predict   
+    test_xy=pd.concat([X_test,y_test],axis=1).dropna()
+    y_test=test_xy.iloc[:,-1]
+    X_test=test_xy.iloc[:,0:-1]
+    
+    ### 6. Return the prediction error, the coefficients and the R2
+    if len(y_test)==0:
+        return [np.nan], [reg.intercept_]+reg.coef_.tolist()[1:]+[reg.score(X_train,y_train)]
+    else:
+        diff = reg.predict(X_test) - y_test
+
+    return diff, [reg.intercept_]+reg.coef_.tolist()[1:]+[reg.score(X_train,y_train)]

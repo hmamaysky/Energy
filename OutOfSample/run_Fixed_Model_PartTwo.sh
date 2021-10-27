@@ -8,7 +8,7 @@
 ## x: baseline variable
 
 # directory of the code
-FS='/user/hw2676/code/Energy/Analysis/Predictive_Power_of_Textual_measures/Fixed_model/5.0Version'
+FS='/user/hw2676/code/Energy/Analysis/New_Var/2.0Version/analysis_codes'
 
 declare -a baselist=('artcount' 'entropy' 'sent' 'sCo' 'fCo' 'sGom' 'fGom' 'sEnv' 'fEnv' 'sEpg' 'fEpg' 'sBbl' 'fBbl' 'sRpc' 'fRpc' 'sEp' 'fEp' 'PCAfreq' 'PCAsent' 'PCAall')
               

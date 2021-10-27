@@ -23,6 +23,7 @@ This file performs the OOS 1-1 and 2-2 Lasso update model.
 
 import pandas as pd
 import sys
+import pickle
 import concurrent.futures
 from OOSfuncs import *
 
@@ -49,7 +50,10 @@ def main(d_var):
     frequency=int(sys.argv[2])
     no_varibles=int(sys.argv[3])
     cv=int(sys.argv[4])
-    
+    # weeks=8
+    # frequency=1
+    # no_varibles=2
+    # cv=5    
     # d_var list
     d_vars = [d_var]
 
@@ -65,6 +69,7 @@ def main(d_var):
         # a dictionary with each dependent variable as key,
         # and a list of rmses for each model as value
         rmse_result={}
+        rmse_series={}
         for d_var in d_vars:
             print('-------------------')
             print(d_var)
@@ -75,12 +80,18 @@ def main(d_var):
             base_diff_list =[]
             text_diff_list =[]
             full_diff_list =[]
-
+            #     List for cumulative rmse
+            constant_rmse_list =[]
+            base_rmse_list =[]
+            text_rmse_list =[]
+            full_rmse_list =[]
             
             # 1.3 Get the exact date of each window (monthly)
             #     Here, we ensure everytime we train, there are enough observations for backward looking
             time_col = data_set(d_var)['date'] 
-            test_week_list = [time for time in time_col if time>=time_col[0]+pd.Timedelta(str(7*updating_window*52)+'days')][::frequency]
+            time_lower=time_col[0]
+            # time_lower= pd.Timestamp('2014-05-03')
+            test_week_list = [time for time in time_col if time>=time_lower+pd.Timedelta(str(7*updating_window*52)+'days')][::frequency]
             
             # 1.4 Main algorithm
             # First, at each window, train and select variables
@@ -106,26 +117,38 @@ def main(d_var):
                 text_diff_list.extend(text_diff) 
                 full_diff_list.extend(full_diff)
                 
+                constant_rmse_list.append(RMSE(constant_diff_list))
+                base_rmse_list.append(RMSE(base_diff_list))
+                text_rmse_list.append(RMSE(text_diff_list))
+                full_rmse_list.append(RMSE(full_diff_list))               
+                
             # 1.5 Store RMSE ratios of different models for each LHS variable  
             rmse_result[d_var]=[RMSE(base_diff_list)/RMSE(constant_diff_list), RMSE(text_diff_list)/RMSE(constant_diff_list),
                           RMSE(full_diff_list)/RMSE(constant_diff_list), RMSE(text_diff_list)/RMSE(base_diff_list),
                           RMSE(full_diff_list)/RMSE(base_diff_list)]
-
+            rmse_series[d_var] = {'const_rmse':constant_rmse_list,
+                                  'base_rmse':base_rmse_list,
+                                  'text_rmse':text_rmse_list,
+                                  'full_rmse':full_rmse_list}
         # 2. Save and Return 
         # Create a DataFrame to save results, more convenient for further interpretation
         rmse_df = pd.DataFrame(rmse_result)
         rmse_df.index=['Base Model', 'Text Model', 'Full Model', 'Text Model (on Base)', 'Full Model (on Base)']
 
-    return rmse_df
+    return rmse_df, rmse_series
 
 # %% 3. Main Process
 if __name__ == '__main__':
+    
     ### 3.1 System Args
     forecasting_week=int(sys.argv[1])
     update_frequency=int(sys.argv[2])
     no_variables=int(sys.argv[3])
     cv_fold=int(sys.argv[4])
-
+    # forecasting_week=8
+    # update_frequency=1
+    # no_variables=1
+    # cv_fold=10
     ### 3.2 File Naming Strings
     if    forecasting_week == 4: file_suffix = '4wk'
     else: file_suffix = '8wk'
@@ -140,13 +163,18 @@ if __name__ == '__main__':
     ### 3.3 Use concurrent calculation for the main algorithm
     # result holders for each process
     rmse=pd.DataFrame()
+    rmse_seriess=dict()
     # 8 dependent variables
     d_vars = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']
     # Main algorithm and save the results
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = executor.map(main,d_vars)
         for result in results:
-            rmse=pd.concat([rmse,result], axis=1)
+            rmse=pd.concat([rmse,result[0]], axis=1)
+            rmse_seriess.update(result[1])
+            
     ### 3.4 Save the results to proper directory
-    rmse.to_excel('/user/hw2676/files/Energy/outputs/model_selection/parsimonious/'
+    rmse.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
                     +file+'/'+file_start+'/Lasso_'+str(cv_fold)+'fold_'+file_suffix+'_t.xlsx')
+    pickle.dump(rmse_seriess,open('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
+                    +file+'/'+file_start+'/Lasso_'+str(cv_fold)+'fold_'+file_suffix+'_t_rmse.p','wb'))

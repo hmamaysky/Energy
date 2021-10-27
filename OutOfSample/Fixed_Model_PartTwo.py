@@ -13,13 +13,15 @@ This part kicks off a process for each text variables and evaluates the model fi
 as the first fixed model var and setting the second var in turn using all the text variables.
 """
 # %% 0. Importing Pachages
-
 import pandas as pd
 import sys
 import concurrent.futures
+import pickle
+import os
+import statsmodels.api as sm
+import statsmodels.regression.linear_model as lm
 from OOSfuncs import *
-
-
+__out_dir__ = '/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/fixed_model/'
 # %% 1. Defining Functions
 ### See OOSfuncs.py for all the functions ###
 
@@ -41,7 +43,11 @@ def main(var):
     no_varibles=int(sys.argv[3])
     cv=int(sys.argv[4])
     base_var=sys.argv[5]
-    
+    # weeks=8
+    # frequency=1
+    # no_varibles=1
+    # cv=5
+    # base_var='HedgPres'
     # d_var list
     d_vars = [var]
 
@@ -52,6 +58,7 @@ def main(var):
     textual_vars = ['artcount', 'entropy', 'sent', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
               'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp',
               'PCAfreq','PCAsent', 'PCAall']
+    # textual_vars = ['artcount']
     # remove the first var from the list for the second var to avoid invalid model
     try:
         textual_vars.remove(base_var)
@@ -62,40 +69,66 @@ def main(var):
     # a dictionary with each dependent variable as key,
     # and a list of rmses for each model as value
     rmse_result={}
-    
+    rmse_series={}
+    # Get the dictionary saving all the pre-generated coefficients
+    os.chdir(__out_dir__)
+    coeffs = pickle.load(open('time_varying_model/processed/integrated_var_coefs.p','rb'))[var]        
     ### 1. Main Algorithm
     for d_var in d_vars:
         print('-------------------')
         print(d_var)
+        # 1.1 Make sure all the vars in the list are valid for the given LHS dependent variable
+        textual_vars = [x for x in textual_vars if x in ind_var_list(d_var,weeks)]
         
-        # 1.1 Result holder for the prediction differences
+        # 1.2 Result holder for the prediction differences
         #     Model names are suggested by the var name
         full_diff_list ={}
+        full_RMSE_list ={} 
+        model_coef = {}
+        model_dict = {} # coef has order, this is crucial in prediction process (multiply the correct coef)
         for t_var in textual_vars:
-            full_diff_list[base_var+', '+t_var]=[]        
-
-        # 1.2 Get the exact date of each window (monthly)
+            full_diff_list[base_var+', '+t_var]=[]  
+            full_RMSE_list[base_var+', '+t_var]=[]  
+            model = base_var+', '+t_var
+            if model in coeffs.keys():
+                model_coef[model] = coeffs[model]
+                model_dict[model] = model
+            else:
+                model_coef[model] = coeffs[t_var+', '+base_var]  
+                model_dict[model] = t_var+', '+base_var
+        # 1.3 Get the exact date of each window (monthly)
         #     Here, we ensure everytime we train, there are enough observations for backward looking
-        time_col = data_set(d_var)['date'] 
-        time_lower = time_col[0]
-        test_week_list = [time for time in time_col if time>=time_lower+pd.Timedelta(str(7*updating_window*52)+'days')][::frequency]
+        #     Note that if a model has ovx_cl1 or sdf variables, the starting time point should be modified accordingly
+        time_col = data_set(d_var)['date']         
         
-        # 1.3 Main algorithm
+        # 1.4 Main algorithm
         # First, at each window, update coefficients of each specifications (model)
         # Second, forecast and get its difference from real observations
         # Finally, record them in a list
+        data=data_set(d_var)
         for t_var in textual_vars:
-            # check if the first RHS var is valid (all should be valid here)
+            # Modifying starting date accordingly
+            time_lower = time_col[0]
+            # time_lower = pd.Timestamp('2015-02-01') # just for testing
+            if (base_var == 'RPsdf_growing') | (base_var == 'RPsdf_rolling') | (t_var == 'RPsdf_growing') | (t_var == 'RPsdf_rolling'):
+                time_lower = pd.Timestamp('2002-04-08')
+            elif (base_var =='ovx_cl1') |(t_var == 'ovx_cl1'):
+                time_lower = pd.Timestamp('2007-05-11')
+            # Get time horizon first, because the second element in a pair may have different time horizon than others
+            test_week_list = [time for time in time_col if time>=time_lower+pd.Timedelta(str(7*updating_window*52)+'days')][::frequency]
+            
+            # Update, Forecast and get the prediction error
             if base_var in (ind_var_list(d_var,weeks)+['PCAfreq','PCAsent', 'PCAall']):
-                # updata, forecast and get the error weekly and save the results
                 for week in test_week_list:
                     print(week)
-                    full_vars = [base_var, t_var]
-                    full_diff = rolling_diff_Lasso(d_var, full_vars, week, wk=weeks, window=updating_window, cvs=cv)
+                    model = base_var+', '+t_var
+                    full_diff, _ = prediction_one_week(data, d_var, model_dict[model], model_coef[model], week)
                     full_diff_list[base_var+', '+t_var].extend(full_diff)
-        # 1.4 Save the results
+                    full_RMSE_list[model].append((RMSE(full_diff_list[model])))
+        # 1.5 Save the results
         rmse_result[d_var]=[]
         rmse_result[d_var].extend([RMSE(full_diff_list[base_var+', '+x]) for x in textual_vars])
+        rmse_series[d_var+'_fullrmse_2'] = full_RMSE_list
 
     # 2. Create a DataFrame to save results, more convenient for further interpretation
     rmse_df = pd.DataFrame(rmse_result)
@@ -105,7 +138,7 @@ def main(var):
     rmse_df.index=index
     final_rmse.append(rmse_df)
     
-    return final_rmse[0]
+    return final_rmse[0], rmse_series
 
 # %% 3. Main Process
 if __name__ == '__main__':
@@ -116,7 +149,11 @@ if __name__ == '__main__':
     no_variables=int(sys.argv[3])
     cv_fold=int(sys.argv[4])
     base_var=sys.argv[5]
-
+    # forecasting_week=8
+    # update_frequency=1
+    # no_variables=1
+    # cv_fold=5
+    # base_var='HedgPres'
     ### 3.2 File Naming Strings
     if      forecasting_week == 4: file_suffix = '4wk'
     else:   file_suffix = '8wk'
@@ -135,14 +172,18 @@ if __name__ == '__main__':
     ### 3.3 Use concurrent calculation for the main algorithm
     # result holders for each process
     rmse = pd.DataFrame()
+    rmse_dicts={}
     # 8 dependent variables
     d_vars = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']
     # Main algorithm and save the results
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = executor.map(main, d_vars) 
         for result in results:
-            rmse = pd.concat([rmse, result], axis=1)
+            rmse = pd.concat([rmse, result[0]], axis=1)
+            rmse_dicts.update(result[1])
             
     ### 3.4 Save the results to proper directory
-    rmse.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/fixed_model/'
-                    +file+'/'+file_start+'/'+base_var+'_Lasso_'+cv+'_'+file_suffix+'_2.xlsx')
+    rmse.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/fixed_model/'
+                    +file+'/'+file_start+'/raw/'+base_var+'_Lasso_'+cv+'_'+file_suffix+'_2.xlsx')
+    pickle.dump(rmse_dicts,open('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/fixed_model/'
+                    +file+'/'+file_start+'/rmse/'+base_var+'_Lasso_'+cv+'_'+file_suffix+'_2.p','wb'))

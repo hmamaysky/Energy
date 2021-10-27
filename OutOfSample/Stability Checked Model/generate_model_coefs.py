@@ -46,7 +46,11 @@ def main(d_var):
     frequency=int(sys.argv[2])
     cv=int(sys.argv[3])
     n_round=sys.argv[4]
-    
+
+    # weeks=8
+    # frequency=1
+    # cv=5
+    # n_round='30' 
     # Read in all the models for round n
     model_list = pickle.load(open('shuffled_model_list.p','rb'))[n_round]
     
@@ -87,13 +91,14 @@ def main(d_var):
                 # due to data issue
                 time_col = data_set(d_var)['date']
                 time_lower = time_col[0]
-                if 'ovx_cl1' in str(model):
+                if 'ovx_diff' in str(model):
                     time_lower = pd.Timestamp('2007-05-11')
                 elif ('RPsdf_growing' in str(model)) | ('RPsdf_rolling' in str(model)):
                     time_lower = pd.Timestamp('2002-04-08')
                 test_week_list = [time for time in time_col if time>=time_lower+pd.Timedelta(str(7*updating_window*52)+'days')][::frequency]
                 # Get the coefficients for each week and save them
                 for week in test_week_list:
+                    print(week)
                     _, var_coeff = rolling_diff_stability_coef(data, d_var, model, week, wk=weeks, window=updating_window, cvs=cv)
                     var_coef_dict[model[0]+', '+model[1]][week]=var_coeff
         # 1.2 Save the results
@@ -116,6 +121,10 @@ if __name__ == '__main__':
     cv_fold=int(sys.argv[3])
     n_rounds = sys.argv[4]
 
+    # forecasting_week=8
+    # update_frequency=1
+    # cv_fold=5
+    # n_rounds = '30'
     ### 3.2 File Naming Strings
     if forecasting_week == 4: file_suffix = '4wk'
     else: file_suffix = '8wk'
@@ -129,14 +138,15 @@ if __name__ == '__main__':
     var_coef_dict = dict()
     # 8 dependent variables
     d_var_list = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']
+    # d_var_list = ['DInv', 'DProd']
     with concurrent.futures.ProcessPoolExecutor() as executor:     
         results = executor.map(main, d_var_list)
-        try:
-            for result in results:
-                var_coef_dict.update(result)
-        except:
-            pass
+        # try:
+        for result in results:
+            var_coef_dict.update(result)
+        # except:
+        #     pass
             
     ### 3.4 Save the results to proper directory     
-    pickle.dump(var_coef_dict, open('/user/hw2676/files/Energy/outputs/model_selection/fixed_model/time_varying_model/raw/var_coefs_round_'
+    pickle.dump(var_coef_dict, open('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/fixed_model/time_varying_model/raw/var_coefs_round_'
                                 +n_rounds+'.p','wb'))

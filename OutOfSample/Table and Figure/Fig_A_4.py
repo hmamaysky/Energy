@@ -3,15 +3,7 @@
 """
 Created on Mon May 18 17:10:32 2020
 
-@author: Hongyu Wu
-
-This code makes the matrix plot in the paper.
-The plot has all the variables on the top and on the left hand side edge and is symetric.
-The text vars precede the baseline vars in the var names.
-The blocks indicate the number of times that the corresponding fixed model beats the constant 
-model in all 8 cases (there are 8 dependent variables thus 8 cases).
-Total selection time of a variable is calculated and shown on the right edge.
-There are two blocks indicating the total selection time of all the text vars and the baseline vars respectively
+@author: billwu
 """
 
 import pandas as pd
@@ -29,9 +21,10 @@ def matrix_generate():
     text_vars = ['artcount', 'entropy', 'sent', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
               'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp',
               'PCAsent', 'PCAfreq', 'PCAall']
-    base_vars = ['FutRet', 'xomRet', 'rdsaRet', 'bpRet', 'DOilVol', 'OilVol', 'DInv', 'DProd', 'DSpot',
-              'tnote_10y', 'DFX', 'sp500Ret', 'basis', 'WIPImom_8wk', 
-              'trend', 'vix_spx', 'ovx_cl1', 'RPsdf_growing', 'RPsdf_rolling']
+    base_vars = ['FutRet', 'DSpot', 'DOilVol', 'xomRet', 'bpRet', 'rdsaRet',
+                    'OilVol', 'DInv', 'DProd', 'tnote_10y', 'DFX', 'sp500Ret', 'StkIdx', 'basis', 'WIPI_8wk', 'trend', 
+                    'ovx_diff', 'vix_diff', 'RPsdf_rolling', 'RPsdf_growing', 'BEME', 'Mom', 'BasMom', 
+                    'DolBeta', 'InflaBeta', 'HedgPres', 'liquidity', 'OpenInt']
     all_vars = text_vars + base_vars
     matrix = pd.DataFrame(0, index=all_vars, columns=all_vars)
     return matrix
@@ -45,23 +38,24 @@ def matrix_process(mat, series):
     return mat
 
 def matrix_plot(mat):
-    fig, ax = plt.subplots(figsize=(15,16), dpi=200)
+    fig, ax = plt.subplots(figsize=(17,18), dpi=200)
     cax = ax.matshow(mat, cmap=plt.cm.YlOrRd)
-    fig.colorbar(cax, ticks=[0,1,2,3,4,5,6,7,8], aspect=40, shrink=.8)    
+    fig.colorbar(cax, ticks=[0,1,2,3,4,5,6,7,8], aspect=40, shrink=.7)    
     text_vars = ['artcount', 'entropy', 'sent', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
               'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp',
               'PCAsent', 'PCAfreq', 'PCAall']
-    base_vars = ['FutRet', 'xomRet', 'rdsaRet', 'bpRet', 'DOilVol', 'OilVol', 'DInv', 'DProd', 'DSpot',
-              'tnote_10y', 'DFX', 'sp500Ret', 'basis', 'WIPImom', 
-              'trend', 'vix_spx', 'ovx_cl1', 'sdf_growing', 'sdf_rolling']
+    base_vars = ['FutRet', 'DSpot', 'DOilVol', 'xomRet', 'bpRet', 'rdsaRet',
+                 'OilVol', 'DInv', 'DProd', 'tnote_10y', 'DFX', 'sp500Ret', 'StkIdx', 'basis', 'WIPI', 'trend', 
+                 'ovx_diff', 'vix_diff', 'sdf_rolling', 'sdf_growing', 'BE/ME', 'Mom', 'BasMom', 
+                 'DolBeta', 'InflaBeta', 'HedgPres', 'liquidity', 'OpenInt']
     all_vars = text_vars + base_vars
     ax.set_xticks(np.arange(len(all_vars)))
     ax.set_xticklabels(all_vars, rotation=90)
     ax.set_yticks(np.arange(len(all_vars)))
     bottom, top = ax.get_ylim()
-    ax.hlines([19.5],-0.5,38.5,color='black')
-    ax.vlines([19.5],-0.5,38.5,color='black')
-    ax.set_ylim(bottom+0.5, top-0.5)
+    ax.hlines([19.5],-0.5,47.5,color='black')
+    ax.vlines([19.5],-0.5,47.5,color='black')
+    ax.set_ylim(bottom, top)
     ax.set_yticklabels(all_vars)
     for i in range(mat.shape[0]):
         ax.text(mat.shape[1], i, sum(mat.iloc[i,:]), va='center', ha='center')
@@ -71,20 +65,20 @@ def matrix_plot(mat):
             if i ==1:
                 ax.text(j, mat.shape[0], sum(mat.iloc[:,j]), va='center', ha='center')
     ax.text(mat.shape[1]+1, 9.5, mat.iloc[:20,:].sum().sum(), va='center', ha='center')
-    ax.text(mat.shape[1]+1, 29, mat.iloc[20:,:].sum().sum(), va='center', ha='center')
-    rect_1 = patches.Rectangle((mat.shape[1]+0.4, 8.9),1.2,1.2,
-                             linewidth=1,edgecolor='black',facecolor='none')
-    rect_2 = patches.Rectangle((mat.shape[1]+0.4, 28.4),1.2,1.2,
-                             linewidth=1,edgecolor='black',facecolor='none')    
-    rect_1.set_clip_on(False)
-    rect_2.set_clip_on(False)
-    ax.add_patch(rect_1)
-    ax.add_patch(rect_2)
+    ax.text(mat.shape[1]+1, 33, mat.iloc[20:,:].sum().sum(), va='center', ha='center')
+#    rect_1 = patches.Rectangle((mat.shape[1]+0.4, 8.9),1.2,1.2,
+#                             linewidth=1,edgecolor='black',facecolor='none')
+#    rect_2 = patches.Rectangle((mat.shape[1]+0.4, 32.4),1.2,1.2,
+#                             linewidth=1,edgecolor='black',facecolor='none')    
+#    rect_1.set_clip_on(False)
+#    rect_2.set_clip_on(False)
+#    ax.add_patch(rect_1)
+#    ax.add_patch(rect_2)
+    plt.tight_layout()
     plt.savefig('../matrix_plots/matrix_plot.png')
     
 def main():
-    wkdir = '/Users/billwu/Desktop/2020 Spring/2020 RA/Prof. Harry Mamaysky/Energy Project/Analysis/Prediction Power of textual'
-    wkdir += '/outcome/model selection results/20201116 WIPImom Updates/wipimom_updated/final_codes_test/fixed_model/oneandone/weekly'
+    wkdir = '/Users/billwu/Desktop/2020 Spring/2020 RA/Prof. Harry Mamaysky/Energy Project/revision/new_variables/fixed_model/oneandone/weekly'
     wkdir += '/results'
     os.chdir(wkdir)
     

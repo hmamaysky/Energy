@@ -127,12 +127,12 @@ def select_stable_whole_sample(d_var, var_coefs_dict, lookback=3):
 # %% 2. Main Function    
 def main(d_var, lookback=3):
     # Set working directory
-    wkdir = '/user/hw2676/files/Energy/outputs/model_selection/fixed_model/time_varying_model/raw'
+    wkdir = '/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/fixed_model/time_varying_model/raw'
     os.chdir(wkdir)
     # Read and integrate all the models, 
     # The integrated results will be saved if first_time is set to be 1
     # Later change first_time to 0 to avoid redundant aggregation process
-    var_coefs_dict = read_and_integrate(first_time=1)
+    var_coefs_dict = read_and_integrate(first_time=0)
     # Generate all the stable models for the whole sample period
     selected_models = select_stable_whole_sample(d_var, var_coefs_dict, lookback)
     
@@ -142,6 +142,7 @@ def main(d_var, lookback=3):
 if __name__=='__main__':
     # Get lookback window from command line
     lookback = int(sys.argv[1])
+    # lookback=3
     # Parallelize the whole process to speed up the calculation
     dvar_list = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']
     selected_models_dict = dict()
@@ -151,7 +152,7 @@ if __name__=='__main__':
             selected_models_dict.update(result)
     # Save the results to proper directory
     pickle.dump(selected_models_dict, 
-                open('/user/hw2676/files/Energy/outputs/model_selection/fixed_model/'+
+                open('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/fixed_model/'+
                      'time_varying_model/processed/'+str(lookback)+'yrback_selected_models_with_coefs.p',
                      'wb'))
         

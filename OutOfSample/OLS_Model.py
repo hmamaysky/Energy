@@ -44,10 +44,12 @@ def main():
     weeks=int(sys.argv[1])
     frequency=int(sys.argv[2])
     no_varibles=int(sys.argv[3])
-    
+    # weeks=8
+    # frequency=1
+    # no_varibles=1  
     # d_var list
     d_vars = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']
-
+    # d_vars = ['DInv', 'DProd']
     # Result holder and the lookback window (/yr)
     final_rmse=[]
     updating_windows = [5]
@@ -140,7 +142,9 @@ if __name__ == '__main__':
     forecasting_week=int(sys.argv[1])
     update_frequency=int(sys.argv[2])
     no_variables=int(sys.argv[3])
-    
+    # forecasting_week=8
+    # update_frequency=1
+    # no_variables=1    
     ### 3.2 File Naming Strings
     if    forecasting_week == 4: file_suffix = '4wk'
     else: file_suffix = '8wk'
@@ -155,9 +159,9 @@ if __name__ == '__main__':
     rmse, text_var_df, base_var_df=main()
     
     ### 3.4 Save the results to proper directory
-    rmse[0].to_excel('/user/hw2676/files/Energy/outputs/model_selection/parsimonious/'
-                +file+'/'+file_start+'/'+file_start+'_'+file_suffix+'_M.xlsx')
-    text_var_df.to_csv('/user/hw2676/files/Energy/outputs/model_selection/parsimonious/'
-                       +file+'/'+file_start+'/text_vars_'+file_start+'_'+file_suffix+'_M.csv')
-    base_var_df.to_csv('/user/hw2676/files/Energy/outputs/model_selection/parsimonious/'
-                       +file+'/'+file_start+'/base_vars_'+file_start+'_'+file_suffix+'_M.csv')
+    rmse[0].to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
+                +file+'/'+file_start+'/'+file_start+'_'+file_suffix+'.xlsx')
+    text_var_df.to_csv('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
+                       +file+'/'+file_start+'/text_vars_'+file_start+'_'+file_suffix+'.csv')
+    base_var_df.to_csv('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
+                       +file+'/'+file_start+'/base_vars_'+file_start+'_'+file_suffix+'.csv')

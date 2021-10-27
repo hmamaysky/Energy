@@ -34,7 +34,7 @@ import concurrent.futures
 import numpy as np
 import statsmodels.api as sm
 import statsmodels.regression.linear_model as lm
-
+from OOSfuncs import *
 # %% 1. Defining Functions
 ### See OOSfuncs.py for all the other functions not defined here ###
 
@@ -64,9 +64,9 @@ def rolling_diff(data, d_var, ind_vars, forecast_start):
     date_update_range, date_test_range, date_pca_range=get_test_row_range(data['date'], forecast_start, wk=8, update_window=5)
     
     ### Shift x to match y and set Newey-West max lag
-    lag_vars = ind_var_list(d_var)
+    lag_vars = ind_var_list(d_var,weeks=8)
     lag_vars.remove('trend')
-    lag_vars.remove('WIPIyoy')
+    lag_vars.remove('WIPImom_8wk')
     data_x=data.copy()
     data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
 
@@ -125,9 +125,9 @@ def prediction_one_week(data, d_var, forecast_week, selected_models, constant_fi
         date_update_range, date_test_range, date_pca_range=get_test_row_range(data['date'], forecast_week, wk=8, update_window=5)
         
         ### Shift x to match y and set lag
-        lag_vars = ind_var_list(d_var)
+        lag_vars = ind_var_list(d_var,weeks=8)
         lag_vars.remove('trend')
-        lag_vars.remove('WIPIyoy')
+        lag_vars.remove('WIPImom_8wk')
         data_x=data.copy()
         data_x.loc[:,lag_vars]=data_x.loc[:,lag_vars].shift(8)
     
@@ -197,7 +197,7 @@ def main(d_var, lookback=3):
     data = data_set(d_var)
     
     # Change dir to read in selected models and coefs
-    wkdir = '/user/hw2676/files/Energy/outputs/model_selection/fixed_model/time_varying_model/processed'
+    wkdir = '/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/fixed_model/time_varying_model/processed'
     os.chdir(wkdir)
     
     # Read in all the selected models and coefs
@@ -246,6 +246,7 @@ def main(d_var, lookback=3):
 if __name__=='__main__':
     # Get lookback window from sys arg
     lookback = int(sys.argv[1])
+#    lookback=3
     # Kick off the calculation by parallelization
     dvar_list = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']
     rmse_results = pd.DataFrame()
@@ -254,7 +255,7 @@ if __name__=='__main__':
         for result in results:
             rmse_results = pd.concat([rmse_results, result], axis=1)
     # Save the results
-    rmse_results.to_excel('/user/hw2676/files/Energy/outputs/model_selection/fixed_model/time_varying_model/outputs/'+
+    rmse_results.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/fixed_model/time_varying_model/outputs/'+
                           str(lookback)+'yrstable_model.xlsx')
     
     

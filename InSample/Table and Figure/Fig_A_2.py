@@ -16,8 +16,8 @@ plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams['axes.labelweight'] = 'bold'
 warnings.filterwarnings('ignore')
 
-wkdir = '/Users/billwu/Desktop/2020 Spring/2020 RA/Prof. Harry Mamaysky/Energy Project/Analysis/'
-wkdir += 'Prediction Power of textual/outcome/model selection results/20201116 WIPImom Updates/wipimom_updated/final_codes_test/'
+wkdir = '/Users/billwu/Desktop/2020 Spring/2020 RA/Prof. Harry Mamaysky/Energy Project/revision/'
+wkdir += 'new_variables/'
 
 ### Please Change wkdir, frequency, LHS and fig.suptitle Accordingly
 ### aspect=24 for monthly, =48 for weekly
@@ -32,6 +32,8 @@ os.chdir(wkdir)
 LHS ='8wk'
 text_1and1 = pd.read_csv('text_vars_' + frequency + '_' + LHS +'.csv').rename(columns={'Unnamed: 0':'date'}).set_index('date').transpose().reset_index().rename(columns={'index':'date'})
 base_1and1 = pd.read_csv('base_vars_' + frequency + '_' + LHS +'.csv').rename(columns={'Unnamed: 0':'date'}).set_index('date').transpose().reset_index().rename(columns={'index':'date'})
+base_1and1= base_1and1.replace(['BEME','basismom','mom_fut1','dxy_betas','cpiyr_betas','hp','liquidity','oi','WIPImom_8wk','ovx_cl1','vix_spx','StikIdx'],
+                               ['BE/ME','BasMom','Mom','DolBeta','InflaBeta','HedgPres','liquidity','OpenInt','WIPI','ovx_diff','vix_diff','StkIdx'])
 
 #text_2and2 = pd.read_csv('text_vars_2and2.csv').rename(columns={'Unnamed: 0':'date'})
 #base_2and2 = pd.read_csv('base_vars_2and2.csv').rename(columns={'Unnamed: 0':'date'})
@@ -61,7 +63,7 @@ def plotting_base(result_set):
     ax[-1].set_xticklabels(xlabel, fontsize=15)
     plt.setp(ax[-1].get_xticklabels(), rotation=30, ha="right",
                  rotation_mode="anchor")
-    fig.suptitle('1-and-1 Model: Selected Baseline Variables (LHS: '+', '.join(d_vars[:4])+ ')', fontsize=30)
+    fig.suptitle('1-and-1 Model: Selected Nontext Variables (LHS: '+', '.join(d_vars[:4])+ ')', fontsize=30)
     fig.tight_layout()
     fig.subplots_adjust(top=0.93)
     plt.savefig('vars plot M/'+LHS+'1.png',bbox_inches = 'tight',
@@ -84,7 +86,7 @@ def plotting_base(result_set):
     ax[-1].set_xticklabels(xlabel, fontsize=15)
     plt.setp(ax[-1].get_xticklabels(), rotation=30, ha="right",
                  rotation_mode="anchor")   
-    fig.suptitle('1-and-1 Model: Selected Baseline Variables (LHS: '+', '.join(d_vars[4:8])+ ')', fontsize=30)
+    fig.suptitle('1-and-1 Model: Selected Nontext Variables (LHS: '+', '.join(d_vars[4:8])+ ')', fontsize=30)
     fig.tight_layout()
     fig.subplots_adjust(top=0.93)
     plt.savefig('vars plot M/'+LHS+'2.png',bbox_inches = 'tight',

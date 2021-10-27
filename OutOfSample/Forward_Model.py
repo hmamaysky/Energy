@@ -46,16 +46,19 @@ def main(d_var):
     frequency=int(sys.argv[2])
     no_varibles=int(sys.argv[3])
     cv=int(sys.argv[4])
-    
+    # weeks=8
+    # frequency=1
+    # no_varibles=2
+    # cv=5
     ### 1. The vars of the forward selection models from the in-sample analysis
-    forward_selected_models={'FutRet':['FutRet', 'DInv', 'WIPImom_8wk', 'OilVol', 'DOilVol', 'DFX', 'basis', 'sEnv'],
-                             'xomRet':['xomRet', 'sp500Ret', 'sGom', 'tnote_10y', 'DFX', 'WIPImom_8wk', 'sRpc', 'DInv'],
-                             'bpRet':['bpRet', 'sp500Ret', 'sEp', 'DFX', 'DSpot', 'fEp', 'sGom', 'tnote_10y'],
-                             'rdsaRet':['rdsaRet', 'WIPImom_8wk', 'VIX', 'sEnv', 'fBbl', 'fGom', 'DInv', 'sEp'],
-                             'DSpot':['DSpot', 'fRpc', 'fBbl', 'basis', 'WIPImom_8wk', 'sp500Ret', 'sEnv', 'entropy'],
-                             'DOilVol':['DOilVol', 'OilVol', 'DSpot', 'VIX', 'entropy', 'fGom', 'fCo', 'PCAsent'],
-                             'DInv':['DInv', 'DProd', 'artcount', 'fRpc', 'VIX', 'entropy', 'vix_spx', 'sEp'],
-                             'DProd':['DProd', 'sEp', 'DInv', 'sBbl', 'fRpc', 'DOilVol', 'artcount', 'sp500Ret']}
+    forward_selected_models={'FutRet':['FutRet',  'DSpot' ,'WIPI_8wk', 'basis', 'sEnv', 'OilVol', 'sGom', 'entropy'],
+                             'xomRet':['xomRet', 'StikIdx', 'sGom', 'tnote_10y', 'sRpc', 'entropy', 'DOilVol', 'fCo'],
+                             'bpRet':['bpRet', 'StikIdx', 'Mom', 'sEnv', 'sEp', 'sGom', 'entropy', 'vix_diff'],
+                             'rdsaRet':['rdsaRet', 'StikIdx', 'WIPI_8wk', 'VIX', 'DInv', 'sEnv', 'sGom', 'fBbl'],
+                             'DSpot':['DSpot', 'FutRet', 'basis', 'WIPI_8wk', 'sEnv', 'OilVol', 'DProd', 'entropy'],
+                             'DOilVol':['DOilVol', 'OilVol', 'WIPI_8wk', 'FutRet', 'fGom', 'VIX', 'entropy', 'fCo'],
+                             'DInv':['DInv', 'artcount', 'fRpc', 'DProd', 'entropy', 'VIX', 'HedgPres', 'basis'],
+                             'DProd':['DProd', 'sEp', 'DOilVol', 'sBbl', 'BEME', 'sp500Ret','StikIdx', 'fBbl']}
 
     ### 2. Data Preparation
     # 2.1 Full Dependent Variable List for later loop
@@ -79,9 +82,12 @@ def main(d_var):
         data = data_set(d_var)
         # 2.4.2 Get the specification of the forward model (top 2 or top 7)
         forward_vars = forward_selected_models[d_var][:no_varibles+1]
+        print(forward_vars)
         # 2.4.3 lists to store the diff between the prediction and the real data
         constant_diff_list = []
         forward_diff_list = []
+        constant_RMSE_list = []
+        forward_RMSE_list = []       
         # 2.4.4 dict to store the coeff of each var
         var_coeff_ = dict()     
         # 2.4.5 Get the exact date of each window (monthly)
@@ -102,7 +108,8 @@ def main(d_var):
             # 3.2 Append diffs to lists              
             constant_diff_list.extend(constant_diff)                
             forward_diff_list.extend(forward_diff)
-            
+            constant_RMSE_list.append(RMSE(constant_diff_list))
+            forward_RMSE_list.append(RMSE(forward_diff_list))
             # 3.3 Save the var coeffs
             var_coeff_[week]=var_coeff
             
@@ -115,15 +122,17 @@ def main(d_var):
     ### 4. Process and Return the results
     rmse_df = pd.DataFrame(rmse_result)
     rmse_df.index=['Constant', 'Forward Model']
-
-    return rmse_df, var_coef_result
+    
+    rmse_series_df = pd.DataFrame({d_var+'_constant':constant_RMSE_list,d_var+'_forward':forward_RMSE_list})
+    return rmse_df, var_coef_result, rmse_series_df
 
 # %% 3. Main Process
 if __name__ == '__main__':
     ### Sys args for file naming
     forecasting_week=int(sys.argv[1])
     no_variables=int(sys.argv[3])
-
+    # forecasting_week=8
+    # no_variables=2
     ### File naming 
     if forecasting_week == 4:
         file_suffix = '4wk'
@@ -133,21 +142,26 @@ if __name__ == '__main__':
     ### Use concurrent calculation for the main algorithm
     # result holders for each process
     rmse_df=pd.DataFrame()
+    rmse_series_df=pd.DataFrame()
     var_coef_dict = dict()
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         # 8 dependent vars
         d_var_list = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']
+        # d_var_list = ['DInv', 'DProd']
         # Main algorithm and save the results
         results = executor.map(main, d_var_list)
         try:
             for result in results:
                 rmse_df = pd.concat([rmse_df, result[0]], axis=1)
+                rmse_series_df = pd.concat([rmse_series_df, result[2]], axis=1)
                 var_coef_dict.update(result[1])
         except:
             pass
     # Save the outputs to certain directory
-    rmse_df.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/parsimonious/forward_models/Lasso_10fold_'
+    rmse_df.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/forward_models/Lasso_10fold_'
                     +file_suffix+str(no_variables)+'vars_forward.xlsx')
-    pickle.dump(var_coef_dict, open('/user/hw2676/files/Energy/outputs/wipimom_updated/final_codes_test/parsimonious/forward_models/var_coef_'
+    rmse_series_df.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/forward_models/Lasso_10fold_'
+                    +file_suffix+str(no_variables)+'vars_forward_rmses.xlsx')
+    pickle.dump(var_coef_dict, open('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/forward_models/var_coef_'
                                 +str(no_variables)+'vars_forward.p','wb'))

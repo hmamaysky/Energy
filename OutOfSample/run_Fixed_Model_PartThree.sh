@@ -8,9 +8,9 @@
 ## x: baseline variable
 
 # directory of the code
-FS='/user/hw2676/code/Energy/Analysis/Predictive_Power_of_Textual_measures/Fixed_model/5.0Version'
+FS='/user/hw2676/code/Energy/Analysis/New_Var/2.0Version/analysis_codes'
 
-declare -a baselist=("FutRet" "xomRet" "bpRet" "rdsaRet" "DOilVol" "OilVol" "DInv" "DProd" "DSpot" "tnote_10y" "DFX" "sp500Ret" "basis" "WIPIyoy" "trend" "RPsdf_growing" "RPsdf_rolling" "vix_spx" "ovx_cl1")
+declare -a baselist=("FutRet" "xomRet" "bpRet" "rdsaRet" "StikIdx" "DOilVol" "OilVol" "DInv" "DProd" "DSpot" "tnote_10y" "DFX" "sp500Ret" "basis" "WIPI_8wk" "trend" 'BEME' 'Mom' 'VIX' 'BasMom' 'DolBeta' 'InflaBeta' 'HedgPres' 'liquidity' 'OpenInt' "RPsdf_growing" "RPsdf_rolling" "vix_diff" "ovx_diff")
               
 # run the code for different years and months
 for w in 8; do 

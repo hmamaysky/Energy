@@ -3,7 +3,7 @@
 ## y: lookback year window
 
 # directory of the code
-FS='/user/hw2676/code/Energy/Analysis/Predictive_Power_of_Textual_measures/Fixed_model/6.0Version'
+FS='/user/hw2676/code/Energy/Analysis/New_Var/1.0Version/analysis_codes/Stability_Filtered_Model'
 
 # run the code for different years and months
 for y in {1..5}; do 
