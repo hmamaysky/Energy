@@ -11,10 +11,6 @@ Contains codes for OOS analysis for the Energy Project
 - Lasso_Model.py tests the performance of the model with R2 based var selection and Lasso coefficient update
 - Fixed_Model*.py tests the performance of the fixed models, there are three parts, covering all the 1-1 pairs from the combined (text and base) var pool
 - Stability Checked Model contains all the codes for an alternative fixed model, please refer to the README file there for further details.
-#### Codes for Plotting/Interpretation
-- 1-1 plot.py plots the time series of the selected variables in the Lasso Update Model.
-- best_oneandone.py extracts the winning fixed models for each dependent variable, calculate the MSE ratios against the constant models and save them in .csv
-- matrix_plots.py plots the summary matrix for the fixed model. Please refer to the comments in the file for details.
 
 
 ### Notes before Running Analysis
@@ -53,6 +49,8 @@ chmod u+x run_Lasso_Model.sh
 ./run_Lasso_Model.sh
 ```
 4. Fixed Model 
+
+Here, we run all the steps in Stability Checked model first to save time on data processing. Please refer to the folder for details. After that, run following codes.
 ```
 chmod u+x Fixed*
 
@@ -62,19 +60,4 @@ chmod u+x run_Fixed*
 
 sge_run --grid_submit=batch ./run_Fixed*
 ```
-5. Subsequent Plots/Interpretation for the Lasso Model
-```
-chmod u+x 1-1 plot.py
 
-sge_run --grid_mem=10G --grid_submit=batch './1-1 plot.py'
-```
-6. Subsequent Plots/Interpretation for the Fixed Model
-```
-chmod u+x best_oneandone.py
-
-sge_run --grid_mem=10G --grid_submit=batch './best_oneandone.py'
-
-chmod u+x matrix_plots.py
-
-sge_run --grid_mem=10G --grid_submit=batch './matrix_plots.py'
-```
