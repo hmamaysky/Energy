@@ -481,6 +481,7 @@ def summary_driver(date_dict={0:('2003-04-25','2007-11-30'),
     return details, data_proc
 # %%
 if __name__ == "__main__":
+    # These time intervals are for subsample analysis, for full sample (Table A IX), just pass in the whole sample period as one interval.
     time_dict={0:('2003-04-25','2005-03-31'),
                1:('2005-04-01','2007-11-30'),
                2:('2007-12-01','2009-06-30'),
