@@ -34,12 +34,12 @@ Contains codes for In Sample analysis for the Energy Project
 ### Procedures
 1. In Sample Forward Selection Model
 ```
-stepwiseForwardSelection_detrended.R
+- stepwiseForwardSelection_detrended.R
 ```
 
 2. Monte Carlo Simulation
 ```
-Monte_Carlo_forwardSelection.R
+- Monte_Carlo_forwardSelection.R
 ```
 3. Creating Some Tables
 ```
