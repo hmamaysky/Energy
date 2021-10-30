@@ -43,11 +43,11 @@ Monte_Carlo_forwardSelection.R
 ```
 3. Creating Some Tables
 ```
-Table_V.R
-Table_A_IV.R 
-Table_A_V.R
-Table_A_VII.R
-Fig_1.py
-Fig_2.py
-Fig_A_1.py
+- Table_V.R
+- Table_A_IV.R 
+- Table_A_V.R
+- Table_A_VII.R
+- Fig_1.py
+- Fig_2.py
+- Fig_A_1.py
 ```
