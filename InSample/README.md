@@ -10,7 +10,7 @@ Contains codes for In Sample analysis for the Energy Project
   - ```Monte_Carlo_forwardSelection.R``` performs monte carlo simulation to control for small-sample biases in R-squareds and t-statistics.
   - Figure 3 and Figure 4 are created in Monte_Carlo_forwardSelection.R.
 
-- In Tables folder: 
+- In Tables and Figures folder: 
   - R codes in this folder are used to create some tables in the paper. 
     - ```Table_V.R```: Table V- "Measuring Instability of In-Sample Forward Selection Results"
     - ```Table_A_IV.R```: Table A.IV- "Count of Selected and Statistically Significant Variables of Forward Selection Model"
