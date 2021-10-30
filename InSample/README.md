@@ -16,6 +16,10 @@ Contains codes for In Sample analysis for the Energy Project
     - ```Table_A_IV.R```: Table A.IV- "Count of Selected and Statistically Significant Variables of Forward Selection Model"
     - ```Table_A_V.R```: Table V- "F-test for the Eight-Week Stepwise Forward Selection"
     - ```Table_A_VII.R```: Table A.VII- "Subperiod stepwise forward selection at the eight-week horizon"
+    - ```Fig_1.py```: Figure 1- "Word cloud plots for energy topics" 
+    - ```Fig_2.py```: Figure 2- "NLP measures over time"
+    - ```Fig_A_1.py```: Figure A.1- "Clustered Correlation Plot of all Independent Variable Series"
+ 
  
 ### Notes for Further Processing of Results
 - Results of Forward Selection Model are self explanatory. Each specification has a word file for regression stats and the order of selected variables is the same as the row orders. The results are used for creating Table IV and Table A.VI. 
@@ -43,4 +47,7 @@ Table_V.R
 Table_A_IV.R 
 Table_A_V.R
 Table_A_VII.R
+Fig_1.py
+Fig_2.py
+Fig_A_1.py
 ```
