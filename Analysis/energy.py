@@ -597,3 +597,19 @@ def find_outliers(serd,txtd):
                 print()
 
     series_outliers('stopic','Sent',sort_ascending=True)
+
+############################## plot some summary stats ##############################
+
+def plot_depvar_corrs():
+
+    dd = pd.read_stata('c:/users/harry/code/Energy/data/transformed_data_physical_v19.dta')
+    cc = dd[['DProd_Wed','DInv_Wed','DSpot_Tue','FutRet_Tue',
+             'DOilVol_Tue','xomRet_Tue','bpRet_Tue','rdsaRet_Tue']].corr()
+    cc.columns = cc.columns.str.replace('_Wed','')
+    cc.columns = cc.columns.str.replace('_Tue','')
+    cc.index = cc.index.str.replace('_Wed','')
+    cc.index = cc.index.str.replace('_Tue','')
+    sns.heatmap(cc,annot=True,fmt='.2f')
+    ## show the dates of the analysis too
+    print('From {} to {}'.format(dd['date_Tue'][0],dd['date_Tue'][1]))
+    

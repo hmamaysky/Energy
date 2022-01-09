@@ -20,3 +20,5 @@ df = oos.compare_sim_data(num_sims=500000)
 # %% probs for runs -- example
 prun = oos.prob_of_run(0.282,3,7,verbose=True)
 print(prun)
+# %% some data plots
+en.plot_depvar_corrs()
