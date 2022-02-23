@@ -64,7 +64,7 @@ class OOSResults():
         assert (self.data['var1'] != self.data['var2']).all()
 
         ## Check #2: see if any pairs exists where {a,b} shows up as {b,a}
-        print('\tDuplicate models? ',end='')
+        print('\tChecking for duplicate models in: ',end='')
         for depvar in self.data.depvar.unique():
 
             print(depvar,end=' ')
@@ -78,7 +78,7 @@ class OOSResults():
                     dups.append({'Y':depvar,'v1':ii,'v2':jj,'idx1':idx1,'idx2':idx2})
 
             assert len(dups) == 0
-        print()
+        print('... none found.')
 
 
     def calc_runs(self):
@@ -343,7 +343,7 @@ class OOSResults():
                                 'diff'+str(kk)])
             
         sim_df.index = index_names
-        sim_df.loc['q', :] = qlist
+        sim_df.loc['q', :] = qlist.values
         
         sim_df = sim_df.loc[['q'] + index_names, :]
         sim_df.columns = calc_res.loc['Dep Var', :]
