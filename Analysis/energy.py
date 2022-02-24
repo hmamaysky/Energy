@@ -4,7 +4,8 @@ from datetime import datetime, timedelta, date
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import Counter
-from scipy.stats import binom
+from scipy.stats import binom, norm
+from scipy.linalg import cholesky
 
 __text_dir__ = '/shared/share_mamaysky-glasserman/energy_drivers/2020-11-16'
 __out_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/results'
@@ -142,11 +143,11 @@ class OOSResults():
 
         ## not implemented
         if kk == 0:
-            return np.nan
+            return (1-qq)**nn
         
         ## the only special case is a run of length nn
         if kk == nn:
-            return qq**kk
+            return qq**nn
         
         ## shorter runs can be at the corners or the interior
         prs = np.zeros(nn-kk+1)
@@ -226,6 +227,7 @@ class OOSResults():
                 nrun = res[rr]
                 prun = self.prob_of_run(qq,kk,nn=len(self.per_cols))
                 ##print(qq,'Prob run of length {} = {}'.format(kk,prun))
+                breakpoint()
                 pval = 1 - sum(binom.pmf(range(nrun+1),tot_mods,prun))
                 ##print('Prob > {} runs = {}'.format(nrun,pval))
                 res[rr+'-p'] = '({:.2f})'.format(pval)
@@ -350,6 +352,42 @@ class OOSResults():
         return sim_df
 
 
+def check_corr_binom(num_draws,prob_success,corr=0.3):
+    '''
+    Compare the PDF of correlated binomials with non-correlated ones to make sure
+    PDF is identical.
+    '''
+
+    nsims = 7500
+    Sig = np.ones((num_draws,num_draws))
+    Sig *= corr
+    np.fill_diagonal(Sig,1)
+    cc = cholesky(Sig,lower=True)
+
+    ## get normal value corresponding to prob_success
+    cutoff = norm.ppf(prob_success)
+    
+    ## sanity check that cholesky decomposition works
+    assert abs(Sig-np.dot(cc,cc.T)).max() < 1e-15
+
+    ## run sims
+    res = []
+    for ii in range(nsims):
+
+        ## draw bunch of correlated normals
+        rv = norm.rvs(size=(num_draws,1))
+        rv = np.dot(cc,rv)
+
+        ## check number less than cutoff
+        n_success = len(rv[rv<cutoff])
+
+        res.append(n_success)
+
+    ## plotting
+    plt.hist(res,density=True,bins=30)
+    xxr = range(np.min(res),np.max(res)+1)
+    zz = binom.pmf(xxr,num_draws,prob_success)
+    plt.plot(xxr,zz,color='red')
     
     
 ############################## Read in text data ##############################

@@ -16,7 +16,7 @@ oos = en.OOSResults()
 oosatt = oos.calc('All',saveout=True)
 oostxt = oos.calc('Text',saveout=True)
 # %% simulations to verify closed form probs of length-k runs
-df = oos.compare_sim_data(num_sims=200000)
+df = oos.compare_sim_data(num_sims=50000)
 # %% probs for runs -- example
 prun = oos.prob_of_run(0.282,3,7,verbose=True)
 print(prun)
