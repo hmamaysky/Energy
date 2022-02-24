@@ -98,7 +98,7 @@ class OOSResults():
             ## for the OOS runs comparisons since not all periods are observed.  Then
             ## ignore this row for future analysis of runs, and send back None
             if rr.isna().any(): return {'drop_row':True}
-            
+
             ## convert indicators to a string and then find all runs of 1, i.e.
             ## 1+ -- which means all instances of 1 occurring 1 or more times
             strform = ''.join(str(int(el)) for el in rr[self.per_cols])
@@ -113,7 +113,7 @@ class OOSResults():
         runs_counts.columns = [el if not isinstance(el,int) else 'Run'+str(el)
                                for el in runs_counts.columns]
         runs_counts = runs_counts[runs_counts.columns.sort_values()]
-        
+
         self.data = pd.concat([self.data,runs_counts],axis=1)
         
     def prob_of_run(self,qq,kk,nn,verbose=False):
@@ -141,11 +141,11 @@ class OOSResults():
         We can then tabulate the prob of each m for each observed LHS variable.
         '''
 
-        ## not implemented
+        ## all failures (0 runs)
         if kk == 0:
             return (1-qq)**nn
         
-        ## the only special case is a run of length nn
+        ## all successes (run of length n)
         if kk == nn:
             return qq**nn
         
@@ -216,22 +216,33 @@ class OOSResults():
                    '# All/Txt':'{}/{}'.format(len(all_vars),len(txt_vars))
             }
 
-            ## get number of pairs {var1,var2} that have a run on a certain length
+            ## put in the zero runs row; 'Runs' contains all combinations with at least
+            ## one period of outperformance relative to constant
+            res['Run0'] = res['Max Runs'] - res['Runs']
+
+            ## get number of pairs {var1,var2} that have a run of a certain length
             runs_indic = thed[run_cols].apply(lambda xx: (xx >= 1).sum(),axis=0)
             res.update(runs_indic)
 
             ## calculate the p-value for each number
-            for rr in run_cols:
+            for rr in ['Run0'] + run_cols:
                 qq = res['q']
                 kk = int(re.findall('[0-9]',rr)[0])
                 nrun = res[rr]
                 prun = self.prob_of_run(qq,kk,nn=len(self.per_cols))
                 ##print(qq,'Prob run of length {} = {}'.format(kk,prun))
-                breakpoint()
                 pval = 1 - sum(binom.pmf(range(nrun+1),tot_mods,prun))
+
+                #### corr
+                #corr = 0.03
+                #sims = check_corr_binom(int(tot_mods),prun,corr=corr,plot=False)
+                #pval2 = len(sims[sims >= nrun])/len(sims)
+                #print(pval,'<<<>>>',pval2)
+
                 ##print('Prob > {} runs = {}'.format(nrun,pval))
+                res[rr+'-prun'] = '{:.2f}'.format(prun)
                 res[rr+'-p'] = '({:.2f})'.format(pval)
-            
+
             return pd.DataFrame(res,index=[0])
 
         ## get all results
@@ -242,8 +253,9 @@ class OOSResults():
             
         ## reorder columns (these will become the rows of the table post-transpose)
         cols = ['Dep Var','Runs','Max Runs','q','# All/Txt']
-        for ii in range(1,len(run_cols)+1):
+        for ii in range(0,len(run_cols)+1):
             cols.append('Run'+str(ii))
+            cols.append('Run'+str(ii)+'-prun')
             cols.append('Run'+str(ii)+'-p')
         allres = allres[cols]
 
@@ -278,7 +290,7 @@ class OOSResults():
                         
                     if ii == 0:
                         fmt += 'BT'
-                    elif ii == pltres['index'].to_list().index('Run1'):
+                    elif ii == pltres['index'].to_list().index('Run0'):
                         fmt += 'T'
                     elif ii == pltres.shape[0]-1:
                         fmt += 'B'
@@ -288,13 +300,15 @@ class OOSResults():
             plt.axis('off')
             plt.title('Out-of-sample runs analysis: {} models'.format(varset),
                       y=0.99,fontsize=12)
+
+            print('Not saving. Just plotting.')
             
         return allres
     
     def compare_sim_data(self, str_len=7, num_sims=100000):
         """
-        Compares the probability of probability of seeing at least one run of length kk
-        with the fraction of rows that have at least one run of length kk calculated by simulation
+        Compares the probability of seeing at least one run of length kk with the fraction of
+        rows that have at least one run of length kk calculated by simulation.
         """
         calc_res = self.calc(varset='All')
         qlist = calc_res.loc['q']
@@ -352,13 +366,16 @@ class OOSResults():
         return sim_df
 
 
-def check_corr_binom(num_draws,prob_success,corr=0.3):
+def check_corr_binom(num_draws,prob_success,corr=0.3,plot=True):
     '''
     Compare the PDF of correlated binomials with non-correlated ones to make sure
     PDF is identical.
+
+    num_draws -- the number of possible models to evaluate for presense of runs
+    (each model is assumed to be characterized by a length-7 string of 0s and 1s)
     '''
 
-    nsims = 7500
+    nsims = 5000
     Sig = np.ones((num_draws,num_draws))
     Sig *= corr
     np.fill_diagonal(Sig,1)
@@ -384,11 +401,14 @@ def check_corr_binom(num_draws,prob_success,corr=0.3):
         res.append(n_success)
 
     ## plotting
-    plt.hist(res,density=True,bins=30)
-    xxr = range(np.min(res),np.max(res)+1)
-    zz = binom.pmf(xxr,num_draws,prob_success)
-    plt.plot(xxr,zz,color='red')
-    
+    if plot:
+        plt.hist(res,density=True,bins=30)
+        xxr = range(np.min(res),np.max(res)+1)
+        zz = binom.pmf(xxr,num_draws,prob_success)
+        plt.plot(xxr,zz,color='red')
+
+    return np.array(res)
+        
     
 ############################## Read in text data ##############################
 

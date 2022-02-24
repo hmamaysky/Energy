@@ -13,8 +13,8 @@ en.plot_text_stats(serd)
 # %% read in and process OOS results
 oos = en.OOSResults()
 # %% calculate various stats
-oosatt = oos.calc('All',saveout=True)
-oostxt = oos.calc('Text',saveout=True)
+oosall = oos.calc('All',saveout=True)
+##oostxt = oos.calc('Text',saveout=True)
 # %% simulations to verify closed form probs of length-k runs
 df = oos.compare_sim_data(num_sims=50000)
 # %% probs for runs -- example
