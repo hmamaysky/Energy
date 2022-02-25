@@ -376,25 +376,30 @@ def check_corr_binom(num_draws,prob_success,corr=0.3,plot=True):
     '''
 
     nsims = 5000
-    Sig = np.ones((num_draws,num_draws))
-    Sig *= corr
-    np.fill_diagonal(Sig,1)
-    cc = cholesky(Sig,lower=True)
+    #Sig = np.ones((num_draws,num_draws))
+    #Sig *= corr
+    #np.fill_diagonal(Sig,1)
+    #cc = cholesky(Sig,lower=True)
+    #
+    ## sanity check that cholesky decomposition works
+    ##assert abs(Sig-np.dot(cc,cc.T)).max() < 1e-15
 
     ## get normal value corresponding to prob_success
     cutoff = norm.ppf(prob_success)
     
-    ## sanity check that cholesky decomposition works
-    assert abs(Sig-np.dot(cc,cc.T)).max() < 1e-15
-
     ## run sims
     res = []
     for ii in range(nsims):
 
         ## draw bunch of correlated normals
         rv = norm.rvs(size=(num_draws,1))
-        rv = np.dot(cc,rv)
+        ff = norm.rvs()
+        
+        ##rv = np.dot(cc,rv)
 
+        ##rv[:200] = np.sqrt(corr) * ff + np.sqrt(1-corr) * rv[:200]
+        rv = np.sqrt(corr) * ff + np.sqrt(1-corr) * rv
+        
         ## check number less than cutoff
         n_success = len(rv[rv<cutoff])
 
