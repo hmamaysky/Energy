@@ -3,6 +3,7 @@ import os, re, numpy as np
 from datetime import datetime, timedelta, date
 import matplotlib.pyplot as plt
 import seaborn as sns
+import math
 from collections import Counter
 from scipy.stats import binom, norm
 from scipy.linalg import cholesky
@@ -184,6 +185,8 @@ class OOSResults():
         '''
 
         assert varset in ['All','Text']
+
+        nsims = 2500 ## number of simulations for correlated outcomes case
         
         ## the columns containig the run counts
         run_cols = [el for el in self.data.columns if re.search('Run[0-9]',el)]
@@ -233,15 +236,21 @@ class OOSResults():
                 ##print(qq,'Prob run of length {} = {}'.format(kk,prun))
                 pval = 1 - sum(binom.pmf(range(nrun+1),tot_mods,prun))
 
-                #### corr
-                #corr = 0.03
-                #sims = check_corr_binom(int(tot_mods),prun,corr=corr,plot=False)
-                #pval2 = len(sims[sims >= nrun])/len(sims)
-                #print(pval,'<<<>>>',pval2)
+                ## check distribution allowing for correlated draws
+                if varset == 'Text':
+                    varsA = len(txt_vars)
+                    varsB = len(all_vars)-len(txt_vars)
+                else:
+                    varsA = len(all_vars)
+                    varsB = 0
 
+                sims = correlated_binom(varsA,varsB,prun,common=1,nsims=nsims,plot=False)
+                pval2 = len(sims[sims > nrun])/len(sims)
+                
                 ##print('Prob > {} runs = {}'.format(nrun,pval))
-                res[rr+'-prun'] = '{:.2f}'.format(prun)
-                res[rr+'-p'] = '({:.2f})'.format(pval)
+                res[rr+'-sprob'] = f'{prun:.3f}'
+                res[rr+'-pval'] = f'({pval:.2f})'
+                res[rr+'-pval2'] = f'({pval2:.2f})'
 
             return pd.DataFrame(res,index=[0])
 
@@ -255,8 +264,9 @@ class OOSResults():
         cols = ['Dep Var','Runs','Max Runs','q','# All/Txt']
         for ii in range(0,len(run_cols)+1):
             cols.append('Run'+str(ii))
-            cols.append('Run'+str(ii)+'-prun')
-            cols.append('Run'+str(ii)+'-p')
+            cols.append('Run'+str(ii)+'-sprob')
+            cols.append('Run'+str(ii)+'-pval')
+            cols.append('Run'+str(ii)+'-pval2')
         allres = allres[cols]
 
         ## transpose table -- result cols becomes rows and cols are LHS vars
@@ -272,6 +282,8 @@ class OOSResults():
         if saveout:
 
             pltres = allres.reset_index()
+            ## prettify row labels
+            pltres['index'] = [re.sub('Run[0-9]-','',el) for el in pltres['index']]
             
             fig = plt.figure(figsize=(7,0.25*pltres.shape[0]),dpi=200)
             tbl = plt.table(pltres.round(3).values,
@@ -281,6 +293,7 @@ class OOSResults():
             ## set edges
             for ii in range(pltres.shape[0]):
                 for jj in range(pltres.shape[1]):
+
                     if jj == 0:
                         fmt = 'LR'
                     elif jj == pltres.shape[1]-1:
@@ -290,7 +303,7 @@ class OOSResults():
                         
                     if ii == 0:
                         fmt += 'BT'
-                    elif ii == pltres['index'].to_list().index('Run0'):
+                    elif re.search('Run[0-9]$',pltres['index'][ii]):
                         fmt += 'T'
                     elif ii == pltres.shape[0]-1:
                         fmt += 'B'
@@ -298,11 +311,14 @@ class OOSResults():
 
             plt.axis('tight')
             plt.axis('off')
-            plt.title('Out-of-sample runs analysis: {} models'.format(varset),
+            plt.title(f'Out-of-sample runs analysis: {varset} models',
                       y=0.99,fontsize=12)
 
-            print('Not saving. Just plotting.')
-            
+            ## save output
+            fname = __out_dir__ + f'/runs-tests-for-{varset}-sims-{nsims}-{date.today()}.pdf'
+            print('Saving to',fname)
+            plt.savefig(fname,bbox_inches='tight')
+
         return allres
     
     def compare_sim_data(self, str_len=7, num_sims=100000):
@@ -366,50 +382,68 @@ class OOSResults():
         return sim_df
 
 
-def check_corr_binom(num_draws,prob_success,corr=0.3,plot=True):
+def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
     '''
     Compare the PDF of correlated binomials with non-correlated ones to make sure
     PDF is identical.
 
-    num_draws -- the number of possible models to evaluate for presense of runs
-    (each model is assumed to be characterized by a length-7 string of 0s and 1s)
-    '''
+    varsA -- the number of possible variables that go into 2-variable models
+    (each model is assumed to be characterized by a length-7 string of 0s and 1s);
+    each type A variable is assumed to enter with every other type A variable
 
-    nsims = 5000
-    #Sig = np.ones((num_draws,num_draws))
-    #Sig *= corr
-    #np.fill_diagonal(Sig,1)
-    #cc = cholesky(Sig,lower=True)
-    #
-    ## sanity check that cholesky decomposition works
-    ##assert abs(Sig-np.dot(cc,cc.T)).max() < 1e-15
+    varsB -- the number of type B variables; type B variables only interact with type A
+    variables, not not with other type B variables (e.g., type A are text, and type B are non-text
+    would capture all models containing at least one text variable)
+    '''
 
     ## get normal value corresponding to prob_success
     cutoff = norm.ppf(prob_success)
+
+    ## calc the number of models
+    num_models = math.comb(varsA,2) + varsA*varsB
+    print(f'Using: cutoff = {cutoff:.3}  # models = {num_models}')
     
     ## run sims
     res = []
-    for ii in range(nsims):
+    for aa in range(nsims):
 
+        if (aa+1) % 500 == 0:
+            print(aa,end=' ')
+        
         ## draw bunch of correlated normals
-        rv = norm.rvs(size=(num_draws,1))
-        ff = norm.rvs()
+        rv = norm.rvs(size=(num_models,1))
+        fA = norm.rvs(size=(varsA,1))
         
-        ##rv = np.dot(cc,rv)
+        ## create factor structure of A-type shocks
+        base = 0
+        for ii in range(varsA-1):
+            locf = np.sqrt(0.5) * (fA[ii] + fA[(ii+1):])
+            idx = range(base,base + varsA - ii - 1)
+            rv[idx] = np.sqrt(common) * locf + np.sqrt(1-common) * rv[idx]
+            base = base + varsA - ii - 1
 
-        ##rv[:200] = np.sqrt(corr) * ff + np.sqrt(1-corr) * rv[:200]
-        rv = np.sqrt(corr) * ff + np.sqrt(1-corr) * rv
-        
+        ## add to these the B-type shocks if there are any
+        if varsB != 0:
+            fB = norm.rvs(size=(varsB,1))
+            for ii in range(varsA):
+                locf = np.sqrt(0.5) * (fA[ii] + fB) ## one A-type and all B-types
+                idx = range(base,base + varsB)
+                rv[idx] = np.sqrt(common) * locf + np.sqrt(1-common) * rv[idx]
+                base = base + varsB
+                
         ## check number less than cutoff
         n_success = len(rv[rv<cutoff])
 
         res.append(n_success)
 
+    print()
+    assert base == num_models ## the count variables (base) and ex-ante calc'd (num_models)
+
     ## plotting
     if plot:
-        plt.hist(res,density=True,bins=30)
+        plt.hist(res,density=True,bins=50)
         xxr = range(np.min(res),np.max(res)+1)
-        zz = binom.pmf(xxr,num_draws,prob_success)
+        zz = binom.pmf(xxr,num_models,prob_success)
         plt.plot(xxr,zz,color='red')
 
     return np.array(res)
