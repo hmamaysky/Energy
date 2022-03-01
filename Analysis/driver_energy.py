@@ -14,7 +14,22 @@ en.plot_text_stats(serd)
 oos = en.OOSResults()
 # %% calculate various stats
 oosall = oos.calc('All',saveout=True)
-oostxt = oos.calc('Text',saveout=True)
+#oostxt = oos.calc('Text',saveout=True)
+# %% count the run types
+def foo(res,commons=np.arange(0,1.1,0.1)):
+    
+    ex = {}
+    for common in commons:
+        
+        subres = res[res.index.str.contains(f'sim{common:.1f}$')]
+        ex[f'sim{common:.1f}'] = \
+            subres[(subres >= '(0.95)') | (subres <= '(0.05)')].notna().sum().sum()
+
+    ex = pd.Series(ex)
+    print(ex)
+    
+    return ex
+    
 # %% simulations to verify closed form probs of length-k runs
 df = oos.compare_sim_data(num_sims=50000)
 # %% probs for runs -- example

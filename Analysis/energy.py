@@ -186,9 +186,9 @@ class OOSResults():
 
         assert varset in ['All','Text']
 
-        nsims = 2500 ## number of simulations for correlated outcomes case
+        nsims = 1000 ## number of simulations for correlated outcomes case
         
-        ## the columns containig the run counts
+        ## the columns containing the run counts
         run_cols = [el for el in self.data.columns if re.search('Run[0-9]',el)]
         
         ## get the vars which aren't missing in any subperiod
@@ -236,7 +236,13 @@ class OOSResults():
                 ##print(qq,'Prob run of length {} = {}'.format(kk,prun))
                 pval = 1 - sum(binom.pmf(range(nrun+1),tot_mods,prun))
 
-                ## check distribution allowing for correlated draws
+                ##print('Prob > {} runs = {}'.format(nrun,pval))
+                res[rr+'-sprob'] = f'{prun:.3f}'
+                res[rr+'-pval'] = f'({pval:.2f})'
+
+                ##
+                ## Simulations: check distribution allowing for correlated draws
+                ##
                 if varset == 'Text':
                     varsA = len(txt_vars)
                     varsB = len(all_vars)-len(txt_vars)
@@ -244,13 +250,11 @@ class OOSResults():
                     varsA = len(all_vars)
                     varsB = 0
 
-                sims = correlated_binom(varsA,varsB,prun,common=1,nsims=nsims,plot=False)
-                pval2 = len(sims[sims > nrun])/len(sims)
+                for common in np.arange(0,1.1,0.1):
+                    sims = correlated_binom(varsA,varsB,prun,common=common,nsims=nsims,plot=False)
+                    pval_sim = len(sims[sims > nrun])/len(sims)
                 
-                ##print('Prob > {} runs = {}'.format(nrun,pval))
-                res[rr+'-sprob'] = f'{prun:.3f}'
-                res[rr+'-pval'] = f'({pval:.2f})'
-                res[rr+'-pval2'] = f'({pval2:.2f})'
+                    res[rr+f'-pval-sim{common:.1f}'] = f'({pval_sim:.2f})'
 
             return pd.DataFrame(res,index=[0])
 
@@ -263,10 +267,13 @@ class OOSResults():
         ## reorder columns (these will become the rows of the table post-transpose)
         cols = ['Dep Var','Runs','Max Runs','q','# All/Txt']
         for ii in range(0,len(run_cols)+1):
-            cols.append('Run'+str(ii))
-            cols.append('Run'+str(ii)+'-sprob')
-            cols.append('Run'+str(ii)+'-pval')
-            cols.append('Run'+str(ii)+'-pval2')
+            add_cols = allres.columns[allres.columns.str.contains(f'Run{ii}')]
+            #cols.append('Run'+str(ii))
+            #cols.append('Run'+str(ii)+'-sprob')
+            #cols.append('Run'+str(ii)+'-pval')
+            #cols.append('Run'+str(ii)+'-pval2')
+            cols.extend(add_cols)
+
         allres = allres[cols]
 
         ## transpose table -- result cols becomes rows and cols are LHS vars
