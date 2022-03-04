@@ -7,6 +7,7 @@ import math
 from collections import Counter
 from scipy.stats import binom, norm
 from scipy.linalg import cholesky
+from collections import Counter
 
 __text_dir__ = '/shared/share_mamaysky-glasserman/energy_drivers/2020-11-16'
 __out_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/results'
@@ -82,7 +83,6 @@ class OOSResults():
             assert len(dups) == 0
         print('... none found.')
 
-
     def calc_runs(self):
         '''
         Calculate how many runs of each type there are for given {depvar,var1,var2}
@@ -117,6 +117,38 @@ class OOSResults():
 
         self.data = pd.concat([self.data,runs_counts],axis=1)
         
+    def variable_distribution(self,runlen):
+        '''
+        Get the empirical distribution of forecasting variables appearing in models
+        with runs. This may help with callibration of the correlation coefficient in
+        the correlated binomial simulations.
+
+        runlen -- Length of run to look for variable distribution
+        '''
+
+        runcol = f'Run{runlen}'
+        assert runcol in self.data.columns
+       
+        ## go through all the dependent variables
+        hists = []
+        for dv in set(self.data.depvar):
+
+            ## get all data for given dependent variable with rows w/out missing observations
+            dd = self.data[(self.data.depvar==dv)&(self.data[runcol])]
+
+            vs = dd['var1'].to_list() + dd['var2'].to_list()
+            vs = pd.Series(Counter(vs)).sort_values()
+            vs.name = f'{dv} range = {vs.max()-vs.min()}'
+
+            hists.append(pd.Series(vs).sort_values())
+            
+
+        ## combine hists
+        hists = pd.concat(hists,axis=1)
+        hists.hist(figsize=(10,7),rwidth=0.9)
+        
+        return vars
+
     def prob_of_run(self,qq,kk,nn,verbose=False):
         '''
         Params
@@ -412,6 +444,7 @@ def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
     
     ## run sims
     res = []
+    spread = []
     for aa in range(nsims):
 
         if (aa+1) % 500 == 0:
@@ -423,31 +456,50 @@ def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
         
         ## create factor structure of A-type shocks
         base = 0
+        idx1 = []  ## store the index of 1st variable go into the outcome
+        idx2 = []  ## store the index of 2nd variable go into the outcome
         for ii in range(varsA-1):
             locf = np.sqrt(0.5) * (fA[ii] + fA[(ii+1):])
-            idx = range(base,base + varsA - ii - 1)
-            rv[idx] = np.sqrt(common) * locf + np.sqrt(1-common) * rv[idx]
+            ref = range(base,base + varsA - ii - 1)
+            rv[ref] = np.sqrt(common) * locf + np.sqrt(1-common) * rv[ref]
             base = base + varsA - ii - 1
+
+            ## which indexes do these represent
+            idx1.extend([f'Var{ii}']*len(ref))
+            idx2.extend([f'Var{el}' for el in range(ii+1,varsA)])
 
         ## add to these the B-type shocks if there are any
         if varsB != 0:
             fB = norm.rvs(size=(varsB,1))
             for ii in range(varsA):
                 locf = np.sqrt(0.5) * (fA[ii] + fB) ## one A-type and all B-types
-                idx = range(base,base + varsB)
-                rv[idx] = np.sqrt(common) * locf + np.sqrt(1-common) * rv[idx]
+                ref = range(base,base + varsB)
+                rv[ref] = np.sqrt(common) * locf + np.sqrt(1-common) * rv[ref]
                 base = base + varsB
                 
         ## check number less than cutoff
         n_success = len(rv[rv<cutoff])
 
-        res.append(n_success)
+        hists = list(np.array(idx1)[(rv < cutoff).T.tolist()]) + \
+            list(np.array(idx2)[(rv < cutoff).T.tolist()])
+        hists = dict(Counter(hists))
 
+        ## not sure this is necessary? maybe?
+        for ii in range(varsA):
+            vname = f'Var{ii}'
+            if vname not in hists.keys():
+                hists[vname] = 0        
+
+        spread.append(max(hists.values())-min(hists.values()))
+        res.append(n_success)
+        
+    plt.hist(spread,bins=30,color='navy')
     print()
     assert base == num_models ## the count variables (base) and ex-ante calc'd (num_models)
 
     ## plotting
     if plot:
+        plt.figure()
         plt.hist(res,density=True,bins=50)
         xxr = range(np.min(res),np.max(res)+1)
         zz = binom.pmf(xxr,num_models,prob_success)
@@ -492,9 +544,6 @@ def read_processed(saveout=True):
     ## save?
     if saveout:
 
-################################################## also take , 
-
-        
         ft1 = ['ftopic'+str(el) for el in [1,2,3,4,5,6,7]]
         st1 = ['stopic'+str(el) for el in [1,2,3,4,5,6,7]]
         subd = procd[['date_thurs','Artcount','Entropy',*ft1,*st1,

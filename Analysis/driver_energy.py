@@ -15,6 +15,9 @@ oos = en.OOSResults()
 # %% calculate various stats
 oosall = oos.calc('All',saveout=True)
 #oostxt = oos.calc('Text',saveout=True)
+# %% check the successful model distributions
+oos.variable_distribution(1)
+aa = en.correlated_binom(45,0,0.5,common=0.5,nsims=250)
 # %% count the run types
 def foo(res,commons=np.arange(0,1.1,0.1)):
     
