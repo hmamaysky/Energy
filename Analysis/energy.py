@@ -218,6 +218,7 @@ class OOSResults():
 
         assert varset in ['All','Text']
 
+        nsims = 250 ## number of simulations for correlated outcomes case
         nsims = 1000 ## number of simulations for correlated outcomes case
         
         ## the columns containing the run counts
@@ -229,11 +230,10 @@ class OOSResults():
         all_vars = set(thed.var1).union(thed.var2)
 
         ## stats for a single dependent variable
-        print('Working on:',end=' ')
         def res_for_depvar(dv):
 
             thed = self.data[(self.data.depvar==dv) & (self.data.drop_row != True)].copy(deep=True)
-            print(dv,end=' ')
+            print('Working on:',dv,end='\n\n')
 
             ## specialize results to those with at least a text var?
             if varset == 'Text':
@@ -282,12 +282,38 @@ class OOSResults():
                     varsA = len(all_vars)
                     varsB = 0
 
-                for common in np.arange(0,1.1,0.1):
-                    sims = correlated_binom(varsA,varsB,prun,common=common,nsims=nsims,plot=False)
+                ##################################################
+                spread_means = []
+                pval_sims = []
+                commons = np.arange(0,1.1,0.2)
+                commons = np.arange(0,1.1,0.1)
+                for common in commons:
+                    sims, spreads = correlated_binom(varsA,varsB,prun,common=common,nsims=nsims,plot=False)
                     pval_sim = len(sims[sims > nrun])/len(sims)
                 
-                    res[rr+f'-pval-sim{common:.1f}'] = f'({pval_sim:.2f})'
+                    spread_means.append(spreads.mean())
+                    pval_sims.append(pval_sim)
+                    
+                ## compare spread
+                if rr != 'Run0':
 
+                    subd = thed[thed[rr]>0]
+                    succvars = subd['var1'].tolist() + subd['var2'].tolist()
+                    succvars = Counter(succvars)
+
+                    for el in self.data.depvar.unique():
+                        if el not in succvars.keys():
+                            succvars[el] = 0
+
+                    spread = max(succvars.values()) - min(succvars.values())
+
+                    ## proximity to simulations
+                    idx = np.argmin(abs(np.array(spread_means)-spread))
+
+                    print(f'{rr}, best common {commons[idx]}, pval {pval_sims[idx]}')
+                   
+                    res[rr+f'-pval-sim'] = f'({pval_sims[idx]:.2f})'
+                    
             return pd.DataFrame(res,index=[0])
 
         ## get all results
@@ -318,47 +344,73 @@ class OOSResults():
         print('\n',allres)
 
         ## show/save output?
-        if saveout:
-
-            pltres = allres.reset_index()
-            ## prettify row labels
-            pltres['index'] = [re.sub('Run[0-9]-','',el) for el in pltres['index']]
-            
-            fig = plt.figure(figsize=(7,0.25*pltres.shape[0]),dpi=200)
-            tbl = plt.table(pltres.round(3).values,
-                            loc='center', colWidths=[1.25] + [1]*(pltres.shape[1]-1),
-                            bbox=[0,0,1,1])
-
-            ## set edges
-            for ii in range(pltres.shape[0]):
-                for jj in range(pltres.shape[1]):
-
-                    if jj == 0:
-                        fmt = 'LR'
-                    elif jj == pltres.shape[1]-1:
-                        fmt = 'R'
-                    else:
-                        fmt = ''
-                        
-                    if ii == 0:
-                        fmt += 'BT'
-                    elif re.search('Run[0-9]$',pltres['index'][ii]):
-                        fmt += 'T'
-                    elif ii == pltres.shape[0]-1:
-                        fmt += 'B'
-                    tbl[ii,jj].visible_edges = fmt
-
-            plt.axis('tight')
-            plt.axis('off')
-            plt.title(f'Out-of-sample runs analysis: {varset} models',
-                      y=0.99,fontsize=12)
-
-            ## save output
-            fname = __out_dir__ + f'/runs-tests-for-{varset}-sims-{nsims}-{date.today()}.pdf'
-            print('Saving to',fname)
-            plt.savefig(fname,bbox_inches='tight')
+        ##if saveout: self.plot_calc(allres,varset)
 
         return allres
+
+######################################################################################################################################################################################################## order of columns?
+    
+    def plot_calc(allres,varset):
+
+        pltres = allres.reset_index()
+
+        ## prettify row labels
+        pltres['index'] = [re.sub('Run[0-9]-','',el) for el in pltres['index']]
+            
+        fig = plt.figure(figsize=(7,0.25*pltres.shape[0]),dpi=200)
+        tbl = plt.table(pltres.round(3).values,
+                        loc='center', colWidths=[1.25] + [1]*(pltres.shape[1]-1),
+                        bbox=[0,0,1,1])
+
+        ## set edges
+        for ii in range(pltres.shape[0]):
+            for jj in range(pltres.shape[1]):
+
+                if jj == 0:
+                    fmt = 'LR'
+                elif jj == pltres.shape[1]-1:
+                    fmt = 'R'
+                else:
+                    fmt = ''
+                        
+                if ii == 0:
+                    fmt += 'BT'
+                elif re.search('Run[0-9]$',pltres['index'][ii]):
+                    fmt += 'T'
+                elif ii == pltres.shape[0]-1:
+                    fmt += 'B'
+                tbl[ii,jj].visible_edges = fmt
+
+        plt.axis('tight')
+        plt.axis('off')
+        plt.title(f'Out-of-sample runs analysis: {varset} models',
+                  y=0.99,fontsize=12)
+
+        ## save output
+        fname = __out_dir__ + f'/runs-tests-for-{varset}-sims-{nsims}-{date.today()}.pdf'
+        print('Saving to',fname)
+        plt.savefig(fname,bbox_inches='tight')
+    
+    ######################### display results of calc ###########################################################################
+
+    ## count the run types
+    def foo(oos,commons=np.arange(0,1.1,0.1)):
+
+        assert isinstance(oos,OOSResults)
+        res = oos.data[oos.data.DepVar=='FutRet']
+    
+        ex = {}
+        for common in commons:
+        
+            subres = res[res.index.str.contains(f'sim{common:.1f}$')]
+            ex[f'sim{common:.1f}'] = \
+                subres[(subres >= '(0.95)') | (subres <= '(0.05)')].notna().sum().sum()
+
+        ex = pd.Series(ex)
+        print(ex)
+    
+        return ex
+
     
     def compare_sim_data(self, str_len=7, num_sims=100000):
         """
@@ -440,7 +492,7 @@ def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
 
     ## calc the number of models
     num_models = math.comb(varsA,2) + varsA*varsB
-    print(f'Using: cutoff = {cutoff:.3}  # models = {num_models}')
+    print(f'Using: cutoff = {cutoff:.3}  common = {common:.2}  # models = {num_models}')
     
     ## run sims
     res = []
@@ -476,37 +528,57 @@ def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
                 ref = range(base,base + varsB)
                 rv[ref] = np.sqrt(common) * locf + np.sqrt(1-common) * rv[ref]
                 base = base + varsB
-                
-        ## check number less than cutoff
-        n_success = len(rv[rv<cutoff])
 
-        hists = list(np.array(idx1)[(rv < cutoff).T.tolist()]) + \
-            list(np.array(idx2)[(rv < cutoff).T.tolist()])
-        hists = dict(Counter(hists))
+                ## which indexes do these represent
+                idx1.extend([f'Var{ii}']*varsB)
+                idx2.extend([f'Var{el}' for el in range(varsA,varsA+varsB)])
+
+        ## sanity check
+        assert base == num_models ## the count variables (base) and ex-ante calc'd (num_models)
+        assert len(idx1) == num_models
+        assert len(idx2) == num_models
+                
+        ##
+        ##  Number of successes: check number less than cutoff
+        ##
+        n_success = len(rv[rv<cutoff])
+        res.append(n_success)
+
+        ##
+        ##  Distribution of successful forecating pairs
+        ##
+        hists = [idx1[ii] for ii, xx in enumerate(rv < cutoff) if xx] \
+            + [idx2[ii] for ii, xx in enumerate(rv < cutoff) if xx]
+        hists = Counter(hists)
 
         ## not sure this is necessary? maybe?
-        for ii in range(varsA):
+        for ii in range(varsA+varsB):
             vname = f'Var{ii}'
             if vname not in hists.keys():
-                hists[vname] = 0        
+                hists[vname] = 0
 
+        ## save the number of successes and a statistic about the spread
         spread.append(max(hists.values())-min(hists.values()))
-        res.append(n_success)
-        
-    plt.hist(spread,bins=30,color='navy')
-    print()
-    assert base == num_models ## the count variables (base) and ex-ante calc'd (num_models)
 
+    print()
+        
     ## plotting
     if plot:
-        plt.figure()
+
+        ## plot the histogram of successful models
         plt.hist(res,density=True,bins=50)
         xxr = range(np.min(res),np.max(res)+1)
         zz = binom.pmf(xxr,num_models,prob_success)
         plt.plot(xxr,zz,color='red')
 
-    return np.array(res)
+        ## plot the histogram of spreads between occurrences of most and least
+        ## frequently successful models
+        plt.figure()
+        plt.hist(spread,rwidth=0.9,color='navy')
+        plt.suptitle('Spread in occurrence between high and low frequency models',y=0.94)
         
+    return np.array(res), np.array(spread)
+
     
 ############################## Read in text data ##############################
 
