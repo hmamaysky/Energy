@@ -138,10 +138,10 @@ class OOSResults():
 
             vs = dd['var1'].to_list() + dd['var2'].to_list()
             vs = pd.Series(Counter(vs)).sort_values()
-            vs.name = f'{dv} range = {vs.max()-vs.min()}'
+            ##vs.name = f'{dv} range = {vs.max()-vs.min()}'
+            vs.name = f'{dv} std = {vs.std():.2f}'
 
             hists.append(pd.Series(vs).sort_values())
-            
 
         ## combine hists
         hists = pd.concat(hists,axis=1)
@@ -205,7 +205,6 @@ class OOSResults():
             print(prs)
 
         return prs.sum()
-
             
     def calc(self,varset,saveout=False):
         '''
@@ -220,19 +219,35 @@ class OOSResults():
 
         nsims = 250 ## number of simulations for correlated outcomes case
         nsims = 1000 ## number of simulations for correlated outcomes case
+        commons = np.arange(0,1.1,0.1)
+        commons = np.arange(0,1.1,0.2)
         
         ## the columns containing the run counts
         run_cols = [el for el in self.data.columns if re.search('Run[0-9]',el)]
         
         ## get the vars which aren't missing in any subperiod
-        thed = self.data[self.data.drop_row != True]
-        txt_vars = set(thed[thed.var1_text==1].var1).union(thed[thed.var2_text==1].var2)
-        all_vars = set(thed.var1).union(thed.var2)
-
+        alld = self.data[self.data.drop_row != True]
+        txt_vars = set(alld[alld.var1_text==1].var1).union(alld[alld.var2_text==1].var2)
+        all_vars = set(alld.var1).union(alld.var2)
+        nontxt_vars = all_vars - txt_vars
+        
+        ## convert to  lists
+        txt_vars, all_vars, nontxt_vars = list(txt_vars), list(all_vars), list(nontxt_vars)
+        
+        ## By focusing on drop_row == False, there should be no missing values anywhere.
+        all_vars_str = '|'.join(all_vars)
+        print(f'Checking that there are no missing observations among {len(all_vars)} variables: ',end='')
+        num_missing = self.data[(self.data.drop_row == True) &
+                                self.data.var1.str.contains(all_vars_str) &
+                                self.data.var2.str.contains(all_vars_str)].shape[0]
+        assert num_missing == 0
+        print('All good!\n')
+        
         ## stats for a single dependent variable
         def res_for_depvar(dv):
 
             thed = self.data[(self.data.depvar==dv) & (self.data.drop_row != True)].copy(deep=True)
+
             print('Working on:',dv,end='\n\n')
 
             ## specialize results to those with at least a text var?
@@ -248,8 +263,7 @@ class OOSResults():
                    ## probability of beating is the total number of beats divided by the total
                    ## number of possible beats (total possible models x number of periods)
                    'q':round(thed[self.per_cols].to_numpy().sum() / (tot_mods * len(self.per_cols)),3),
-                   '# All/Txt':'{}/{}'.format(len(all_vars),len(txt_vars))
-            }
+                   '# All/Txt':'{}/{}'.format(len(all_vars),len(txt_vars))}
 
             ## put in the zero runs row; 'Runs' contains all combinations with at least
             ## one period of outperformance relative to constant
@@ -282,37 +296,74 @@ class OOSResults():
                     varsA = len(all_vars)
                     varsB = 0
 
-                ##################################################
-                spread_means = []
+                ## run simulations to get spread (i.e., measure of dispersion of frequency counts
+                ## of number of times variables appear in two-variable forecasting models) and
+                ## simulated p-values
+                spread_means = []  
                 pval_sims = []
-                commons = np.arange(0,1.1,0.2)
-                commons = np.arange(0,1.1,0.1)
                 for common in commons:
                     sims, spreads = correlated_binom(varsA,varsB,prun,common=common,nsims=nsims,plot=False)
                     pval_sim = len(sims[sims > nrun])/len(sims)
                 
                     spread_means.append(spreads.mean())
                     pval_sims.append(pval_sim)
-                    
+
                 ## compare spread
                 if rr != 'Run0':
-
                     subd = thed[thed[rr]>0]
                     succvars = subd['var1'].tolist() + subd['var2'].tolist()
-                    succvars = Counter(succvars)
+                else: ## this is the case of 0-length runs
 
-                    for el in self.data.depvar.unique():
-                        if el not in succvars.keys():
-                            succvars[el] = 0
+                    ## get all pairs of variables for models
+                    varpairs = []
+                    if varset == 'All':
+                        for ii in range(len(all_vars)):
+                            for jj in range(ii+1,len(all_vars)):
+                                varpairs += [(all_vars[ii],all_vars[jj])]
+                    else: ## working with Text variable
+                        for ii in range(len(txt_vars)):
+                            for jj in range(ii+1,len(txt_vars)):
+                                varpairs += [(txt_vars[ii],txt_vars[jj])]
+                        for ii in range(len(txt_vars)):
+                            for jj in range(len(nontxt_vars)):
+                                varpairs += [(txt_vars[ii],nontxt_vars[jj])]
+                                
+                    ## drop those pairs that have a run
+                    for kk in range(thed.shape[0]):
 
-                    spread = max(succvars.values()) - min(succvars.values())
+                        flag1 = (thed.iloc[kk].var1,thed.iloc[kk].var2) in varpairs
+                        flag2 = (thed.iloc[kk].var2,thed.iloc[kk].var1) in varpairs
 
-                    ## proximity to simulations
-                    idx = np.argmin(abs(np.array(spread_means)-spread))
+                        if flag1:
+                            varpairs.remove((thed.iloc[kk].var1,thed.iloc[kk].var2))
 
-                    print(f'{rr}, best common {commons[idx]}, pval {pval_sims[idx]}')
+                        if flag2:
+                            varpairs.remove((thed.iloc[kk].var2,thed.iloc[kk].var1))
+
+                    ## count the occurrences of the remaining pairs that had runs of
+                    ## length 0
+                    succvars = [el[0] for el in varpairs] + [el[1] for el in varpairs]
+
+                ## now the code proceeds the same for either Run0 or non-Run0 runs
+                succvars = Counter(succvars)
+                                        
+                for el in all_vars:
+                    if el not in succvars.keys():
+                        succvars[el] = 0
+
+                ## sanity check
+                assert sum(succvars.values())/2 == nrun
+                            
+                ##spread = max(succvars.values()) - min(succvars.values())
+                spread = np.std(list(succvars.values()))
+
+                ## proximity to simulations
+                idx = np.argmin(abs(np.array(spread_means)-spread))
+
+                print(f'{rr}, best common {commons[idx]}, pval {pval_sims[idx]}')
                    
-                    res[rr+f'-pval-sim'] = f'({pval_sims[idx]:.2f})'
+                res[rr+'-pval-sim'] = f'({pval_sims[idx]:.2f})'
+                res[rr+'-common'] = f'[{commons[idx]:.1f}]'
                     
             return pd.DataFrame(res,index=[0])
 
@@ -323,19 +374,14 @@ class OOSResults():
         allres = pd.concat(allres,axis=0)
             
         ## reorder columns (these will become the rows of the table post-transpose)
+        ## and add all columns whose name starts with "Run[0-9]"
         cols = ['Dep Var','Runs','Max Runs','q','# All/Txt']
         for ii in range(0,len(run_cols)+1):
             add_cols = allres.columns[allres.columns.str.contains(f'Run{ii}')]
-            #cols.append('Run'+str(ii))
-            #cols.append('Run'+str(ii)+'-sprob')
-            #cols.append('Run'+str(ii)+'-pval')
-            #cols.append('Run'+str(ii)+'-pval2')
             cols.extend(add_cols)
 
-        allres = allres[cols]
-
         ## transpose table -- result cols becomes rows and cols are LHS vars
-        allres = allres.fillna(0).transpose()
+        allres = allres[cols].fillna(0).transpose()
         allres.columns = allres.loc['Dep Var']
         
         ## reorder how dependent variables show up
@@ -344,14 +390,26 @@ class OOSResults():
         print('\n',allres)
 
         ## show/save output?
-        ##if saveout: self.plot_calc(allres,varset)
-
+        try:
+            if saveout: self.plot_calc(allres,varset,nsims,commons,detailed=False)
+        except:
+            print('Something went wrong with plot_calc.')
+            
         return allres
 
-######################################################################################################################################################################################################## order of columns?
-    
-    def plot_calc(allres,varset):
+    def plot_calc(self,allres,varset,nsims,commons,detailed=False):
+        '''
+        Plot the results of the calc() method.
+        '''
+        
+        assert varset in ['All','Text']
 
+        ## select which rows
+        if not detailed:
+            allres = allres[allres.index.str.contains('common') == False]
+            allres = allres[allres.index.str.contains('pval$') == False]
+
+        ## convert to plotting
         pltres = allres.reset_index()
 
         ## prettify row labels
@@ -387,30 +445,10 @@ class OOSResults():
                   y=0.99,fontsize=12)
 
         ## save output
-        fname = __out_dir__ + f'/runs-tests-for-{varset}-sims-{nsims}-{date.today()}.pdf'
+        fname = __out_dir__ + \
+            f'/runs-tests-for-{varset}-sims-{nsims}-comm-{len(commons)}-{date.today()}.pdf'
         print('Saving to',fname)
         plt.savefig(fname,bbox_inches='tight')
-    
-    ######################### display results of calc ###########################################################################
-
-    ## count the run types
-    def foo(oos,commons=np.arange(0,1.1,0.1)):
-
-        assert isinstance(oos,OOSResults)
-        res = oos.data[oos.data.DepVar=='FutRet']
-    
-        ex = {}
-        for common in commons:
-        
-            subres = res[res.index.str.contains(f'sim{common:.1f}$')]
-            ex[f'sim{common:.1f}'] = \
-                subres[(subres >= '(0.95)') | (subres <= '(0.05)')].notna().sum().sum()
-
-        ex = pd.Series(ex)
-        print(ex)
-    
-        return ex
-
     
     def compare_sim_data(self, str_len=7, num_sims=100000):
         """
@@ -558,7 +596,8 @@ def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
                 hists[vname] = 0
 
         ## save the number of successes and a statistic about the spread
-        spread.append(max(hists.values())-min(hists.values()))
+        ##spread.append(max(hists.values())-min(hists.values()))
+        spread.append(np.std(list(hists.values())))
 
     print()
         
