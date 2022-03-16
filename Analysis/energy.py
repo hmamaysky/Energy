@@ -120,7 +120,7 @@ class OOSResults():
     def variable_distribution(self,runlen):
         '''
         Get the empirical distribution of forecasting variables appearing in models
-        with runs. This may help with callibration of the correlation coefficient in
+        with runs. This may help with calibration of the correlation coefficient in
         the correlated binomial simulations.
 
         runlen -- Length of run to look for variable distribution
