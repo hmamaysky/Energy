@@ -1,10 +1,5 @@
 # About this script:  
-# All variables are candidates: baseline, text, PCs, and risk premia
-# Per variable, we are using residuals after detrending, and then again 
-# after taking out the lagged dependent variable that usually figures on
-# the RHS of each regression (and so not per se the lagged dependent variable)
-# Choose 7 variables using forward selection instead 
-# So this script runs monte carlo forward selection for all subperiods and produce following outputs.
+# This script runs monte carlo forward selection for all subperiods and produce following outputs.
 # Main Output: Table A.VII "Subperiod stepwise forward selection at the eight-week horizon" in word file.
 # Additional Outputs:  
 # - Word files for aggregated forward selection regression results  
