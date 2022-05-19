@@ -205,23 +205,146 @@ class OOSResults():
             print(prs)
 
         return prs.sum()
-            
-    def calc(self,varset,saveout=False):
+
+    def res_for_depvar(self,dv,varset,all_vars,txt_vars,run_cols):
         '''
-        Calculate the statistics.
-
-        varset -- Either 'All' to look at results for all the forecasting variables or 'Text'
-        to look at the results for models that include at least one text variables.
-        saveout -- Save/plot the table form of the results?
+        Run the analysis for a single dependent variable.
         '''
-
-        assert varset in ['All','Text']
-
-        nsims = 250 ## number of simulations for correlated outcomes case
-        nsims = 1000 ## number of simulations for correlated outcomes case
-        commons = np.arange(0,1.1,0.1)
-        commons = np.arange(0,1.1,0.2)
         
+        nsims = 100 ## number of simulations for correlated outcomes case
+        nsims = 2500 ## number of simulations for correlated outcomes case
+        commons = np.arange(0,1.1,0.2)
+
+        thed = self.data[(self.data.depvar==dv) & (self.data.drop_row != True)].copy(deep=True)
+
+        print('Working on:',dv,end='\n\n')
+
+        ## specialize results to those with at least a text var?
+        if varset == 'Text':
+            thed = thed[(thed.var1_text==1) | (thed.var2_text==1)]
+            tot_mods = (len(all_vars)-len(txt_vars))*len(txt_vars) + len(txt_vars)*(len(txt_vars)-1)/2
+        else:
+            tot_mods = len(all_vars)*(len(all_vars)-1)/2
+
+        res = {'Dep Var':dv,
+               'Runs':thed.shape[0],
+               'Max Runs':int(tot_mods),
+               ## probability of beating is the total number of beats divided by the total
+               ## number of possible beats (total possible models x number of periods)
+               'q':round(thed[self.per_cols].to_numpy().sum() / (tot_mods * len(self.per_cols)),3),
+               '# All/Txt':'{}/{}'.format(len(all_vars),len(txt_vars)),
+               'nsims':nsims,
+               'commons':'-'.join([f'{el:.3f}' for el in commons])}
+
+        ## put in the zero runs row; 'Runs' contains all combinations with at least
+        ## one period of outperformance relative to constant
+        res['Run0'] = res['Max Runs'] - res['Runs']
+
+        ## get number of pairs {var1,var2} that have a run of a certain length
+        runs_indic = thed[run_cols].apply(lambda xx: (xx >= 1).sum(),axis=0)
+        res.update(runs_indic)
+
+        ## calculate the p-value for each number
+        for rr in ['Run0'] + run_cols:
+            qq = res['q']
+            kk = int(re.findall('[0-9]',rr)[0])
+            nrun = res[rr]
+            prun = self.prob_of_run(qq,kk,nn=len(self.per_cols))
+            ##print(qq,'Prob run of length {} = {}'.format(kk,prun))
+            pval = 1 - sum(binom.pmf(range(nrun+1),tot_mods,prun))
+
+            ##print('Prob > {} runs = {}'.format(nrun,pval))
+            res[rr+'-sprob'] = f'{prun:.3f}'
+            res[rr+'-pval'] = f'({pval:.2f})'
+
+            ##
+            ## Simulations: check distribution allowing for correlated draws
+            ##
+            if varset == 'Text':
+                varsA = len(txt_vars)
+                varsB = len(all_vars)-len(txt_vars)
+            else:
+                varsA = len(all_vars)
+                varsB = 0
+
+            ## run simulations to get spread (i.e., measure of dispersion of frequency counts
+            ## of number of times variables appear in two-variable forecasting models) and
+            ## simulated p-values
+            spread_means = []  
+            pval_sims = []
+            for common in commons:
+                sims, spreads = correlated_binom(varsA,varsB,prun,common=common,nsims=nsims,plot=False)
+                pval_sim = len(sims[sims > nrun])/len(sims)
+
+                spread_means.append(spreads.mean())
+                pval_sims.append(pval_sim)
+
+            ## compare spread
+            if rr != 'Run0':
+                subd = thed[thed[rr]>0]
+                succvars = subd['var1'].tolist() + subd['var2'].tolist()
+            else: ## this is the case of 0-length runs
+
+                ## get all pairs of variables for models
+                varpairs = []
+                if varset == 'All':
+                    for ii in range(len(all_vars)):
+                        for jj in range(ii+1,len(all_vars)):
+                            varpairs += [(all_vars[ii],all_vars[jj])]
+                else: ## working with Text variable
+                    for ii in range(len(txt_vars)):
+                        for jj in range(ii+1,len(txt_vars)):
+                            varpairs += [(txt_vars[ii],txt_vars[jj])]
+                    for ii in range(len(txt_vars)):
+                        for jj in range(len(nontxt_vars)):
+                            varpairs += [(txt_vars[ii],nontxt_vars[jj])]
+
+                ## drop those pairs that have a run
+                for kk in range(thed.shape[0]):
+
+                    flag1 = (thed.iloc[kk].var1,thed.iloc[kk].var2) in varpairs
+                    flag2 = (thed.iloc[kk].var2,thed.iloc[kk].var1) in varpairs
+
+                    if flag1:
+                        varpairs.remove((thed.iloc[kk].var1,thed.iloc[kk].var2))
+
+                    if flag2:
+                        varpairs.remove((thed.iloc[kk].var2,thed.iloc[kk].var1))
+
+                ## count the occurrences of the remaining pairs that had runs of
+                ## length 0
+                succvars = [el[0] for el in varpairs] + [el[1] for el in varpairs]
+
+            ## now the code proceeds the same for either Run0 or non-Run0 runs
+            succvars = Counter(succvars)
+
+            for el in all_vars:
+                if el not in succvars.keys():
+                    succvars[el] = 0
+
+            ## sanity check
+            assert sum(succvars.values())/2 == nrun
+
+            ##spread = max(succvars.values()) - min(succvars.values())
+            spread = np.std(list(succvars.values()))
+
+            ## proximity to simulations
+            idx = np.argmin(abs(np.array(spread_means)-spread))
+
+            print(f'{rr}, best common {commons[idx]}, pval {pval_sims[idx]}')
+
+            res[rr+'-pval-sim'] = f'({pval_sims[idx]:.2f})'
+            res[rr+'-common'] = f'[{commons[idx]:.1f}]'
+
+        res = pd.DataFrame(res,index=[0]).set_index('Dep Var')
+        return res
+
+    def prep_for_simulation(self):
+        '''
+        Set up stuff needed to do a simulation of p-values for the runs tests
+        under some dependence between runs.
+        '''
+
         ## the columns containing the run counts
         run_cols = [el for el in self.data.columns if re.search('Run[0-9]',el)]
         
@@ -242,136 +365,25 @@ class OOSResults():
                                 self.data.var2.str.contains(all_vars_str)].shape[0]
         assert num_missing == 0
         print('All good!\n')
+
+        ## return vals
+        return all_vars, txt_vars, run_cols
+    
+    def calc(self,varset,saveout=False):
+        '''
+        Calculate the statistics for the simulations to determine runs p-values.
+
+        varset -- Either 'All' to look at results for all the forecasting variables or 'Text'
+        to look at the results for models that include at least one text variables.
+        saveout -- Save/plot the table form of the results?
+        '''
+
+        assert varset in ['All','Text']
         
-        ## stats for a single dependent variable
-        def res_for_depvar(dv):
-
-            thed = self.data[(self.data.depvar==dv) & (self.data.drop_row != True)].copy(deep=True)
-
-            print('Working on:',dv,end='\n\n')
-
-            ## specialize results to those with at least a text var?
-            if varset == 'Text':
-                thed = thed[(thed.var1_text==1) | (thed.var2_text==1)]
-                tot_mods = (len(all_vars)-len(txt_vars))*len(txt_vars) + len(txt_vars)*(len(txt_vars)-1)/2
-            else:
-                tot_mods = len(all_vars)*(len(all_vars)-1)/2
-
-            res = {'Dep Var':dv,
-                   'Runs':thed.shape[0],
-                   'Max Runs':int(tot_mods),
-                   ## probability of beating is the total number of beats divided by the total
-                   ## number of possible beats (total possible models x number of periods)
-                   'q':round(thed[self.per_cols].to_numpy().sum() / (tot_mods * len(self.per_cols)),3),
-                   '# All/Txt':'{}/{}'.format(len(all_vars),len(txt_vars))}
-
-            ## put in the zero runs row; 'Runs' contains all combinations with at least
-            ## one period of outperformance relative to constant
-            res['Run0'] = res['Max Runs'] - res['Runs']
-
-            ## get number of pairs {var1,var2} that have a run of a certain length
-            runs_indic = thed[run_cols].apply(lambda xx: (xx >= 1).sum(),axis=0)
-            res.update(runs_indic)
-
-            ## calculate the p-value for each number
-            for rr in ['Run0'] + run_cols:
-                qq = res['q']
-                kk = int(re.findall('[0-9]',rr)[0])
-                nrun = res[rr]
-                prun = self.prob_of_run(qq,kk,nn=len(self.per_cols))
-                ##print(qq,'Prob run of length {} = {}'.format(kk,prun))
-                pval = 1 - sum(binom.pmf(range(nrun+1),tot_mods,prun))
-
-                ##print('Prob > {} runs = {}'.format(nrun,pval))
-                res[rr+'-sprob'] = f'{prun:.3f}'
-                res[rr+'-pval'] = f'({pval:.2f})'
-
-                ##
-                ## Simulations: check distribution allowing for correlated draws
-                ##
-                if varset == 'Text':
-                    varsA = len(txt_vars)
-                    varsB = len(all_vars)-len(txt_vars)
-                else:
-                    varsA = len(all_vars)
-                    varsB = 0
-
-                ## run simulations to get spread (i.e., measure of dispersion of frequency counts
-                ## of number of times variables appear in two-variable forecasting models) and
-                ## simulated p-values
-                spread_means = []  
-                pval_sims = []
-                for common in commons:
-                    sims, spreads = correlated_binom(varsA,varsB,prun,common=common,nsims=nsims,plot=False)
-                    pval_sim = len(sims[sims > nrun])/len(sims)
-                
-                    spread_means.append(spreads.mean())
-                    pval_sims.append(pval_sim)
-
-                ## compare spread
-                if rr != 'Run0':
-                    subd = thed[thed[rr]>0]
-                    succvars = subd['var1'].tolist() + subd['var2'].tolist()
-                else: ## this is the case of 0-length runs
-
-                    ## get all pairs of variables for models
-                    varpairs = []
-                    if varset == 'All':
-                        for ii in range(len(all_vars)):
-                            for jj in range(ii+1,len(all_vars)):
-                                varpairs += [(all_vars[ii],all_vars[jj])]
-                    else: ## working with Text variable
-                        for ii in range(len(txt_vars)):
-                            for jj in range(ii+1,len(txt_vars)):
-                                varpairs += [(txt_vars[ii],txt_vars[jj])]
-                        for ii in range(len(txt_vars)):
-                            for jj in range(len(nontxt_vars)):
-                                varpairs += [(txt_vars[ii],nontxt_vars[jj])]
-                                
-                    ## drop those pairs that have a run
-                    for kk in range(thed.shape[0]):
-
-                        flag1 = (thed.iloc[kk].var1,thed.iloc[kk].var2) in varpairs
-                        flag2 = (thed.iloc[kk].var2,thed.iloc[kk].var1) in varpairs
-
-                        if flag1:
-                            varpairs.remove((thed.iloc[kk].var1,thed.iloc[kk].var2))
-
-                        if flag2:
-                            varpairs.remove((thed.iloc[kk].var2,thed.iloc[kk].var1))
-
-                    ## count the occurrences of the remaining pairs that had runs of
-                    ## length 0
-                    succvars = [el[0] for el in varpairs] + [el[1] for el in varpairs]
-
-                ## now the code proceeds the same for either Run0 or non-Run0 runs
-                succvars = Counter(succvars)
-                                        
-                for el in all_vars:
-                    if el not in succvars.keys():
-                        succvars[el] = 0
-
-                ## sanity check
-                assert sum(succvars.values())/2 == nrun
-                            
-                ##spread = max(succvars.values()) - min(succvars.values())
-                spread = np.std(list(succvars.values()))
-
-                ## proximity to simulations
-                idx = np.argmin(abs(np.array(spread_means)-spread))
-
-                print(f'{rr}, best common {commons[idx]}, pval {pval_sims[idx]}')
-                   
-                res[rr+'-pval-sim'] = f'({pval_sims[idx]:.2f})'
-                res[rr+'-common'] = f'[{commons[idx]:.1f}]'
-                    
-            return pd.DataFrame(res,index=[0])
-
         ## get all results
         allres = []
-        for dv in self.data.depvar.unique():
-            allres.append(res_for_depvar(dv).reset_index(drop=True))
         allres = pd.concat(allres,axis=0)
+        breakpoint()
             
         ## reorder columns (these will become the rows of the table post-transpose)
         ## and add all columns whose name starts with "Run[0-9]"
@@ -621,8 +633,16 @@ def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
     
 ############################## Read in text data ##############################
 
+def assert_on_grid():
+
+    if not os.getenv('USER'):
+        raise Exception('This has to be run on the computing grid, not on PC.')
+        
+
 def read_info():
 
+    assert_on_grid()
+    
     ## list all files
     info_dir = __text_dir__+'/DataProcessing/info/'
     fnames = sorted(os.listdir(info_dir))
@@ -641,6 +661,8 @@ def read_info():
 
 def read_processed(saveout=True):
 
+    assert_on_grid()
+    
     ## 12/16/2020: Hongyu says this is the data we're using for the paper
     fname = __text_dir__ + '/data/transformed_data_prices_v14.dta'
     print('Reading in "',fname,'"',sep='')
@@ -826,7 +848,7 @@ def show_outliers(serd,txtd):
 
 def find_outliers(serd,txtd):
     ''' Find outlier dates and articles. '''
-    
+
     ## find the sentiment 4wk columns
     ## ntop -- number of top outliers
     ## lookback -- number of days to look back
