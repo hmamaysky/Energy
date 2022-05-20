@@ -21,11 +21,11 @@ Run1-pval-sim,(0.01)
 Run1-common,[0.2]
 Run2-sprob,0.341
 Run2-pval,(0.07)
-Run2-pval-sim,(0.33)
+Run2-pval-sim,(0.34)
 Run2-common,[0.4]
 Run3-sprob,0.113
 Run3-pval,(1.00)
-Run3-pval-sim,(0.97)
+Run3-pval-sim,(0.96)
 Run3-common,[0.2]
 Run4-sprob,0.034
 Run4-pval,(1.00)

@@ -13,16 +13,14 @@ en.plot_text_stats(serd)
 # %% *** can run locally, not on grid ***
 ## read in and process OOS results about number of runsin subperiods
 oos = en.OOSResults()
-# %% summary of models
-prep = oos.prep_for_simulation()
 # %% sample run (for debugging run_runs_sims.py)
-res = oos.res_for_depvar('bpRet','Text',prep)
+res = oos.res_for_depvar('bpRet','Text')
 # %% summarize outputs of [run_runs_sims.py]
 oosall = oos.summary('All',saveout=True)
 oostxt = oos.summary('Text',saveout=True)
 # %% check the successful model distributions
 oos.variable_distribution(runlen=1)
-numA = len(prep['all_vars'])
+numA = len(oos.model_summary()['all_vars'])
 numB = 0
 pr = 0.5 ## probability of a successful trial
 en.correlated_binom(numA,numB,pr,common=0.,nsims=1000)

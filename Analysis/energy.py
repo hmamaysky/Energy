@@ -3,7 +3,6 @@ import os, re, numpy as np
 from datetime import datetime, timedelta, date
 import matplotlib.pyplot as plt
 import seaborn as sns
-import math
 from collections import Counter
 from scipy.stats import binom, norm
 from scipy.linalg import cholesky
@@ -13,6 +12,7 @@ from utils import pyhelp as pyh
 __text_dir__ = '/shared/share_mamaysky-glasserman/energy_drivers/2020-11-16'
 __out_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/results'
 __sup_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/support'
+__dpi_res__ = 500
 
 
 ############################## parse OOS persistence results ##############################
@@ -139,7 +139,6 @@ class OOSResults():
 
             vs = dd['var1'].to_list() + dd['var2'].to_list()
             vs = pd.Series(Counter(vs)).sort_values()
-            ##vs.name = f'{dv} range = {vs.max()-vs.min()}'
             vs.name = f'{dv} std = {vs.std():.2f}'
 
             hists.append(pd.Series(vs).sort_values())
@@ -147,12 +146,19 @@ class OOSResults():
         ## combine hists
         hists = pd.concat(hists,axis=1)
         hists.hist(figsize=(10,7),rwidth=0.8)
-        title = 'Distribution of number of successful models per forecaster'
-        plt.suptitle(title,y=0.95,fontsize=15)
+        title = 'Distribution of number of successful models per forecasting variable'
 
-        fname = __out_dir__ + '/' + title.replace(' ','-') + '-' + str(date.today()) + '.pdf'
+        ## some info about model
+        summ = self.model_summary()
+        numA = len(summ['all_vars'])
+        title2 = f'Run length = {runlen}  Number vars = {numA}  Max appearances = {numA*(numA-1):.0f}'
+
+        ## make title and save
+        plt.suptitle(title + '\n' + title2,y=0.99,fontsize=15)
+
+        fname = __out_dir__+'/Distribution-'+title2.replace(' ','-')+'-'+str(date.today())+'.png'
         print('Saving to',fname)
-        plt.savefig(fname)
+        plt.savefig(fname,dpi=__dpi_res__)
         
         return vars
 
@@ -213,11 +219,9 @@ class OOSResults():
 
         return prs.sum()
 
-    def res_for_depvar(self,dv,varset,prep):
+    def res_for_depvar(self,dv,varset):
         '''
         Run the analysis for a single dependent variable.
-
-        prep -- some setup for this function that comes from 'prep_for_simulation'
         '''
 
         ## number of simulations and common variation for correlated outcomes case
@@ -227,10 +231,11 @@ class OOSResults():
         
         ## get vars
         thed = self.data[(self.data.depvar==dv) & (self.data.drop_row != True)].copy(deep=True)
-        txt_vars = prep['txt_vars']
-        all_vars = prep['all_vars']
-        nontxt_vars = prep['nontxt_vars']
-        run_cols = prep['run_cols']
+        summ = self.model_summary()
+        txt_vars = summ['txt_vars']
+        all_vars = summ['all_vars']
+        nontxt_vars = summ['nontxt_vars']
+        run_cols = summ['run_cols']
         
         ## status update
         print('Working on:',dv,end='\n\n')
@@ -341,10 +346,8 @@ class OOSResults():
             ## sanity check
             assert sum(succvars.values())/2 == nrun
 
-            ##spread = max(succvars.values()) - min(succvars.values())
-            spread = np.std(list(succvars.values()))
-
             ## proximity to simulations
+            spread = np.std(list(succvars.values()))
             idx = np.argmin(abs(np.array(spread_means)-spread))
 
             print(f'{rr}, best common {commons[idx]}, pval {pval_sims[idx]}')
@@ -355,10 +358,9 @@ class OOSResults():
         res = pd.DataFrame(res,index=[0]).set_index('Dep Var')
         return res
 
-    def prep_for_simulation(self):
+    def model_summary(self):
         '''
-        Set up stuff needed to do a simulation of p-values for the runs tests
-        under some dependence between runs.
+        Some summary statistics about the OOS model tests.
         '''
 
         ## the columns containing the run counts
@@ -458,7 +460,7 @@ class OOSResults():
         ## prettify row labels
         pltres['index'] = [re.sub('Run[0-9]-','',el) for el in pltres['index']]
             
-        fig = plt.figure(figsize=(7,0.25*pltres.shape[0]),dpi=200)
+        fig = plt.figure(figsize=(7,0.25*pltres.shape[0]),dpi=__dpi_res__)
         tbl = plt.table(pltres.round(3).values,
                         loc='center', colWidths=[1.25] + [1]*(pltres.shape[1]-1),
                         bbox=[0,0,1,1])
@@ -489,9 +491,9 @@ class OOSResults():
 
         ## save output
         fname = __out_dir__ + \
-            f'/runs-tests-for-{varset}-sims-{nsims}-comm-{len(commons)}-{date.today()}.pdf'
+            f'/runs-tests-for-{varset}-sims-{nsims}-comm-{len(commons)}-{date.today()}.png'
         print('Saving to',fname)
-        plt.savefig(fname,bbox_inches='tight')
+        plt.savefig(fname,bbox_inches='tight',dpi=__dpi_res__)
     
     def compare_sim_data(self, str_len=7, num_sims=100000):
         """
@@ -572,7 +574,7 @@ def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
     cutoff = norm.ppf(prob_success)
 
     ## calc the number of models
-    num_models = math.comb(varsA,2) + varsA*varsB
+    num_models = int(varsA*(varsA-1)/2 + varsA*varsB)
     print(f'Using: cutoff = {cutoff:.3}  common = {common:.2}  # models = {num_models}')
     
     ## run sims
@@ -639,7 +641,6 @@ def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
                 hists[vname] = 0
 
         ## save the number of successes and a statistic about the spread
-        ##spread.append(max(hists.values())-min(hists.values()))
         spread.append(np.std(list(hists.values())))
 
     print()
@@ -657,19 +658,21 @@ def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
         plt.plot(xxr,zz,color='red')
         plt.suptitle(f'Number successful trials with common={common:.2f} nsims={nsims}',y=0.94)
         
-        fname = __out_dir__ + f'/number-successful-trials-common-{common:.2f}-{date.today()}.pdf'
+        fname = __out_dir__ + f'/number-successful-trials-common-{common:.2f}-{date.today()}.png'
         print(fname)
-        plt.savefig(fname)
+        plt.savefig(fname,dpi=__dpi_res__)
         
         ## plot the histogram of spreads between occurrences of most and least
         ## frequently successful models
         plt.figure()
-        plt.hist(spread,rwidth=0.9,color='navy')
+        plt.hist(spread,rwidth=0.9,color='navy',
+                 label=f'common = {common:.2f}\nnsims = {nsims}')
         plt.suptitle('Spread in occurrence between high and low frequency models',y=0.94)
-
-        fname = __out_dir__ + f'/spread-high-low-frequency-{common:.2f}-{date.today()}.pdf'
+        plt.legend(handlelength=0,handletextpad=0)
+        
+        fname = __out_dir__ + f'/spread-high-low-frequency-{common:.2f}-{date.today()}.png'
         print(fname)
-        plt.savefig(fname)
+        plt.savefig(fname,dpi=__dpi_res__)
 
         
     return np.array(res), np.array(spread)
