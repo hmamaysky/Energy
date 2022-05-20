@@ -146,7 +146,13 @@ class OOSResults():
 
         ## combine hists
         hists = pd.concat(hists,axis=1)
-        hists.hist(figsize=(10,7),rwidth=0.9)
+        hists.hist(figsize=(10,7),rwidth=0.8)
+        title = 'Distribution of number of successful models per forecaster'
+        plt.suptitle(title,y=0.95,fontsize=15)
+
+        fname = __out_dir__ + '/' + title.replace(' ','-') + '-' + str(date.today()) + '.pdf'
+        print('Saving to',fname)
+        plt.savefig(fname)
         
         return vars
 
@@ -213,11 +219,12 @@ class OOSResults():
 
         prep -- some setup for this function that comes from 'prep_for_simulation'
         '''
-        
-        nsims = 1000 ## number of simulations for correlated outcomes case
-        ##nsims = 100 ## number of simulations for correlated outcomes case
-        commons = np.arange(0,1.1,0.2)
 
+        ## number of simulations and common variation for correlated outcomes case
+        nsims = 100
+        nsims = 2500
+        commons = np.arange(0,1.1,0.2)
+        
         ## get vars
         thed = self.data[(self.data.depvar==dv) & (self.data.drop_row != True)].copy(deep=True)
         txt_vars = prep['txt_vars']
@@ -491,8 +498,8 @@ class OOSResults():
         Compares the probability of seeing at least one run of length kk with the fraction of
         rows that have at least one run of length kk calculated by simulation.
         """
-        calc_res = self.calc(varset='All')
-        qlist = calc_res.loc['q']
+        calc_res = self.summary(varset='All')
+        qlist = [float(el) for el in calc_res.loc['q']]
         klist = [1, 2, 3, 4, 5]
 
         ## Create a table that summarizes the comparison results
@@ -540,7 +547,7 @@ class OOSResults():
                                 'diff'+str(kk)])
             
         sim_df.index = index_names
-        sim_df.loc['q', :] = qlist.values
+        sim_df.loc['q', :] = qlist
         
         sim_df = sim_df.loc[['q'] + index_names, :]
         sim_df.columns = calc_res.loc['Dep Var', :]
@@ -640,17 +647,30 @@ def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
     ## plotting
     if plot:
 
+        run_date = date.today()
+        
         ## plot the histogram of successful models
-        plt.hist(res,density=True,bins=50)
+        plt.figure()
+        plt.hist(res,rwidth=0.9,density=True,bins=50)
         xxr = range(np.min(res),np.max(res)+1)
         zz = binom.pmf(xxr,num_models,prob_success)
         plt.plot(xxr,zz,color='red')
-
+        plt.suptitle(f'Number successful trials with common={common:.2f} nsims={nsims}',y=0.94)
+        
+        fname = __out_dir__ + f'/number-successful-trials-common-{common:.2f}-{date.today()}.pdf'
+        print(fname)
+        plt.savefig(fname)
+        
         ## plot the histogram of spreads between occurrences of most and least
         ## frequently successful models
         plt.figure()
         plt.hist(spread,rwidth=0.9,color='navy')
         plt.suptitle('Spread in occurrence between high and low frequency models',y=0.94)
+
+        fname = __out_dir__ + f'/spread-high-low-frequency-{common:.2f}-{date.today()}.pdf'
+        print(fname)
+        plt.savefig(fname)
+
         
     return np.array(res), np.array(spread)
 

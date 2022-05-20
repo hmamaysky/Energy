@@ -17,15 +17,15 @@ Run0-pval-sim,(0.84)
 Run0-common,[0.2]
 Run1-sprob,0.741
 Run1-pval,(0.02)
-Run1-pval-sim,(0.18)
+Run1-pval-sim,(0.19)
 Run1-common,[0.2]
 Run2-sprob,0.246
 Run2-pval,(0.95)
-Run2-pval-sim,(0.78)
+Run2-pval-sim,(0.76)
 Run2-common,[0.2]
 Run3-sprob,0.059
 Run3-pval,(0.28)
-Run3-pval-sim,(0.39)
+Run3-pval-sim,(0.37)
 Run3-common,[0.6]
 Run4-sprob,0.013
 Run4-pval,(0.98)
@@ -33,5 +33,5 @@ Run4-pval-sim,(0.98)
 Run4-common,[0.0]
 Run5-sprob,0.003
 Run5-pval,(0.86)
-Run5-pval-sim,(0.85)
+Run5-pval-sim,(0.86)
 Run5-common,[0.0]
