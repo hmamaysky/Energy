@@ -5,10 +5,10 @@ import re, os, datetime, multiprocessing
 
 __out_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/results/'
 
-def run_one_depvar(oos,dv,varset,all_vars,txt_vars,run_cols,run_date):
+def run_one_depvar(oos,dv,varset,prep,run_date):
 
     ## do the actual calculation
-    res = oos.res_for_depvar(dv,varset,all_vars,txt_vars,run_cols)
+    res = oos.res_for_depvar(dv,varset,prep)
 
     ## save to csv
     fname = __out_dir__ + f'sims-for-runs-tests-{varset}-{dv}-{run_date}.csv'
@@ -19,12 +19,12 @@ def run_varset(oos,varset,run_date):
 
     print(f'Running for {varset}')
 
-    all_vars, txt_vars, run_cols = oos.prep_for_simulation()
+    prep = oos.prep_for_simulation()
    
     ## kick off runs
     pool = multiprocessing.Pool(processes=len(oos.data.depvar.unique()))
     for dv in oos.data.depvar.unique():
-        pool.apply_async(run_one_depvar,(oos,dv,varset,all_vars,txt_vars,run_cols,run_date))
+        pool.apply_async(run_one_depvar,(oos,dv,varset,prep,run_date))
     pool.close()
     pool.join()
 

@@ -10,15 +10,15 @@ en.find_outliers(serd,txtd)
 en.show_outliers(serd,txtd)
 # %% some text series plots
 en.plot_text_stats(serd)
-# %% read in and process OOS results about number of runsin subperiods
+# %% *** can run locally, not on grid ***
+## read in and process OOS results about number of runsin subperiods
 oos = en.OOSResults()
 # %% do a test run
-all_vars, txt_vars, run_cols = oos.prep_for_simulation()
-res = oos.res_for_depvar('bpRet','All',all_vars,txt_vars,run_cols)
-# %% calculate various stats
-oosall = oos.calc('All',saveout=True)
-# %% 
-oostxt = oos.calc('Text',saveout=True)
+prep = oos.prep_for_simulation()
+res = oos.res_for_depvar('bpRet','Text',prep)
+# %% summarize outputs of run_runs_sims.py
+oosall = oos.summary('All',saveout=True)
+oostxt = oos.summary('Text',saveout=True)
 # %% check the successful model distributions
 oos.variable_distribution(runlen=1)
 aa = en.correlated_binom(45,0,0.5,common=0.7,nsims=250)

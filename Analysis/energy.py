@@ -8,6 +8,7 @@ from collections import Counter
 from scipy.stats import binom, norm
 from scipy.linalg import cholesky
 from collections import Counter
+from utils import pyhelp as pyh
 
 __text_dir__ = '/shared/share_mamaysky-glasserman/energy_drivers/2020-11-16'
 __out_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/results'
@@ -206,17 +207,25 @@ class OOSResults():
 
         return prs.sum()
 
-    def res_for_depvar(self,dv,varset,all_vars,txt_vars,run_cols):
+    def res_for_depvar(self,dv,varset,prep):
         '''
         Run the analysis for a single dependent variable.
+
+        prep -- some setup for this function that comes from 'prep_for_simulation'
         '''
         
-        nsims = 100 ## number of simulations for correlated outcomes case
-        nsims = 2500 ## number of simulations for correlated outcomes case
+        nsims = 1000 ## number of simulations for correlated outcomes case
+        ##nsims = 100 ## number of simulations for correlated outcomes case
         commons = np.arange(0,1.1,0.2)
 
+        ## get vars
         thed = self.data[(self.data.depvar==dv) & (self.data.drop_row != True)].copy(deep=True)
-
+        txt_vars = prep['txt_vars']
+        all_vars = prep['all_vars']
+        nontxt_vars = prep['nontxt_vars']
+        run_cols = prep['run_cols']
+        
+        ## status update
         print('Working on:',dv,end='\n\n')
 
         ## specialize results to those with at least a text var?
@@ -367,9 +376,12 @@ class OOSResults():
         print('All good!\n')
 
         ## return vals
-        return all_vars, txt_vars, run_cols
+        return {'all_vars':all_vars,
+                'txt_vars':txt_vars,
+                'nontxt_vars':nontxt_vars,
+                'run_cols':run_cols}
     
-    def calc(self,varset,saveout=False):
+    def summary(self,varset,saveout=False):
         '''
         Calculate the statistics for the simulations to determine runs p-values.
 
@@ -381,29 +393,41 @@ class OOSResults():
         assert varset in ['All','Text']
         
         ## get all results
+        fnames = pyh.most_recent_file(__out_dir__,f'sims-for-runs-tests-{varset}',multiple=True)
         allres = []
-        allres = pd.concat(allres,axis=0)
-        breakpoint()
+        for fname in fnames:
+            allres.append(pd.read_csv(fname,index_col=0))
+        allres = pd.concat(allres,axis=1)
             
-        ## reorder columns (these will become the rows of the table post-transpose)
-        ## and add all columns whose name starts with "Run[0-9]"
-        cols = ['Dep Var','Runs','Max Runs','q','# All/Txt']
-        for ii in range(0,len(run_cols)+1):
-            add_cols = allres.columns[allres.columns.str.contains(f'Run{ii}')]
-            cols.extend(add_cols)
+        ## same some results that will be discarded when displaying
+        nsims = allres.loc['nsims'].unique()
+        assert len(nsims)==1
+        nsims = nsims[0]
+        
+        commons = allres.loc['commons'].unique()
+        assert len(commons)==1
+        commons = [float(el) for el in commons[0].split('-')]
 
-        ## transpose table -- result cols becomes rows and cols are LHS vars
-        allres = allres[cols].fillna(0).transpose()
-        allres.columns = allres.loc['Dep Var']
+        ## reorder rows and add all rows whose name starts with "Run[0-9]"
+        rows = ['Runs','Max Runs','q','# All/Txt']
+
+        ## find strings that end with "Run[0-9]+"
+        runs = allres.index[allres.index.str.contains('Run[0-9]+$')]
+        for run in runs:
+            add_rows = allres.index[allres.index.str.contains(run)]
+            rows.extend(add_rows)
         
         ## reorder how dependent variables show up
-        allres = allres[['FutRet','DSpot','DOilVol','xomRet','bpRet','rdsaRet','DInv','DProd']]
+        allres = allres[['FutRet','DSpot','DOilVol','xomRet','bpRet','rdsaRet','DInv','DProd']].loc[rows]
 
-        print('\n',allres)
-
+        ## make columns names into first row
+        toprow = pd.DataFrame(dict(zip(allres.columns,allres.columns)),index=['Dep Var'])
+        allres = pd.concat([toprow,allres],axis=0)
+        
         ## show/save output?
         try:
-            if saveout: self.plot_calc(allres,varset,nsims,commons,detailed=False)
+            if saveout:
+                self.plot_calc(allres,varset,nsims,commons,detailed=False)
         except:
             print('Something went wrong with plot_calc.')
             
@@ -419,7 +443,7 @@ class OOSResults():
         ## select which rows
         if not detailed:
             allres = allres[allres.index.str.contains('common') == False]
-            allres = allres[allres.index.str.contains('pval$') == False]
+            ##allres = allres[allres.index.str.contains('pval$') == False]
 
         ## convert to plotting
         pltres = allres.reset_index()
