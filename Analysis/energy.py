@@ -129,38 +129,52 @@ class OOSResults():
 
         runcol = f'Run{runlen}'
         assert runcol in self.data.columns
-       
-        ## go through all the dependent variables
-        hists = []
-        for dv in set(self.data.depvar):
 
-            ## get all data for given dependent variable with rows w/out missing observations
-            dd = self.data[(self.data.depvar==dv)&(self.data[runcol])]
-
-            vs = dd['var1'].to_list() + dd['var2'].to_list()
-            vs = pd.Series(Counter(vs)).sort_values()
-            vs.name = f'{dv} std = {vs.std():.2f}'
-
-            hists.append(pd.Series(vs).sort_values())
-
-        ## combine hists
-        hists = pd.concat(hists,axis=1)
-        hists.hist(figsize=(10,7),rwidth=0.8)
-        title = 'Distribution of number of successful models per forecasting variable'
-
-        ## some info about model
+        ## summary stats about models
         summ = self.model_summary()
         numA = len(summ['all_vars'])
-        title2 = f'Run length = {runlen}  Number vars = {numA}  Max appearances = {numA*(numA-1):.0f}'
+        numT = len(summ['txt_vars'])
 
-        ## make title and save
-        plt.suptitle(title + '\n' + title2,y=0.99,fontsize=15)
+        for model_type in ['all','text']:
 
-        fname = __out_dir__+'/Distribution-'+title2.replace(' ','-')+'-'+str(date.today())+'.png'
-        print('Saving to',fname)
-        plt.savefig(fname,dpi=__dpi_res__)
+            if model_type == 'all':
+                num_models = numA * (numA-1) / 2
+                var_set = summ['all_vars']
+            else:
+                num_models = numT * (numT-1) / 2 + numT * (numA - numT)
+                var_set = summ['txt_vars']
+                
+            ## go through all the dependent variables
+            hists = []
+            for dv in sorted(set(self.data.depvar)):
+
+                ## get all data for given dependent variable with rows w/out missing observations,
+                ## and make sure to restrict attention to the desired set of forecasting variables
+                dd = self.data[(self.data.depvar==dv)&(self.data[runcol])&
+                               (self.data.var1.apply(lambda el: el in var_set) |
+                                self.data.var2.apply(lambda el: el in var_set))]
+
+                vs = dd['var1'].to_list() + dd['var2'].to_list()
+                vs = pd.Series(Counter(vs)).sort_values()
+                vs.name = f'{dv}  std={vs.std():.2f}'
+
+                hists.append(pd.Series(vs).sort_values())
+
+            ## combine hists
+            hists = pd.concat(hists,axis=1)
+            hists.hist(figsize=(10,7),rwidth=0.8)
+            title = f'Distribution of number of successful {model_type}-variable models'
+
+            ## some info about model
+            title2 = f'Run length={runlen}  Num vars={numA}  Txt vars={numT}  Num models={num_models:.0f}'
+
+            ## make title and save
+            plt.suptitle(title + '\n' + title2,y=0.99,fontsize=15)
+
+            fname = __out_dir__+f'/Dist-{model_type}-'+title2.replace(' ','-')+'-'+str(date.today())+'.png'
+            print('Saving to',fname)
+            plt.savefig(fname,dpi=__dpi_res__)
         
-        return vars
 
     def prob_of_run(self,qq,kk,nn,verbose=False):
         '''
@@ -228,6 +242,8 @@ class OOSResults():
         nsims = 100
         nsims = 2500
         commons = np.arange(0,1.1,0.2)
+        commons_str = ', '.join([str(el.round(2)) for el in commons])
+        print(f'For {dv} using c (common) values of {commons_str}.')
         
         ## get vars
         thed = self.data[(self.data.depvar==dv) & (self.data.drop_row != True)].copy(deep=True)
@@ -666,7 +682,7 @@ def correlated_binom(varsA,varsB,prob_success,common=0.3,nsims=2500,plot=True):
         ## frequently successful models
         plt.figure()
         plt.hist(spread,rwidth=0.9,color='navy',
-                 label=f'common = {common:.2f}\nnsims = {nsims}')
+                 label=f'common = {common:.2f}\nnsims = {nsims}\nmean = {np.mean(spread):.2f}')
         plt.suptitle('Spread in occurrence between high and low frequency models',y=0.94)
         plt.legend(handlelength=0,handletextpad=0)
         

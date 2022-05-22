@@ -18,13 +18,14 @@ res = oos.res_for_depvar('bpRet','Text')
 # %% summarize outputs of [run_runs_sims.py]
 oosall = oos.summary('All',saveout=True)
 oostxt = oos.summary('Text',saveout=True)
-# %% check the successful model distributions
+# %% check empirical successful variable distributions
 oos.variable_distribution(runlen=1)
+# %% simulated successful variable distributions
 numA = len(oos.model_summary()['all_vars'])
 numB = 0
 pr = 0.5 ## probability of a successful trial
-en.correlated_binom(numA,numB,pr,common=0.,nsims=1000)
-en.correlated_binom(numA,numB,pr,common=0.9,nsims=1000)
+en.correlated_binom(numA,numB,pr,common=0.,nsims=2500)
+en.correlated_binom(numA,numB,pr,common=0.9,nsims=2500)
 # %% simulations to verify closed form probs of length-k runs
 df = oos.compare_sim_data(num_sims=50000)
 # %% probs for runs -- example
