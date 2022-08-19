@@ -418,8 +418,9 @@ def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
         return [np.nan]
     else:
         diff = reg.predict(X_test) - y_test
+        pred = reg.predict(X_test)
 
-    return diff
+    return diff, pred
 
 ### 2.3 Custom Rolling Diff function for Forward Model 
 def rolling_diff_forward(data, d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
