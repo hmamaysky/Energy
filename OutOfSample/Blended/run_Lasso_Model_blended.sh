@@ -13,7 +13,7 @@ for w in 8; do
 	for f in 1; do
         for v in 1 2; do
             for l in 10; do
-                sge_run --grid_mem=64G --grid_ncpus=8 --grid_submit=batch --grid_quiet "${FS}/Lasso_Model.py $w $f $v $l";
+                sge_run --grid_mem=64G --grid_ncpus=8 --grid_submit=batch --grid_quiet "${FS}/Lasso_Model_blended.py $w $f $v $l";
             done
         done
 	done
