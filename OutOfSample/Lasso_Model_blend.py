@@ -70,6 +70,7 @@ def main(d_var):
         # and a list of rmses for each model as value
         rmse_result={}
         rmse_series={}
+        prediction={}
         for d_var in d_vars:
             print('-------------------')
             print(d_var)
@@ -80,12 +81,21 @@ def main(d_var):
             base_diff_list =[]
             text_diff_list =[]
             full_diff_list =[]
+            blended_diff_list =[]
+
+            constant_pred_list =[]
+            base_pred_list =[]
+            text_pred_list =[]
+            full_pred_list =[]
+            blended_pred_list =[]
+            
             #     List for cumulative rmse
             constant_rmse_list =[]
             base_rmse_list =[]
             text_rmse_list =[]
             full_rmse_list =[]
-            
+            blended_rmse_list =[]
+                        
             # 1.3 Get the exact date of each window (monthly)
             #     Here, we ensure everytime we train, there are enough observations for backward looking
             time_col = data_set(d_var)['date'] 
@@ -106,21 +116,32 @@ def main(d_var):
                 full_vars, base_vars, text_vars = select_significant(d_var, week, wk=weeks, ns=no_varibles)
                 
                 # Calculate MSE and RMSE
-                constant_diff = rolling_diff_Lasso(d_var, [], week, wk=weeks, window=updating_window, cvs=cv)
-                base_diff = rolling_diff_Lasso(d_var, base_vars, week, wk=weeks, window=updating_window, cvs=cv)
-                text_diff = rolling_diff_Lasso(d_var, text_vars, week, wk=weeks, window=updating_window, cvs=cv)
-                full_diff = rolling_diff_Lasso(d_var, full_vars, week, wk=weeks, window=updating_window, cvs=cv)
+                constant_diff, constant_pred = rolling_diff_Lasso(d_var, [], week, wk=weeks, window=updating_window, cvs=cv)
+                base_diff, base_pred = rolling_diff_Lasso(d_var, base_vars, week, wk=weeks, window=updating_window, cvs=cv)
+                text_diff, text_pred = rolling_diff_Lasso(d_var, text_vars, week, wk=weeks, window=updating_window, cvs=cv)
+                full_diff, full_pred = rolling_diff_Lasso(d_var, full_vars, week, wk=weeks, window=updating_window, cvs=cv)
+                w=0 # set weights
+                blended_diff = w*constant_diff + (1-w)*full_diff
+                blended_pred = w*constant_pred + (1-w)*full_pred
                
                 # Append results to lists              
                 constant_diff_list.extend(constant_diff)                
                 base_diff_list.extend(base_diff)    
                 text_diff_list.extend(text_diff) 
                 full_diff_list.extend(full_diff)
+                blended_diff_list.extend(blended_diff)
                 
+                constant_pred_list.extend(constant_pred)                
+                base_pred_list.extend(base_pred)    
+                text_pred_list.extend(text_pred) 
+                full_pred_list.extend(full_pred)
+                blended_pred_list.extend(blended_pred)
+
                 constant_rmse_list.append(RMSE(constant_diff_list))
                 base_rmse_list.append(RMSE(base_diff_list))
                 text_rmse_list.append(RMSE(text_diff_list))
-                full_rmse_list.append(RMSE(full_diff_list))               
+                full_rmse_list.append(RMSE(full_diff_list))           
+                blended_rmse_list.append(RMSE(blended_diff_list))
                 
             # 1.5 Store RMSE ratios of different models for each LHS variable  
             rmse_result[d_var]=[RMSE(base_diff_list)/RMSE(constant_diff_list), RMSE(text_diff_list)/RMSE(constant_diff_list),
@@ -129,13 +150,20 @@ def main(d_var):
             rmse_series[d_var] = {'const_rmse':constant_rmse_list,
                                   'base_rmse':base_rmse_list,
                                   'text_rmse':text_rmse_list,
-                                  'full_rmse':full_rmse_list}
+                                  'full_rmse':full_rmse_list,
+                                  'blended_rmse':blended_rmse_list}
+            
+            prediction[d_var] = {'const_pred':constant_pred_list,
+                                  'base_pred':base_pred_list,
+                                  'text_pred':text_pred_list,
+                                  'full_pred':full_pred_list,
+                                  'blended_pred':blended_pred_list}
         # 2. Save and Return 
         # Create a DataFrame to save results, more convenient for further interpretation
         rmse_df = pd.DataFrame(rmse_result)
         rmse_df.index=['Base Model', 'Text Model', 'Full Model', 'Text Model (on Base)', 'Full Model (on Base)']
 
-    return rmse_df, rmse_series
+    return rmse_df, rmse_series, prediction
 
 # %% 3. Main Process
 if __name__ == '__main__':
@@ -164,6 +192,7 @@ if __name__ == '__main__':
     # result holders for each process
     rmse=pd.DataFrame()
     rmse_seriess=dict()
+    prediction_series=dict()
     # 8 dependent variables
     d_vars = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']
     # Main algorithm and save the results
@@ -172,9 +201,12 @@ if __name__ == '__main__':
         for result in results:
             rmse=pd.concat([rmse,result[0]], axis=1)
             rmse_seriess.update(result[1])
+            prediction_series.update(result[2])
             
     ### 3.4 Save the results to proper directory
     rmse.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
                     +file+'/'+file_start+'/Lasso_'+str(cv_fold)+'fold_'+file_suffix+'_t.xlsx')
     pickle.dump(rmse_seriess,open('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
                     +file+'/'+file_start+'/Lasso_'+str(cv_fold)+'fold_'+file_suffix+'_t_rmse.p','wb'))
+    pickle.dump(prediction_series,open('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
+                    +file+'/'+file_start+'/Lasso_prediction_'+str(cv_fold)+'fold_'+file_suffix+'_t.p','wb'))
