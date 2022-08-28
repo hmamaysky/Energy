@@ -6,7 +6,7 @@
 ## l: Lasso cross validation folds
 
 # directory of the code
-FS='/user/hw2676/code/Energy/Analysis/New_Var/2.0Version/analysis_codes'
+FS='/user/sk5193/code/Energy/Analysis/New_Var/2.0Version/analysis_codes'
 
 # run the code for different years and months
 for w in 8; do 
