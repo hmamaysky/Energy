@@ -204,9 +204,9 @@ if __name__ == '__main__':
             prediction_series.update(result[2])
             
     ### 3.4 Save the results to proper directory
-    rmse.to_excel('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
+    rmse.to_excel('/user/sk5193/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
                     +file+'/'+file_start+'/Lasso_'+str(cv_fold)+'fold_'+file_suffix+'_t.xlsx')
-    pickle.dump(rmse_seriess,open('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
+    pickle.dump(rmse_seriess,open('/user/sk5193/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
                     +file+'/'+file_start+'/Lasso_'+str(cv_fold)+'fold_'+file_suffix+'_t_rmse.p','wb'))
-    pickle.dump(prediction_series,open('/user/hw2676/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
+    pickle.dump(prediction_series,open('/user/sk5193/files/Energy/outputs/wipimom_updated/new_variables/parsimonious/'
                     +file+'/'+file_start+'/Lasso_prediction_'+str(cv_fold)+'fold_'+file_suffix+'_t.p','wb'))
