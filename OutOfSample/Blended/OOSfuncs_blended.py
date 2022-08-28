@@ -45,7 +45,7 @@ def RMSE(x):
 ### 1.2 Load dataset according to different dependent variable ###
 def data_set(d_var):
     ## change directory
-    wkdir = '/user/hw2676/files/Energy'
+    wkdir = '/user/sk5193/files/Energy'
     os.chdir(wkdir)
     
     ## Price vars and Physical vars use different Dataset
