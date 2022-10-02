@@ -139,7 +139,7 @@ class OOSAnalysis:
         return f'pdata: price-based timing data {self.pdata.shape}\n' + \
             f'pred8: predictions from 8-wk 1 non-txt & 1 txt model {self.pred8.shape}\n'
 
-    def dopred(self,numvar='1_1',mtype='full'):
+    def blended_oos(self,numvar='1_1',mtype='full'):
         '''
         mtype -- which model to compare to const: base, text, full
         '''
@@ -172,7 +172,8 @@ class OOSAnalysis:
         sers = pd.concat(sers,axis=1)
         fig = plt.figure()
         max_wt = 0.5
-        axs = sers[sers.index <= max_wt].plot(subplots=True,layout=(2,4),figsize=(10,5))
+        axs = sers[sers.index <= max_wt].plot(subplots=True,layout=(2,4),figsize=(11,5),
+                                              xlabel='$w$',ylabel='$R^2_{OOS}$ in percent')
         for ii, ax in enumerate(axs.flatten()):
             ##ax.axhline(1,linestyle='--')
             ax.axhline(0,linestyle='--')
