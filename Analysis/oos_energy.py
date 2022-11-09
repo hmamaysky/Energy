@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import statsmodels.api as sm
 
 __data_loc__ = os.getenv('HOME')+'/code/Energy/OutOfSample'
 
@@ -60,6 +61,11 @@ class OOSAnalysis:
         ## now get the implied actual series
         self.calc_actual_and_verify()
         
+    def __repr__(self):
+
+        return f'pdata: price-based timing data {self.pdata.shape}\n' + \
+            f'pred8: predictions from 8-wk 1-1 (base/txt/both) and 2-2 (base/txt/both) models {self.pred8.shape}\n'
+
     def calc_actual_and_verify(self):
         '''
         This calculates the actual outcomes series as the prediction minus the difference,
@@ -69,11 +75,10 @@ class OOSAnalysis:
 
         print('\tcalc\'ing and verifying actual series')
         
-        ## get the implied actual series (not that for a given depser, this should be the same
-        ## across all types (i.e., const, base, text, and full forecasting methods
+        ## Get the implied actual series. Note that for a given depser, this should be the same
+        ## across all types (i.e., const, base, text, and full forecasting methods.
         self.pred8['actual'] = self.pred8['pred'] - self.pred8['diff']
         self.pred8.set_index(['index','numvar','type','depser'],inplace=True)
-       
 
         ## check that this is the correct calculation for actual series for all
         ## (depser,numvar,type) tuples, e.g., ('FutRet','2_2','const')
@@ -94,9 +99,12 @@ class OOSAnalysis:
                         if diff.max() > 1e-13:
                             print('There is a problem reconstructing actual series for',
                                   (depser,mtype,numvar),f'. Max diff is {diff.max()}.')
+                            raise Exception('Reconstructed actual series do not reconcile.')
                     ii += 1
 
-
+            print(f'\t\t {depser:7}: implied "actual" series good for ' + \
+                  f'{{const,text,base,full}} x {{1_1,2_2}}')
+                    
     def gen_old_table(self,numvar='1_1'):
         '''
         Generate the old Table VI from the paper, which shows the RMSE ratios.
@@ -134,10 +142,23 @@ class OOSAnalysis:
         print(table.round(3),end='\n\n')
         return table            
         
-    def __repr__(self):
+    def check_const_for_actual(self):
+        '''
+        Check how well constant forecasts actual outcomes across the dependent
+        variables.
+        '''
 
-        return f'pdata: price-based timing data {self.pdata.shape}\n' + \
-            f'pred8: predictions from 8-wk 1 non-txt & 1 txt model {self.pred8.shape}\n'
+        numvar = '1_1' ## should be same for '2_2'
+        for depser in self.pred8.index.get_level_values('depser').unique():
+
+            ## calc the regression of actual on constant model
+            actual = self.pred8.xs((numvar,depser,'const'),level=['numvar','depser','type'])['actual']
+            c_pred = self.pred8.xs((numvar,depser,'const'),level=['numvar','depser','type'])['pred']
+            mod = sm.OLS(actual,sm.add_constant(c_pred),missing='drop')
+            res = mod.fit()
+            print(f'depser = {depser:8s} (numvar={numvar})  R2={res.rsquared:6.4f}' + \
+                  f'  bb={res.params["pred"]:6.3f}  pval={res.pvalues["pred"]:6.3f}')
+            
 
     def blended_oos(self,numvar='1_1',mtype='full'):
         '''
@@ -148,9 +169,11 @@ class OOSAnalysis:
         for depser in self.pred8.index.get_level_values('depser').unique():
         
             const = self.pred8.xs((numvar,depser,'const'),level=['numvar','depser','type'])['diff']
+            const_pred = self.pred8.xs((numvar,depser,'const'),level=['numvar','depser','type'])['pred']
             model = self.pred8.xs((numvar,depser,mtype),level=['numvar','depser','type'])['diff']
-            ##zero = self.pred8.xs((numvar,depser,'const'),level=['numvar','depser','type'])['actual']
-        
+            actual = self.pred8.xs((numvar,depser,mtype),level=['numvar','depser','type'])['actual']
+            use_mean = -1
+            
             ## align after droppoing na's
             good_idx = const.notna() & model.notna()
             const = const[good_idx]
@@ -160,9 +183,10 @@ class OOSAnalysis:
             evalstat = []
             wts = np.arange(0,1,0.01)
             for wt in wts:
-                blend = wt * model + (1-wt) * const
-                ##evalstat.append(np.sqrt((blend**2).mean()/(const**2).mean()))
-                evalstat.append(100-100*(blend**2).mean()/(const**2).mean())
+                blend = wt * model + (1-wt) * (const_pred-actual)
+                ##evalstat.append(100-100*(blend**2).mean()/(const**2).mean())
+                ##evalstat.append(100-100*(blend**2).mean()/((actual-use_mean)**2).mean())
+                evalstat.append(100-100*(blend**2).mean()/((const_pred-actual)**2).mean())
 
             sers.append(pd.Series(evalstat,index=wts,name=depser))
 
@@ -171,7 +195,7 @@ class OOSAnalysis:
         ##
         sers = pd.concat(sers,axis=1)
         fig = plt.figure()
-        max_wt = 0.5
+        max_wt = 0.50
         axs = sers[sers.index <= max_wt].plot(subplots=True,layout=(2,4),figsize=(11,5),
                                               xlabel='$w$',ylabel='$R^2_{OOS}$ in percent')
         for ii, ax in enumerate(axs.flatten()):

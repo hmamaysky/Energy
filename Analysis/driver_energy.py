@@ -10,6 +10,13 @@ en.find_outliers(serd,txtd)
 en.show_outliers(serd,txtd)
 # %% some text series plots
 en.plot_text_stats(serd)
+# %% check SR for futret series (can run not on grid)
+import os
+locdir = os.getenv('HOME')+'/code/energy/data/'
+vard = pd.read_stata(locdir+'transformed_data_prices_v19.dta')
+fr = vard.FutRet_t8_Fri/100-1
+print('Mean = {:.4f}  SD = {:.4f}  SR = {:.4f}'.\
+      format(fr.mean(),fr.std(),np.sqrt(52/8)*fr.mean()/fr.std()))
 # %% *** can run locally, not on grid ***
 ## read in and process OOS results about number of runsin subperiods
 oos = en.OOSResults()

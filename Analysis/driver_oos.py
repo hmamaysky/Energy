@@ -5,6 +5,8 @@ oo = oos.OOSAnalysis()
 # %% replicate results in paper
 oo.gen_old_table('1_1')
 oo.gen_old_table('2_2')
+# %% check how rolling constant predicts actual outcomes
+oo.check_const_for_actual()
 # %% do predictions versus
 oo.blended_oos('1_1','base')
 oo.blended_oos('1_1','text')
