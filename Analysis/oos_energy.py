@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 
 __data_loc__ = os.getenv('HOME')+'/code/Energy/OutOfSample'
+__out_loc__ = os.getenv('HOME')+'/code/Energy/Analysis/results'
 
 class OOSAnalysis:
 
@@ -160,50 +161,83 @@ class OOSAnalysis:
                   f'  bb={res.params["pred"]:6.3f}  pval={res.pvalues["pred"]:6.3f}')
             
 
-    def blended_oos(self,numvar='1_1',mtype='full'):
+    def blended_oos(self,numvar='1_1',mtype='full',saveout=False):
         '''
         mtype -- which model to compare to const: base, text, full
         '''
 
-        sers = []
+        oos_R2 = []
+        mean_err = []
         for depser in self.pred8.index.get_level_values('depser').unique():
         
-            const = self.pred8.xs((numvar,depser,'const'),level=['numvar','depser','type'])['diff']
-            const_pred = self.pred8.xs((numvar,depser,'const'),level=['numvar','depser','type'])['pred']
+            ## these are the errors of the constant model and the rolling lasso model
             model = self.pred8.xs((numvar,depser,mtype),level=['numvar','depser','type'])['diff']
+            const = self.pred8.xs((numvar,depser,'const'),level=['numvar','depser','type'])['diff']
+
+            ## this is the prediction coming from the constant model, i.e., rolling mean
+            const_pred = self.pred8.xs((numvar,depser,'const'),level=['numvar','depser','type'])['pred']
+
+            ## this is the actual outcome for the given depser
             actual = self.pred8.xs((numvar,depser,mtype),level=['numvar','depser','type'])['actual']
-            use_mean = -1
-            
+
+            ## this is if we want to set a fixed mean forecast
+            ##use_mean = -1
+
             ## align after droppoing na's
-            good_idx = const.notna() & model.notna()
-            const = const[good_idx]
+            good_idx = const.notna() & model.notna() & const_pred.notna() & actual.notna()
             model = model[good_idx]
+            const = const[good_idx]
+            const_pred = const_pred[good_idx]
+            actual = actual[good_idx]
+
+            ## sanity check (this is redundant given 'calc_actual_and_verify'
+            assert np.abs(const - (const_pred - actual)).max() < 1e-13
             
             ## get the R2's or RMSE ratios
-            evalstat = []
+            oos_R2_local = []
+            mean_err_local = []
             wts = np.arange(0,1,0.01)
             for wt in wts:
                 blend = wt * model + (1-wt) * (const_pred-actual)
-                ##evalstat.append(100-100*(blend**2).mean()/(const**2).mean())
-                ##evalstat.append(100-100*(blend**2).mean()/((actual-use_mean)**2).mean())
-                evalstat.append(100-100*(blend**2).mean()/((const_pred-actual)**2).mean())
 
-            sers.append(pd.Series(evalstat,index=wts,name=depser))
+                ##oos_R2_local.append(100-100*(blend**2).mean()/(const**2).mean())
+                ##oos_R2_local.append(100-100*(blend**2).mean()/((actual-use_mean)**2).mean())
+                oos_R2_local.append(100-100*(blend**2).mean()/((const_pred-actual)**2).mean())
+
+                mean_err_local.append(blend.mean()/actual.std())
+
+            ## collect results for the given depser
+            oos_R2.append(pd.Series(oos_R2_local,index=wts,name=depser))
+            mean_err.append(pd.Series(mean_err_local,index=wts,name=depser))
+
+        ## collect all the data
+        oos_R2 = pd.concat(oos_R2,axis=1)
+        mean_err = pd.concat(mean_err,axis=1)
 
         ##
         ##  Plot only up to a max_wt range
         ##
-        sers = pd.concat(sers,axis=1)
-        fig = plt.figure()
-        max_wt = 0.50
-        axs = sers[sers.index <= max_wt].plot(subplots=True,layout=(2,4),figsize=(11,5),
-                                              xlabel='$w$',ylabel='$R^2_{OOS}$ in percent')
-        for ii, ax in enumerate(axs.flatten()):
-            ##ax.axhline(1,linestyle='--')
-            ax.axhline(0,linestyle='--')
-            ax.set_title(f'Global opt = {sers.iloc[:,ii].max():.2f}%')
+        def plot_outcome(data,label,ylabel,hline=None):
 
-        model_name = {'base':'non-text','text':'text','full':'full'}
-        plt.suptitle(f'Comparing {model_name[mtype]} ({numvar}) and const model blends',y=0.97)
-        plt.tight_layout()
-        
+            fig = plt.figure()
+            max_wt = 0.50
+            axs = data[data.index <= max_wt].plot(subplots=True,layout=(2,4),figsize=(11,5),
+                                                  xlabel='$w$',ylabel=ylabel)
+            if hline is not None:
+                for ii, ax in enumerate(axs.flatten()):
+                    ax.axhline(hline,linestyle='--')
+                    ax.set_title(f'Global opt = {data.iloc[:,ii].max():.2f}%')
+
+            model_name = {'base':'non-text','text':'text','full':'full'}
+            title = f'{label} {model_name[mtype]} ({numvar}) and const model blends'
+            plt.suptitle(title,y=0.97)
+            plt.tight_layout()
+
+            if saveout:
+                fname = (__out_loc__ + '/' + title + '.pdf').\
+                    replace('(','').replace(')','').replace(' ','-').replace('_','-')
+                print('Saving to',fname)
+                plt.savefig(fname)
+
+        plot_outcome(oos_R2,'OOS R2',ylabel='$R^2_{OOS}$ in percent',hline=0)
+        plot_outcome(mean_err,'Mean normalized error (pred-actual)',ylabel='Normalized mean error')
