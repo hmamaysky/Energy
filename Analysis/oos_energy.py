@@ -161,48 +161,48 @@ class OOSAnalysis:
                   f'  bb={res.params["pred"]:6.3f}  pval={res.pvalues["pred"]:6.3f}')
             
 
-    def blended_oos(self,numvar='1_1',mtype='full',saveout=False):
+    def blended_oos(self,numvar='1_1',mtest='full',mcontrol='const',saveout=False):
         '''
-        mtype -- which model to compare to const: base, text, full
+        mtest -- which model to compare to const: base, text, full
+        mcontrol -- which is the control model, i.e., const for main results, but can also be
+                    base if we want to use the non-text model as the control model for OOS R2
         '''
 
         oos_R2 = []
         mean_err = []
         for depser in self.pred8.index.get_level_values('depser').unique():
         
-            ## these are the errors of the constant model and the rolling lasso model
-            model = self.pred8.xs((numvar,depser,mtype),level=['numvar','depser','type'])['diff']
-            const = self.pred8.xs((numvar,depser,'const'),level=['numvar','depser','type'])['diff']
+            ## these are the errors of the control model and the rolling lasso model
+            model = self.pred8.xs((numvar,depser,mtest),level=['numvar','depser','type'])['diff']
+            control = self.pred8.xs((numvar,depser,mcontrol),level=['numvar','depser','type'])['diff']
 
-            ## this is the prediction coming from the constant model, i.e., rolling mean
-            const_pred = self.pred8.xs((numvar,depser,'const'),level=['numvar','depser','type'])['pred']
+            ## this is the prediction coming from the control model, e.g., rolling mean for const
+            control_pred = self.pred8.xs((numvar,depser,mcontrol),level=['numvar','depser','type'])['pred']
 
             ## this is the actual outcome for the given depser
-            actual = self.pred8.xs((numvar,depser,mtype),level=['numvar','depser','type'])['actual']
+            actual = self.pred8.xs((numvar,depser,mtest),level=['numvar','depser','type'])['actual']
 
             ## this is if we want to set a fixed mean forecast
             ##use_mean = -1
 
             ## align after droppoing na's
-            good_idx = const.notna() & model.notna() & const_pred.notna() & actual.notna()
+            good_idx = control.notna() & model.notna() & control_pred.notna() & actual.notna()
             model = model[good_idx]
-            const = const[good_idx]
-            const_pred = const_pred[good_idx]
+            control = control[good_idx]
+            control_pred = control_pred[good_idx]
             actual = actual[good_idx]
 
             ## sanity check (this is redundant given 'calc_actual_and_verify'
-            assert np.abs(const - (const_pred - actual)).max() < 1e-13
+            assert np.abs(control - (control_pred - actual)).max() < 1e-13
             
             ## get the R2's or RMSE ratios
             oos_R2_local = []
             mean_err_local = []
             wts = np.arange(0,1,0.01)
             for wt in wts:
-                blend = wt * model + (1-wt) * (const_pred-actual)
+                blend = wt * model + (1-wt) * (control_pred-actual)
 
-                ##oos_R2_local.append(100-100*(blend**2).mean()/(const**2).mean())
-                ##oos_R2_local.append(100-100*(blend**2).mean()/((actual-use_mean)**2).mean())
-                oos_R2_local.append(100-100*(blend**2).mean()/((const_pred-actual)**2).mean())
+                oos_R2_local.append(100-100*(blend**2).mean()/((control_pred-actual)**2).mean())
 
                 mean_err_local.append(blend.mean()/actual.std())
 
@@ -220,16 +220,19 @@ class OOSAnalysis:
         def plot_outcome(data,label,ylabel,hline=None):
 
             fig = plt.figure()
-            max_wt = 0.50
-            axs = data[data.index <= max_wt].plot(subplots=True,layout=(2,4),figsize=(11,5),
+            if mcontrol == 'const':
+                max_wt = 0.50
+            else:
+                max_wt = 1
+            axs = data[data.index <= max_wt].plot(subplots=True,layout=(2,4),figsize=(11,4),
                                                   xlabel='$w$',ylabel=ylabel)
             if hline is not None:
                 for ii, ax in enumerate(axs.flatten()):
                     ax.axhline(hline,linestyle='--')
                     ax.set_title(f'Global opt = {data.iloc[:,ii].max():.2f}%')
 
-            model_name = {'base':'non-text','text':'text','full':'full'}
-            title = f'{label} {model_name[mtype]} ({numvar}) and const model blends'
+            model_name = {'base':'non-text','text':'text','full':'full','const':'rolling mean'}
+            title = f'{label} {model_name[mtest]} ({numvar}) vs {model_name[mcontrol]} model blends'
             plt.suptitle(title,y=0.97)
             plt.tight_layout()
 

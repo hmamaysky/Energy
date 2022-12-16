@@ -18,7 +18,7 @@ fr = vard.FutRet_t8_Fri/100-1
 print('Mean = {:.4f}  SD = {:.4f}  SR = {:.4f}'.\
       format(fr.mean(),fr.std(),np.sqrt(52/8)*fr.mean()/fr.std()))
 # %% *** can run locally, not on grid ***
-## read in and process OOS results about number of runsin subperiods
+## read in and process OOS results about number of runs in subperiods
 oos = en.OOSResults()
 # %% sample run (for debugging run_runs_sims.py)
 res = oos.res_for_depvar('bpRet','Text')
