@@ -5,6 +5,7 @@ Created on Wed Apr 29 21:54:04 2020
 
 @author: Hongyu Wu
 
+
 This file performs the OOS 1-1 and 2-2 OLS update model.
 
 1. The main algorithm first select a significant 1-1 or 2-2 pair (#of baseline var-#of text var)
