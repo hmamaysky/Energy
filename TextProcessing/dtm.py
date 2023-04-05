@@ -1,42 +1,43 @@
-#!/apps/anaconda2/bin/python
+#!/user/kh3191/.conda/envs/nlp/bin/python
 
 """
-    Program            : refer to run_dtm.sh 
     Function           : This code prepares the monthly dtm files
 """
 
-import xml.etree.cElementTree as cElementTree
-import time
-import unicodedata
-import nltk
-import string
-from nltk.corpus import stopwords
-from nltk.stem import *
-from nltk.stem import PorterStemmer  
-stemmer=PorterStemmer()
-  
 import pandas as pd
 import numpy as np
-from nltk import stem
-from multiprocessing import Pool
-import re
-from nltk.util import ngrams
 import os
-import datetime as dt
-import random
-from sklearn.feature_extraction.text import TfidfVectorizer
-from collections import Counter
-import sys
+from tqdm import tqdm
+
 import csv
 csv.field_size_limit(100000000)
 from collections import OrderedDict
 
+import re
+import nltk
+from nltk.corpus import stopwords
+from nltk import stem
+from nltk.util import ngrams
+stemmer = stem.snowball.EnglishStemmer()
+stop = stopwords.words('english')
 
-from os import listdir
-from os.path import isfile, join
 
+import argparse
+from argparse import RawTextHelpFormatter
+def parse_option():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--inputWordsPath', type=str, 
+           default='clustering_C.csv')
+    parser.add_argument('--inputPath', type=str, 
+           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
+    parser.add_argument('--outputPath', type=str, 
+           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C')
+    parser.add_argument('--usePandas', type=bool, default=True)
+    opt = parser.parse_args()
+    return opt
 
-
+opt = parse_option()
+print(opt)
 
 def get_clean0(sample):
 
@@ -86,7 +87,6 @@ def get_clean1(sample):
     lx = get_clean0(sample)
     tokens = nltk.word_tokenize(lx)
     cleanup = [stemmer.stem(token) for token in tokens]
-
     return cleanup 
 
 
@@ -127,83 +127,71 @@ def get_clean3(sample):
 
 
 
+def main():
+    
+    words_test = pd.read_csv(opt.inputWordsPath, sep=',')
+    words_test = words_test.word.tolist()
 
-stemmer=stem.snowball.EnglishStemmer()
-stop = stopwords.words('english')
+    for file in tqdm(os.listdir(opt.inputPath)):
+        YYYYMM = file[-15:-9]
+        
+        if opt.usePandas:
+            df = pd.read_csv(f'{opt.inputPath}/{file}')
+            counts_df = 0
+            for get_clean in [get_clean1, get_clean2, get_clean3]:
+                grams = df['augbod'].apply(lambda text: get_clean(text))
+                exploded_lists = grams.explode()
+                counts = exploded_lists[exploded_lists.isin(words_test)].groupby(level=0).apply(lambda x: x.value_counts())
+                counts_df += counts.unstack().fillna(0).reindex(columns=words_test, index=df.index, fill_value=0)
+                
+            pd.concat([df[['Id','TimeStamp']], counts_df], axis=1).to_csv(f'{opt.outputPath}/{YYYYMM}_dtm.csv', index=False)
+            
+        else:
+            with open(f'{opt.inputPath}/{file}', 'r') as csvfile:
+                        spamreader = csv.reader(csvfile, delimiter=',')
+                        next(spamreader, None)
+                        data1 = []
+                        data2 = []
+                        data3 = []
+                        data4 = []
+                        data5 = []
+                        for row in spamreader:
+                            my_dict = OrderedDict.fromkeys(words_test,0)
+                            l = row[4]
 
+                            bod_txt = get_clean1(l)
 
-j = sys.argv[1]
-a = j[-10:-4]
-inputwords= '/user/hw2676/code/Energy/DataProcessing/article_measure/dtm'
-words_test = pd.read_csv(inputwords +'/'+'clustering_C.csv',sep=',')
-
-words_test1 = words_test.word.tolist()
-f1 = words_test1
-
-words_test1 = map(lambda x: x ,words_test1)
-my_dict = dict.fromkeys(words_test1,0)
-
-
-inputpath = '/work/hw2676/Energy/oil_RTRS'
-
-os.chdir(inputpath)
-
-with open(j, 'rb') as csvfile:
-                spamreader = csv.reader(csvfile, delimiter=',')
-                next(spamreader, None)
-                data1 = []
-                data2 = []
-                data3 = []
-                data4 = []
-                data5 = []
-                for row in spamreader:
-                    my_dict = OrderedDict.fromkeys(words_test1,0)
-                    l = row[4]
-
-                    bod_txt = get_clean1(l)
-                    
-                    for word in bod_txt:
-                        if word in my_dict:
-                            my_dict[word] += 1
-
-
-                    bod_txt = get_clean2(l)
-                    
-                    for word in bod_txt:
-                        if word in my_dict:
-                            my_dict[word] += 1
+                            for word in bod_txt:
+                                if word in my_dict:
+                                    my_dict[word] += 1
 
 
-                    bod_txt = get_clean3(l)
-                    
-                    for word in bod_txt:
-                        if word in my_dict:
-                            my_dict[word] += 1
+                            bod_txt = get_clean2(l)
 
-                    wtx = list(my_dict.values())
-
-                    data1.append(row[0])
-                    data2.append(row[1])
-                    #data3.append(row[4])
-                    data5.append(wtx)
+                            for word in bod_txt:
+                                if word in my_dict:
+                                    my_dict[word] += 1
 
 
+                            bod_txt = get_clean3(l)
+
+                            for word in bod_txt:
+                                if word in my_dict:
+                                    my_dict[word] += 1
+
+                            wtx = list(my_dict.values())
+
+                            data1.append(row[0])
+                            data2.append(row[1])
+                            #data3.append(row[4])
+                            data5.append(wtx)
+                        
+            # Output the data structure of article information.
+            df1 = pd.DataFrame({'Id':data1, 'TimeStamp':data2, 'countwords':data5})
+            df1[words_test] = pd.DataFrame(df1.countwords.values.tolist(), index= df1.index)
+            df1 = df1.drop(['countwords'],axis=1)
+            df1.to_csv(f'{opt.outputPath}/{YYYYMM}_dtm.csv', index=False)
 
 
-                            
-
-
-
-
-# Output the data structure of article information.
-df1 = pd.DataFrame({'Id':data1, 'TimeStamp':data2, 'countwords':data5})
-df1[f1] = pd.DataFrame(df1.countwords.values.tolist(), index= df1.index)
-df1 = df1.drop(['countwords'],axis=1)
-a = j[-10:-4]
-outputpath= '/work/hw2676/Energy/dtm_Clustering_C'
-df1.to_csv(outputpath+'/'+ a +'dtm.csv',index=False)
-
-
-
-
-
+if __name__ == '__main__':
+    main()
