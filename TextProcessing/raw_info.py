@@ -1,4 +1,4 @@
-#!/apps/anaconda2/bin/python
+#!/user/kh3191/.conda/envs/nlp/bin/python
 
 """
 Program   : refer to run_raw_info.sh 
@@ -8,8 +8,22 @@ Return    : data frame of article information (raw info)
 import pandas as pd
 import json
 import unicodedata
-import sys
-import csv
+import os
+from tqdm import tqdm
+
+import argparse
+from argparse import RawTextHelpFormatter
+def parse_option():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--outputPath', type=str, 
+                        default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/info')
+    parser.add_argument('--dataPath', type=str, 
+                        default='../../../../data/ThomsonReuters_NewsArchive')
+    opt = parser.parse_args()
+    return opt
+
+opt = parse_option()
+print(opt)
 
 
 def get_info_article(JSON):    
@@ -94,13 +108,15 @@ def gen_info(raw_file):
     Temp1 = Temp1.drop(['urgency','lan','body'],axis=1) 
     return Temp1
      
-
-
-outputpath= '/work/hw2676/Energy/raw' 
-
-path1 = '/shared/share_mamaysky-glasserman/data/TRNewsArchive'
-
-raw_file = sys.argv[1]
-YYYYMM = raw_file[-15:-9]
-Temp = gen_info(path1 + '/' + raw_file)
-Temp.to_csv(outputpath + '/' + 'RTRS-' + YYYYMM + 'proc.csv', encoding = 'utf-8', index=False)
+    
+def main():
+    for year in range(1996,2024):
+        for raw_file in tqdm(os.listdir(f'{opt.dataPath}/{year}')):
+        
+            YYYYMM = raw_file[-15:-9]
+            Temp = gen_info(f'{opt.dataPath}/{year}/{raw_file}')
+            Temp.to_csv(f'{opt.outputPath}/{YYYYMM}_info.csv', encoding = 'utf-8', index=False)
+    
+    
+if __name__ == '__main__':
+    main()
