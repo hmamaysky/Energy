@@ -7,11 +7,9 @@ Contains codes for textual data processing in Energy Project. Please make sure t
 
 1. Generate monthly csv info files (raw info files)
 ```
-chmod u+x raw_info.py
+chmod 700 raw_info.py
 
-chmod u+x run_raw_info.sh
-
-./run_raw_info.sh
+./raw_info.sh
 
 ```
 2. Select the oil articles and generate the oil-related monthly raw info files
