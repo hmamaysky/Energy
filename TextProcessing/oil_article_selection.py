@@ -1,9 +1,6 @@
-#!/apps/anaconda2/bin/python
+#!/user/kh3191/.conda/envs/nlp/bin/python
 
 """
-
-Created on 2019
-@author: Roya Arab Loodaricheh
 
 Program: Refer to run_oil_article_selection.sh 
 Description  : 	Input is the info-file of all articles 
@@ -13,41 +10,46 @@ Return    : 	dataframe of selected articles' information
 
 """  
 import pandas as pd
-import sys
+import os
+from tqdm import tqdm
+
+import argparse
+from argparse import RawTextHelpFormatter
+def parse_option():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--tagPath', type=str, 
+                        default='energytag.csv')
+    parser.add_argument('--inputPath', type=str, 
+                        default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/info')
+    parser.add_argument('--outputPath', type=str, 
+                        default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
+    opt = parser.parse_args()
+    return opt
+
+opt = parse_option()
+print(opt)
 
 
-energyq = pd.read_csv('energytag.csv',sep=',')
-energyq = energyq.energytag.tolist()
-energyq = map(lambda x: 'N2:'+x.upper(),energyq)
+def main():
+    energyq = pd.read_csv(opt.tagPath, sep=',')
+    energyq = energyq.energytag.tolist()
+    energyq = set(map(lambda x: 'N2:'+x.upper(), energyq))
+
+    for file in tqdm(os.listdir(opt.inputPath)):
+        Temp = pd.read_csv(f'{opt.inputPath}/{file}', sep=',')    
+        Temp['energyq_check'] = [energyq.intersection(eval(i)) != set() for i in Temp['subject']]
+        Temp = Temp[Temp['energyq_check']]
+
+        Temp = Temp.sort_values('TimeStamp').groupby('PNAC')
+        # keep the first article in chain (before revisions)
+        Temp1 = Temp.first().reset_index()  
+        Temp1 = Temp1[Temp1['augbod'].notnull()].reset_index()
+
+        Temp1 = Temp1[['Id', 'TimeStamp', 'headline', 'subject', 'augbod']]
+
+        Temp1.to_csv(f'{opt.outputPath}/oil_{file}', encoding = 'utf-8', index=False)
 
 
-
-inputpath= '/work/hw2676/Energy/raw'  
-outputpath= '/work/hw2676/Energy/oil_RTRS'  
-
-j = sys.argv[1]
-Temp = pd.read_csv(inputpath + '/' + 'RTRS-' + j + 'proc.csv', sep=',')
-
-
-
-data1 =[]
-for i in range(len(Temp)):
-    subs = Temp.loc[i,'subject']
-    qcheck = []
-    qcheck = [elem in subs for elem in energyq]
-    l = True in qcheck
-    data1.append(l)
     
-Temp['energyq_check'] = data1
-
-Temp = Temp[Temp['energyq_check']==True]
-
-Temp = Temp.sort_values('TimeStamp').groupby('PNAC')
-# keep the first article in chain (before revisions)
-Temp1 = Temp.first().reset_index()  
-Temp1 = Temp1[Temp1['augbod'].notnull()].reset_index()
-
-Temp1 = Temp1[['Id', 'TimeStamp', 'headline', 'subject', 'augbod']]
-    
-Temp1.to_csv(outputpath + '/oil_RTRS_' + j + '.csv' , encoding = 'utf-8', index=False)
-
+if __name__ == '__main__':
+    main()
