@@ -14,11 +14,9 @@ chmod 700 raw_info.py
 ```
 2. Select the oil articles and generate the oil-related monthly raw info files
 ```
-chmod u+x oil_article_selection.py
+chmod 700 oil_article_selection.py
 
-chmod u+x run_oil_article_selection.sh
-
-./run_oil_article_selection.sh
+./oil_article_selection.py
 
 ```
 3. Prepare the dtm files
