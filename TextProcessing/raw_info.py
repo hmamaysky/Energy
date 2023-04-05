@@ -19,6 +19,8 @@ def parse_option():
                         default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/info')
     parser.add_argument('--dataPath', type=str, 
                         default='../../../../data/ThomsonReuters_NewsArchive')
+    parser.add_argument('--startYear', type=int, default=1996)
+    parser.add_argument('--endYear', type=int, default=2023)
     opt = parser.parse_args()
     return opt
 
@@ -110,7 +112,7 @@ def gen_info(raw_file):
      
     
 def main():
-    for year in range(1996,2024):
+    for year in range(opt.startYear,opt.endYear+1):
         for raw_file in tqdm(os.listdir(f'{opt.dataPath}/{year}')):
         
             YYYYMM = raw_file[-15:-9]
