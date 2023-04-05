@@ -1,7 +1,6 @@
 #!/user/kh3191/.conda/envs/nlp/bin/python
 
 """
-Program   : refer to run_raw_info.sh 
 Function  : parse the raw JSON file.
 Return    : data frame of article information (raw info)
 """  
