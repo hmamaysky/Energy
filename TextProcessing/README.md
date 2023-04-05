@@ -21,11 +21,9 @@ chmod 700 oil_article_selection.py
 ```
 3. Prepare the dtm files
 ```
-chmod u+x dtm.py
+chmod 700 dtm.py
 
-chmod u+x run_dtm.sh 
-
-./run_dtm.sh 
+grid_run --grid_mem=50G --grid_ncpus=16 --grid_submit=batch ./dtm.py --usePandas '' 
 
 ```
 4.  Calculate the entropy
