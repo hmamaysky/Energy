@@ -9,7 +9,7 @@ Contains codes for textual data processing in Energy Project. Please make sure t
 ```
 chmod 700 raw_info.py
 
-./raw_info.sh
+./raw_info.py
 
 ```
 2. Select the oil articles and generate the oil-related monthly raw info files
