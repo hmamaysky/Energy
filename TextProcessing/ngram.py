@@ -1,24 +1,37 @@
-#!/apps/anaconda2/bin/python
+#!/user/kh3191/.conda/envs/nlp/bin/python
  
 """
     Program            : refer to run_ngram.sh 
     Function           : Input: info files, Output: 3gram and 4gram of one month with their frequencies
 """
 
-
+import re
 import nltk
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer  
-stemmer=PorterStemmer()
-import pandas as pd
-from nltk import stem
-import re
+stop = stopwords.words('english')
+from nltk.stem import PorterStemmer
+stemmer = PorterStemmer()
 from nltk.util import ngrams
-import sys
-import csv
+
+import pandas as pd
+
+import os
+from tqdm import tqdm
 
 
+import argparse
+from argparse import RawTextHelpFormatter
+def parse_option():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--inputPath', type=str, 
+           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
+    parser.add_argument('--outputPath', type=str, 
+           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure')
+    opt = parser.parse_args()
+    return opt
 
+opt = parse_option()
+print(opt)
 
 
 def get_clean0(sample):
@@ -102,33 +115,25 @@ def get_clean4(sample):
 
 
 if __name__ == "__main__":
-    #stemmer=stem.snowball.EnglishStemmer()
-    stemmer=PorterStemmer()
-    stop = stopwords.words('english')
-    j = sys.argv[1]
-    a = j[-10:-4]
-    Temp = pd.read_csv(j, delimiter=',')
-    Temp['gram3'] = Temp['augbod'].apply(get_clean3)
-    Temp['gram4'] = Temp['augbod'].apply(get_clean4)
-    
-    gram3_dict = {}
-    for word_list in Temp['gram3']:
-        for word in word_list:
-            gram3_dict[word] = gram3_dict.get(word, 0) + 1
-    
-    gram4_dict = {}
-    for word_list in Temp['gram4']:
-        for word in word_list:
-            gram4_dict[word] = gram4_dict.get(word, 0) + 1
 
-    gram3 = pd.DataFrame(gram3_dict.items(),columns = ['word','freq'])
-    gram4 = pd.DataFrame(gram4_dict.items(),columns = ['word','freq'])
-    
-    outputpath1 = '/work/hw2676/Energy/3gram'
-    outputpath2 = '/work/hw2676/Energy/4gram'
+    for file in tqdm(os.listdir(opt.inputPath)):
+        YYYYMM = file[-15:-9]
+        Temp = pd.read_csv(f'{opt.inputPath}/{file}', delimiter=',')
+        Temp['gram3'] = Temp['augbod'].apply(get_clean3)
+        Temp['gram4'] = Temp['augbod'].apply(get_clean4)
 
-    gram3.to_csv(outputpath1 + '/' + a +'_3gram.csv')
-    gram4.to_csv(outputpath2 + '/' + a +'_4gram.csv')
+        gram3_dict = {}
+        for word_list in Temp['gram3']:
+            for word in word_list:
+                gram3_dict[word] = gram3_dict.get(word, 0) + 1
 
+        gram4_dict = {}
+        for word_list in Temp['gram4']:
+            for word in word_list:
+                gram4_dict[word] = gram4_dict.get(word, 0) + 1
 
+        gram3 = pd.DataFrame(gram3_dict.items(),columns = ['word','freq'])
+        gram4 = pd.DataFrame(gram4_dict.items(),columns = ['word','freq'])
 
+        gram3.to_csv(f'{opt.outputPath}/3gram/{YYYYMM}_3gram.csv')
+        gram4.to_csv(f'{opt.outputPath}/4gram/{YYYYMM}_4gram.csv')
