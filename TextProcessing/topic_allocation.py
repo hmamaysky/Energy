@@ -55,3 +55,5 @@ for file in tqdm(os.listdir(opt.inputPath_dtm)):
 
     df0['headline']=df_info['headline']
     df0.to_csv(f'{opt.outputPath}/{YYYYMM}_topic_alloc.csv',index=False)
+
+
