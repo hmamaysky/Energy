@@ -58,11 +58,9 @@ chmod u+x run_total.sh
 ```
 7.  Calculates the allocation of the topics for each article
 ```
-chmod u+x topic_allocation.py
+chmod 700 topic_allocation.py
 
-chmod u+x run_topic.sh  
-
-./run_topic.sh 
+grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./topic_allocation.py
 
 ```
 8.  Combine all the article measures and change the time to NY to create final info files
