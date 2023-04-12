@@ -28,11 +28,9 @@ grid_run --grid_mem=50G --grid_ncpus=16 --grid_submit=batch ./dtm.py --usePandas
 ```
 4.  Calculate the entropy
 ```
-chmod u+x ngram.py
+chmod 700 ngram.py
 
-chmod u+x run_ngram.sh
-
-./run_ngram.sh
+grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./ngram.py
 
 
 chmod u+x entropy.py
