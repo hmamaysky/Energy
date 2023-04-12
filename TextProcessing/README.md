@@ -33,11 +33,10 @@ chmod 700 ngram.py
 grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./ngram.py
 
 
-chmod u+x entropy.py
+chmod 700 entropy.py
 
-chmod u+x run_entropy.sh
+grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./entropy.py
 
-./run_entropy.sh
 ```
 5.  Calculate the sentiments
 ```
