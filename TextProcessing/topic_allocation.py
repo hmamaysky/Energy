@@ -1,55 +1,57 @@
-#!/apps/anaconda2/bin/python
+#!/user/kh3191/.conda/envs/nlp/bin/python
 
 """
-    Program            : refer to run_topic.sh 
     Function           : This code calculates the allocation of the topics for each article 
 """
 
-import string
 import numpy as np
 import pandas as pd
-import sys
 import os
-import csv
+from tqdm import tqdm
 
-j=sys.argv[1]
-aa = j[-13:-7]
+import argparse
+from argparse import RawTextHelpFormatter
+def parse_option():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--inputWordsPath', type=str, 
+       default='clustering_C.csv')
+    parser.add_argument('--inputPath_info', type=str, 
+       default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
+    parser.add_argument('--inputPath_dtm', type=str, 
+       default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C')
+    parser.add_argument('--outputPath', type=str, 
+       default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/topic_allocation')
+    parser.add_argument('--n_topics', type=int, default=7)
+    opt = parser.parse_args()
+    return opt
 
-inputpath_dtm = '/NOBACKUP/scratch/ra2826/oil-project/dtm_Clustering_C'
-inputpath_info = '/NOBACKUP/scratch/ra2826/oil-project/oil_RTRS'
-FS='/user/user1/ra2826/oil_project/article_measures/topic_allocation'
-
-
-df_dtm = pd.read_csv(inputpath_dtm + '/' + aa + 'dtm.csv', delimiter=',')
-
-df_info = pd.read_csv(inputpath_info + '/' + 'oil_RTRS_' + aa + '.csv', delimiter=',')
-
-topics = pd.read_csv(FS+'/'+'clustering_C.csv',sep=',',index_col=0)
-
-topics_list=[]
-for i in range(7):
-    topics_list.append(topics.index[topics['Topic'] == i+1].tolist())
-
-
-df0=pd.DataFrame()
-for i in range(7):
-    data=[]
-    for index, row in df_dtm.iterrows():
-        print(index)
-        x=sum(df_dtm.loc[index,topics_list[i]])
-        data.append(x)
-    df0['Topic'+str(i+1)]=data
+opt = parse_option()
+print(opt)
 
 
-df0['sum'] = df0.sum(axis=1)
-df0 = df0.loc[:,'Topic1':'Topic7'].div(df0['sum'], axis=0)
-df0=df0.fillna(0)
+for file in tqdm(os.listdir(opt.inputPath_dtm)):
+    YYYYMM = file[-15:-8]
+
+    df_dtm = pd.read_csv(f'{opt.inputPath_dtm}/{YYYYMM}_dtm.csv', delimiter=',')
+    df_info = pd.read_csv(f'{opt.inputPath_info}/oil_{YYYYMM}_info.csv', delimiter=',')
+    topics = pd.read_csv(opt.inputWordsPath, sep=',', index_col=0)
+
+    topics_list = [topics.index[topics['Topic'] == i].tolist() for i in range(1,opt.n_topics+1)]
+
+    df0=pd.DataFrame()
+    for i in range(opt.n_topics):
+        data=[]
+        for index, row in df_dtm.iterrows():
+            #print(index)
+            x=sum(df_dtm.loc[index,topics_list[i]])
+            data.append(x)
+        df0['Topic'+str(i+1)]=data
 
 
-df0['headline']=df_info['headline']
+    df0['sum'] = df0.sum(axis=1)
+    df0 = df0.loc[:,'Topic1':f'Topic{opt.n_topics}'].div(df0['sum'], axis=0)
+    df0=df0.fillna(0)
 
 
-outputpath = '/NOBACKUP/scratch/ra2826/oil-project/topic_allocation'
-df0.to_csv(outputpath + '/' + aa + 'topic_alloc.csv',index=False)		
-
-
+    df0['headline']=df_info['headline']
+    df0.to_csv(f'{opt.outputPath}/{YYYYMM}_topic_alloc.csv',index=False)
