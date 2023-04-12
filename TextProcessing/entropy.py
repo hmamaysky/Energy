@@ -1,30 +1,27 @@
-#!/apps/anaconda2/bin/python
+#!/user/kh3191/.conda/envs/nlp/bin/python
  
 """
     Program            : refer to run_entropy.sh 
     Function           : Input: info, 3gram, and 4gram files
-                         Output: entropy files 
-                         The code from github.com/hmamaysky/TR_text/tree/master/States/03_entropy.py is used here.   
+                         Output: entropy files   
 """
 
+import numpy as np
+import pandas as pd
 
+import re
 import nltk
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer  
-stemmer=PorterStemmer()
-from nltk import stem
+from nltk import stem 
+stemmer = stem.snowball.EnglishStemmer()
+stop = stopwords.words('english')
 from nltk.util import ngrams
 
-import sys
 import csv
-import string
-import pandas as pd
-from collections import Counter
-import re
-import numpy as np
 from os import listdir
 from os.path import isfile, join
 
+from tqdm import tqdm
 
 
 ######################################################## 
@@ -32,21 +29,33 @@ from os.path import isfile, join
 # File Paths 
 # 
 ########################################################
+import argparse
+from argparse import RawTextHelpFormatter
+def parse_option():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--ng3Path', type=str, 
+           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/3gram')
+    parser.add_argument('--ng4Path', type=str, 
+           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/4gram')
+    parser.add_argument('--inputPath', type=str, 
+           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
+    parser.add_argument('--outputPath', type=str, 
+           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/entropy')
+    opt = parser.parse_args()
+    return opt
 
-ng3 = '/work/hw2676/Energy/3gram'
-ng4 = '/work/hw2676/Energy/4gram'
-info = '/work/hw2676/Energy/oil_RTRS'
-output = '/work/hw2676/Energy/entropy'
+opt = parse_option()
+print(opt)
 
 
 
 SS='/'
-datas = [info + SS + f for f in listdir(info) if isfile(join(info, f))]
+datas = [opt.inputPath + SS + f for f in listdir(opt.inputPath) if isfile(join(opt.inputPath, f))]
 datas.sort()
-datas2=listdir(info)
+datas2=listdir(opt.inputPath)
 datas2.sort()
-ngr3 = [ng3 + SS + f for f in listdir(ng3) if isfile(join(ng3, f))]
-ngr4 = [ng4 + SS + f for f in listdir(ng4) if isfile(join(ng4, f))]
+ngr3 = [opt.ng3Path + SS + f for f in listdir(opt.ng3Path) if isfile(join(opt.ng3Path, f))]
+ngr4 = [opt.ng4Path + SS + f for f in listdir(opt.ng4Path) if isfile(join(opt.ng4Path, f))]
 ngr3.sort()
 ngr4.sort()
 
@@ -142,53 +151,50 @@ class NGRAM(object):
 
 
 if __name__ == "__main__":
-    stemmer=stem.snowball.EnglishStemmer()
-    stop = stopwords.words('english')
-    fnum = int(sys.argv[1])
-    Temp=pd.read_csv(datas[fnum],sep=',')
-    Temp['gram4'] = Temp['augbod'].apply(get_clean4)
-    ngram4s = NGRAM()
-    for f in Temp['gram4']:
-        ngram4s.add_doc(f)
+    
+    for fnum, file in tqdm(enumerate(datas)):
 
-    # fnum 27 indicates the number of months to use as the trial data to use for entropy calculations
-    if fnum >= 27:
-        stop4_dict = {}
-        for l in ngr4[fnum-27:fnum-3]:
-            with open(l, 'rb') as csvfile:
-                spamreader = csv.reader(csvfile, delimiter=',')
-                for i,j,k in spamreader:
-                    if i!='':
-                        stop4_dict[j] = stop4_dict.get(j,0) + int(k)
+        Temp=pd.read_csv(file,sep=',')
+        Temp['gram4'] = Temp['augbod'].apply(get_clean4)
+        ngram4s = NGRAM()
+        for f in Temp['gram4']:
+            ngram4s.add_doc(f)
 
-
-        stop3_dict = {}
-        for l in ngr3[fnum-27:fnum-3]:
-            with open(l, 'rb') as csvfile:
-                spamreader = csv.reader(csvfile, delimiter=',')
-                for i,j,k in spamreader:
-                    if i!='':
-                        stop3_dict[j] = stop3_dict.get(j,0) + int(k)
-
-        entropy = []
-        for a in ngram4s.sparse:
-            p = [float(l)/sum(a.values()) for l in a.values()]
-            M = []
-            for l in a.keys():
-                b = '.'.join(l.split('.')[:3])
-                temp = float((stop4_dict.get(l,0) + 1))/(stop3_dict.get(b,0) + 10)
-                M.append(temp)
-            m = [-p[i] * np.log(M[i]) for i in range(len(M))]
-            entropy.append(sum(m))
-    else:
-        entropy = [np.nan] * len(Temp)
-
-    entpd = pd.DataFrame({'entropy':entropy})
-    temp2 = Temp[['Id']]
-    entpd = pd.concat([entpd,temp2],axis=1)
-    jj=datas2[fnum]
-    aa=jj[-10:-4]
-    entpd.to_csv(output+SS+aa+'_entropy.csv',index=False)
+        # fnum 27 indicates the number of months to use as the trial data to use for entropy calculations
+        if fnum >= 27:
+            stop4_dict = {}
+            for l in ngr4[fnum-27:fnum-3]:
+                with open(l, 'rb') as csvfile:
+                    spamreader = csv.reader(csvfile, delimiter=',')
+                    for i,j,k in spamreader:
+                        if i!='':
+                            stop4_dict[j] = stop4_dict.get(j,0) + int(k)
 
 
+            stop3_dict = {}
+            for l in ngr3[fnum-27:fnum-3]:
+                with open(l, 'rb') as csvfile:
+                    spamreader = csv.reader(csvfile, delimiter=',')
+                    for i,j,k in spamreader:
+                        if i!='':
+                            stop3_dict[j] = stop3_dict.get(j,0) + int(k)
 
+            entropy = []
+            for a in ngram4s.sparse:
+                p = [float(l)/sum(a.values()) for l in a.values()]
+                M = []
+                for l in a.keys():
+                    b = '.'.join(l.split('.')[:3])
+                    temp = float((stop4_dict.get(l,0) + 1))/(stop3_dict.get(b,0) + 10)
+                    M.append(temp)
+                m = [-p[i] * np.log(M[i]) for i in range(len(M))]
+                entropy.append(sum(m))
+        else:
+            entropy = [np.nan] * len(Temp)
+
+        entpd = pd.DataFrame({'entropy':entropy})
+        temp2 = Temp[['Id']]
+        entpd = pd.concat([entpd,temp2],axis=1)
+        jj=datas2[fnum]
+        YYYYMM=jj[-15:-9]
+        entpd.to_csv(opt.outputPath+SS+YYYYMM+'_entropy.csv',index=False)
