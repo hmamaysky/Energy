@@ -2,7 +2,6 @@
 
 """
 
-Program: Refer to run_oil_article_selection.sh 
 Description  : 	Input is the info-file of all articles 
 				First, get the articles with energy tag
 				Then, in articles with similar PNAC, get the latest one
