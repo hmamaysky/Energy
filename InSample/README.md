@@ -25,6 +25,9 @@ Contains codes for In Sample analysis for the Energy Project
 - Results of Forward Selection Model are self explanatory. Each specification has a word file for regression stats and the order of selected variables is the same as the row orders. The results are used for creating Table IV and Table A.VI. 
 - We utilize both the results of ```stepwiseForwardSelection_detrended.R``` and ```Monte_Carlo_forwardSelection.R``` to create Table IV. While information about the order of selected variables comes from the former, other results for creating Table IV such as coefficients, p-values, mean of simulated adjusted, CDF(%) come from the latter.
 
+### Notes for running analysis with Michael Plante data
+- files _opec, _mnsc, and _all run are all used to run this analysis for the appendix. _mnsc runs the same analysis as table 4 in the paper with the same data, _opec runs the same analysis as table 4 in the paper but without any of the text analysis variables and with Michael Plante's OPEC variable, and _all runs the same analysis as table 4 in the paper but with both the papers text analysis variables and with Michael Plante's OPEC variable.
+
 
 ### Notes before running Analysis
 - Please change the working directory and the saving directory properly in each file before running the program.
