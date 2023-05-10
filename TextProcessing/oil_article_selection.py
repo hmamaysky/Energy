@@ -11,6 +11,7 @@ Return    : 	dataframe of selected articles' information
 import pandas as pd
 import os
 from tqdm import tqdm
+import ast
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -36,7 +37,7 @@ def main():
 
     for file in tqdm(os.listdir(opt.inputPath)):
         Temp = pd.read_csv(f'{opt.inputPath}/{file}', sep=',')    
-        Temp['energyq_check'] = [energyq.intersection(eval(i)) != set() for i in Temp['subject']]
+        Temp['energyq_check'] = [energyq.intersection(ast.literal_eval(i)) != set() for i in Temp['subject']]
         Temp = Temp[Temp['energyq_check']]
 
         Temp = Temp.sort_values('TimeStamp').groupby('PNAC')
