@@ -38,7 +38,7 @@ chmod 700 entropy.py
 grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./entropy.py
 
 ```
-5.  Calculate the sentiments
+5.  Calculate the sentiments (20min on 64 CPUs)
 ```
 chmod 700 sentcode.py
 
