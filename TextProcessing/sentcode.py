@@ -4,22 +4,16 @@
     Function           : This code prepares the sentiment scores
 """
 
-from nltk.tokenize import word_tokenize
-from nltk.sentiment.util import mark_negation
-from nltk.corpus import stopwords
-from nltk import stem
-stemmer = stem.snowball.EnglishStemmer()
-stop = stopwords.words('english')
-stop_final = [stemmer.stem(l) for l in stop]
-
 import numpy as np
 import pandas as pd
 import re
 import textmining
-from tqdm import tqdm
+
+from utils import mark_neg, get_clean, get_total
 
 from pandarallel import pandarallel
 pandarallel.initialize(progress_bar=False)
+from tqdm import tqdm
 
 import os
 
@@ -43,28 +37,6 @@ def parse_option():
 
 opt = parse_option()
 print(opt)
-
-
-######################################################## 
-# 
-# Functions 
-# 
-########################################################
-def mark_neg(sample):
-    tokens = word_tokenize(sample)
-    tokens = mark_negation(tokens)
-    return tokens
-
-def get_clean(sample):
-    document = re.sub('[^a-z]', ' ', sample)
-    cleanup = document.strip().split()
-    words = [word for word in cleanup if word not in set(stop)]
-    result = ' '.join(words)
-    return result
-
-def get_total(sample):
-    cleanup = sample.split(' ')
-    return len(cleanup)
 
 
 def main():
