@@ -1,4 +1,4 @@
-#!/apps/anaconda2/bin/python
+#!/user/kh3191/.conda/envs/nlp/bin/python
  
 """
     Function           : This code generate the cosine file. This takes some time to run if dtm is big	
@@ -8,23 +8,39 @@ import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy import sparse
 import numpy as np
-from os import listdir
+
+import os
 from os.path import isfile, join
 import time
 import datetime
 start_time = time.time()
 
-path1 = '/NOBACKUP/scratch/ra2826/oil-project/dtm_numeric'
-pathin = [path1 + '/' + f for f in listdir(path1) if isfile(join(path1, f))]
 
-frames = []
-for j in pathin:
-    x = pd.read_csv(j,  delimiter=',')
-    frames.append(x)
+import argparse
+from argparse import RawTextHelpFormatter
+def parse_option():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--inputWordsPath', type=str, 
+           default='clustering_C.csv')
+    parser.add_argument('--dtmPath', type=str, 
+           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric')
+    parser.add_argument('--outputPath', type=str, 
+           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/cosine')
+    opt = parser.parse_args()
+    return opt
 
+opt = parse_option()
+print(opt)
+
+words_test = pd.read_csv(opt.inputWordsPath , sep=',')
+word_set = words_test.word.tolist()
+#print(len(word_set))
+
+pathin = [f"{opt.dtmPath}/{f}" for f in os.listdir(opt.dtmPath)]
+
+frames = [pd.read_csv(j, delimiter=',') for j in pathin]
 df = pd.concat(frames)
-print(len(df))
-
+print(f"Length of df: {len(df)}")
 
 
 word_column = df.words.tolist()
@@ -40,12 +56,9 @@ print(len(list(set(word_column))))
 print(len(list(set(id_column))))
 
 
-
-
 V = np.array(freq_column)
 I = np.array(id_column)
 J = np.array(word_column)
-
 
 del freq_column #release memory
 del id_column #release memory
@@ -68,18 +81,10 @@ print(similarities.shape)
 del A
 
 
-words_test = pd.read_csv('/user/user1/ra2826/oil_project/article_measures/dtm/clustering_C.csv' , sep=',')
-word_set = words_test.word.tolist()
-print(len(word_set))
-
 df_cosine = pd.DataFrame(data=similarities, index=word_set, columns=word_set)
 
 now = datetime.datetime.now().strftime("%Y%m%d")
-df_cosine.to_csv('/NOBACKUP/scratch/ra2826/oil-project/cosine/cosine' + now + '.csv')
-
-
-
-
+df_cosine.to_csv(f"{opt.outputPath}_{now}.csv")
 
 print("--- %s seconds ---" % (time.time() - start_time))
 
