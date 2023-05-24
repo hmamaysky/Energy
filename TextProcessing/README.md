@@ -63,14 +63,14 @@ chmod 700 info.py
 ```
 All outputs are stored under `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/combined_info`.
 
-8. Fix the dates on info files based on the oil price eastern closing time 
+8. ![#f03c15](https://placehold.co/15x15/f03c15/f03c15.png) Fix the dates on info files based on the oil price eastern closing time 
 
 ```
 chmod u+x date_fixed_measures.py
 
 sge_run --grid_mem=32G --grid_ncpus=1 --grid_submit=batch ./date_fixed_measures.py
 ```
-9. Aggregate from transcripts to daily measure (we take weighted average of each measure where the weights are word counts of a transcript)
+9. ![#f03c15](https://placehold.co/15x15/f03c15/f03c15.png) Aggregate from transcripts to daily measure (we take weighted average of each measure where the weights are word counts of a transcript)
 
 ```
 chmod u+x agg_daily.py
