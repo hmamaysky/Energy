@@ -38,7 +38,7 @@ chmod 700 entropy.py
 grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./entropy.py
 
 ```
-5.  Calculate the sentiments (20min on 64 CPUs)
+5.  Calculate the sentiments and count the total number of words in each article after cleaning (20min on 64 CPUs)
 ```
 chmod 700 sentcode.py
 
@@ -47,23 +47,14 @@ pip install textmining3
 ./sentcode.py
 
 ```
-6.  Count the total number of words in each article after cleaning
-```
-chmod u+x total.py
-
-chmod u+x run_total.sh 
-
-./run_total.sh  
-
-```
-7.  Calculates the allocation of the topics for each article
+6.  Calculates the allocation of the topics for each article
 ```
 chmod 700 topic_allocation.py
 
 grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./topic_allocation.py
 
 ```
-8.  Combine all the article measures and change the time to NY to create final info files
+7.  Combine all the article measures and change the time to NY to create final info files
 ```
 chmod u+x info.py
 
@@ -72,16 +63,16 @@ chmod u+x run_info.sh
 ./run_info.sh
 
 ```
-9. Concatenate all the files at '/work/hw2676/Energy/DataProcessing/info' for the next step
+8. Concatenate all the files at '/work/hw2676/Energy/DataProcessing/info' for the next step
 
-10. Fix the dates on info files based on the oil price eastern closing time 
+9. Fix the dates on info files based on the oil price eastern closing time 
 
 ```
 chmod u+x date_fixed_measures.py
 
 sge_run --grid_mem=32G --grid_ncpus=1 --grid_submit=batch ./date_fixed_measures.py
 ```
-11. Aggregate from transcripts to daily measure (we take weighted average of each measure where the weights are word counts of a transcript)
+10. Aggregate from transcripts to daily measure (we take weighted average of each measure where the weights are word counts of a transcript)
 
 ```
 chmod u+x agg_daily.py
