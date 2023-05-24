@@ -56,23 +56,21 @@ grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./topic_allocation.p
 ```
 7.  Combine all the article measures and change the time to NY to create final info files
 ```
-chmod u+x info.py
+chmod 700 info.py
 
-chmod u+x run_info.sh
-
-./run_info.sh
+./info.py
 
 ```
-8. Concatenate all the files at '/work/hw2676/Energy/DataProcessing/info' for the next step
+All outputs are stored under `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/combined_info`.
 
-9. Fix the dates on info files based on the oil price eastern closing time 
+8. Fix the dates on info files based on the oil price eastern closing time 
 
 ```
 chmod u+x date_fixed_measures.py
 
 sge_run --grid_mem=32G --grid_ncpus=1 --grid_submit=batch ./date_fixed_measures.py
 ```
-10. Aggregate from transcripts to daily measure (we take weighted average of each measure where the weights are word counts of a transcript)
+9. Aggregate from transcripts to daily measure (we take weighted average of each measure where the weights are word counts of a transcript)
 
 ```
 chmod u+x agg_daily.py
