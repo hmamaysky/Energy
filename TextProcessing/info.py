@@ -4,13 +4,11 @@
     Function           : This code combine all the article measures and change the time to NY
 """
 
+import os
 import pandas as pd
 from dateutil import tz
 from datetime import datetime
-# from pandarallel import pandarallel
-# pandarallel.initialize(progress_bar=False)
 from tqdm import tqdm
-tqdm.pandas()
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -19,10 +17,10 @@ def parse_option():
     parser.add_argument('--inputPath', type=str, 
            default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
     parser.add_argument('--measurePath', type=str, 
-           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure')
+           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure')
     parser.add_argument('--outputPath', type=str, 
            default='../../../..//shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/combined_info')
-       opt = parser.parse_args()
+    opt = parser.parse_args()
     return opt
 
 opt = parse_option()
@@ -59,22 +57,22 @@ if __name__ == "__main__":
         df_info = pd.read_csv(f"{opt.inputPath}/{file}", delimiter=',')
         df_info.drop(['augbod'], axis=1, inplace=True)
         
-        df_sent = pd.read_csv(f"{opt.measurePath}/{YYYMM}_sent.csv", delimiter=',')
+        df_sent = pd.read_csv(f"{opt.measurePath}/sentiment/{YYYYMM}_sent.csv", delimiter=',')
         df_sent.rename(columns={'sent': 'sentiment'}, inplace=True)
-        df_topic = pd.read_csv(f"{opt.measurePath}/{YYYMM}_topic_alloc.csv", delimiter=',')
+        df_topic = pd.read_csv(f"{opt.measurePath}/topic_allocation/{YYYYMM}_topic_alloc.csv", delimiter=',')
         df_topic.drop(['headline'], axis=1, inplace=True)
         try:
-            df_entropy = pd.read_csv(f"{opt.measurePath}/{YYYMM}_entropy.csv", delimiter=',')
+            df_entropy = pd.read_csv(f"{opt.measurePath}/entropy/{YYYYMM}_entropy.csv", delimiter=',')
         except FileNotFoundError:
             df_entropy = pd.DataFrame(columns=['entropy'])
-        df_total = pd.read_csv(f"{opt.measurePath}/{YYYMM}_total.csv", delimiter=',')
+        df_total = pd.read_csv(f"{opt.measurePath}/total/{YYYYMM}_total.csv", delimiter=',')
     
         df = df_info.join(df_sent['sentiment'])\
                     .join(df_topic)\
                     .join(df_entropy['entropy'])\
                     .join(df_total['total'])
         
-        df['TimeStamp_NY'] = df.progress_apply(UTC_to_NY, axis=1)
+        df['TimeStamp_NY'] = df.apply(UTC_to_NY, axis=1)
         df.rename(columns={'TimeStamp': 'TimeStamp_UTC'}, inplace=True)
 
         cols = ['Id', 'TimeStamp_UTC', 'TimeStamp_NY', 'subject', 'headline', 'entropy', 'total', 'sentiment', 
