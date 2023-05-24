@@ -40,11 +40,11 @@ grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./entropy.py
 ```
 5.  Calculate the sentiments
 ```
-chmod u+x sentcode.py
+chmod 700 sentcode.py
 
-chmod u+x run_sent.sh
+pip install textmining3
 
-./run_sent.sh 
+./sentcode.py
 
 ```
 6.  Count the total number of words in each article after cleaning
