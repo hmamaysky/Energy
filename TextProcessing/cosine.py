@@ -82,9 +82,7 @@ del A
 
 
 df_cosine = pd.DataFrame(data=similarities, index=word_set, columns=word_set)
-
-now = datetime.datetime.now().strftime("%Y%m%d")
-df_cosine.to_csv(f"{opt.outputPath}_{now}.csv")
+df_cosine.to_csv(f"{opt.outputPath}/cosine.csv")
 
 print("--- %s seconds ---" % (time.time() - start_time))
 
