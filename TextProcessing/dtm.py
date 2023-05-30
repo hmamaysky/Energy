@@ -29,9 +29,9 @@ def parse_option():
     parser.add_argument('--inputWordsPath', type=str, 
            default='clustering_C.csv')
     parser.add_argument('--inputPath', type=str, 
-           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
     parser.add_argument('--outputPath', type=str, 
-           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C')
     parser.add_argument('--usePandas', type=bool, default=True)
     opt = parser.parse_args()
     return opt
