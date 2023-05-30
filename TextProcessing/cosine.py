@@ -23,9 +23,9 @@ def parse_option():
     parser.add_argument('--inputWordsPath', type=str, 
            default='clustering_C.csv')
     parser.add_argument('--dtmPath', type=str, 
-           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric')
     parser.add_argument('--outputPath', type=str, 
-           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/cosine')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/cosine')
     opt = parser.parse_args()
     return opt
 
