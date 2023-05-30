@@ -15,9 +15,9 @@ from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--outputPath', type=str, 
-                        default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/info')
+                        default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/info')
     parser.add_argument('--dataPath', type=str, 
-                        default='../../../../data/ThomsonReuters_NewsArchive')
+                        default='/data/ThomsonReuters_NewsArchive')
     parser.add_argument('--startYear', type=int, default=1996)
     parser.add_argument('--endYear', type=int, default=2023)
     opt = parser.parse_args()
