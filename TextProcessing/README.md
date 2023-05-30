@@ -26,7 +26,7 @@ chmod 700 dtm.py
 grid_run --grid_mem=50G --grid_ncpus=16 --grid_submit=batch ./dtm.py --usePandas '' 
 
 ```
-4.  ![#f03c15](https://placehold.co/15x15/f03c15/f03c15.png) Calculate the entropy
+4.  Calculate the entropy
 ```
 chmod 700 ngram.py
 
@@ -35,7 +35,7 @@ grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./ngram.py
 
 chmod 700 entropy.py
 
-grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./entropy.py
+./entropy.py
 
 ```
 5.  Calculate the sentiments and count the total number of words in each article after cleaning (20min on 64 CPUs)
