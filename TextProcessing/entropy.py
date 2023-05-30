@@ -40,38 +40,38 @@ opt = parse_option()
 print(opt)
 
 
-# from collections import defaultdict
-# def get_stop_dict(ngr_files):
-#     stop_dict = defaultdict(int)
-#     dfs = [pd.read_csv(l, index_col=0) for l in ngr_files]
-#     df = pd.concat(dfs)
-#     for word, freq in zip(df['word'], df['freq']):
-#         stop_dict[word] += freq
+from collections import defaultdict
+def get_stop_dict(ngr_files):
+    stop_dict = defaultdict(int)
+    dfs = [pd.read_csv(l, index_col=0) for l in ngr_files]
+    df = pd.concat(dfs)
+    for word, freq in zip(df['word'], df['freq']):
+        stop_dict[word] += freq
+    return stop_dict
+
+# from collections import Counter
+# def get_stop_dict(ngr_file):
+#     df = pd.read_csv(ngr_file, index_col=0)
+#     stop_dict = Counter(dict(zip(df['word'], df['freq'])))
 #     return stop_dict
 
-from collections import Counter
-def get_stop_dict(ngr_file):
-    df = pd.read_csv(ngr_file, index_col=0)
-    stop_dict = Counter(dict(zip(df['word'], df['freq'])))
-    return stop_dict
-
-import json
-def save_list_counters(counters, file_name):
-    counters_data = [{k: v for k, v in counter.items()} for counter in counters]
-    with open(file_name, 'w') as f:
-        json.dump(counters_data, f)
+# import json
+# def save_list_counters(counters, file_name):
+#     counters_data = [{k: v for k, v in counter.items()} for counter in counters]
+#     with open(file_name, 'w') as f:
+#         json.dump(counters_data, f)
         
-def load_list_counters(file_name):
-    with open(file_name, 'r') as f:
-        counters_data = json.load(f)
-        counters = [Counter(counter_dict) for counter_dict in counters_data]
-    return counters
+# def load_list_counters(file_name):
+#     with open(file_name, 'r') as f:
+#         counters_data = json.load(f)
+#         counters = [Counter(counter_dict) for counter_dict in counters_data]
+#     return counters
 
-def get_rolling_counters(counters, fnum):
-    stop_dict = Counter()
-    for i in range(fnum-opt.monthTrials, fnum-opt.monthTrials+opt.monthWindow):
-        stop_dict += counters[i]
-    return stop_dict
+# def get_rolling_counters(counters, fnum):
+#     stop_dict = Counter()
+#     for i in range(fnum-opt.monthTrials, fnum-opt.monthTrials+opt.monthWindow):
+#         stop_dict += counters[i]
+#     return stop_dict
 
 
 if __name__ == "__main__":
@@ -79,19 +79,26 @@ if __name__ == "__main__":
     data = glob.glob(opt.inputPath + '/*.csv')
     data.sort()
 
-    stop34_dicts = []
+    ngr_list = []
     for n in [3,4]:
-        file_name = f"stop{n}_dicts.json"
         ngr = glob.glob(f"{opt.ngPath}/{n}gram/*.csv")
         ngr.sort()
-        if not os.path.isfile(file_name):
-            stop_dicts = [get_stop_dict(ngr_file) for ngr_file in tqdm(ngr)]
-            save_list_counters(stop_dicts, file_name)
-            stop34_dicts.append(stop_dicts)
-        else:
-            print(f"Loading {file_name}")
-            stop34_dicts.append(load_list_counters(file_name))
-    stop3_dicts, stop4_dicts = stop34_dicts
+        ngr_list.append(ngr)
+    ngr3, ngr4 = ngr_list
+    
+#     stop34_dicts = []
+#     for n in [3,4]:
+#         file_name = f"stop{n}_dicts.json"
+#         ngr = glob.glob(f"{opt.ngPath}/{n}gram/*.csv")
+#         ngr.sort()
+#         if not os.path.isfile(file_name):
+#             stop_dicts = [get_stop_dict(ngr_file) for ngr_file in tqdm(ngr)]
+#             save_list_counters(stop_dicts, file_name)
+#             stop34_dicts.append(stop_dicts)
+#         else:
+#             print(f"Loading {file_name}")
+#             stop34_dicts.append(load_list_counters(file_name))
+#     stop3_dicts, stop4_dicts = stop34_dicts
     
     for fnum, file in tqdm(enumerate(data)):
 
@@ -100,8 +107,10 @@ if __name__ == "__main__":
         # fnum monthTrials indicates the number of months to use as the trial data to use for entropy calculations
         if fnum >= opt.monthTrials:
                       
-            stop3_dict = get_rolling_counters(stop3_dicts, fnum)
-            stop4_dict = get_rolling_counters(stop4_dicts, fnum)
+#             stop3_dict = get_rolling_counters(stop3_dicts, fnum)
+#             stop4_dict = get_rolling_counters(stop4_dicts, fnum)
+            stop3_dict = get_stop_dict(ngr3[fnum-opt.monthTrials:fnum-opt.monthTrials+opt.monthWindow])
+            stop4_dict = get_stop_dict(ngr4[fnum-opt.monthTrials:fnum-opt.monthTrials+opt.monthWindow])
             
             Temp['gram4'] = Temp['augbod'].parallel_apply(get_clean4)
             ngram4s = NGRAM()
