@@ -26,7 +26,7 @@ chmod 700 dtm.py
 grid_run --grid_mem=50G --grid_ncpus=16 --grid_submit=batch ./dtm.py --usePandas '' 
 
 ```
-4.  Calculate the entropy
+4.  Calculate the entropy (first step~6h; second step~75min)
 ```
 chmod 700 ngram.py
 
