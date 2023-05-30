@@ -14,9 +14,9 @@ def parse_option():
     parser.add_argument('--tagPath', type=str, 
                         default='energytag.csv')
     parser.add_argument('--oldPath', type=str, 
-       default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2020-11-16')
+       default='/shared/share_mamaysky-glasserman/energy_drivers/2020-11-16')
     parser.add_argument('--newPath', type=str, 
-       default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023')
+       default='/shared/share_mamaysky-glasserman/energy_drivers/2023')
     parser.add_argument('--check', type=str, default='topic')
     parser.add_argument('--getAllMissingSubjects', type=bool, default=True)
     opt = parser.parse_args()
