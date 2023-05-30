@@ -20,9 +20,9 @@ def parse_option():
     parser.add_argument('--tagPath', type=str, 
                         default='energytag.csv')
     parser.add_argument('--inputPath', type=str, 
-                        default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/info')
+                        default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/info')
     parser.add_argument('--outputPath', type=str, 
-                        default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
+                        default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
     opt = parser.parse_args()
     return opt
 
