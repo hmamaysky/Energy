@@ -30,11 +30,11 @@ def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--sentDicPath', type=str, default='2014.txt')
     parser.add_argument('--inputPath', type=str, 
-           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
     parser.add_argument('--outputPathSent', type=str, 
-           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/sentiment')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/sentiment')
     parser.add_argument('--outputPathTotal', type=str, 
-           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/total')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/total')
     opt = parser.parse_args()
     return opt
 
