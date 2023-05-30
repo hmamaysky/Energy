@@ -15,11 +15,11 @@ from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--inputPath', type=str, 
-           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
     parser.add_argument('--measurePath', type=str, 
-           default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure')
     parser.add_argument('--outputPath', type=str, 
-           default='../../../..//shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/combined_info')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/combined_info')
     opt = parser.parse_args()
     return opt
 
