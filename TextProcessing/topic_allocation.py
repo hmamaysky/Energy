@@ -16,11 +16,11 @@ def parse_option():
     parser.add_argument('--inputWordsPath', type=str, 
        default='clustering_C.csv')
     parser.add_argument('--inputPath_info', type=str, 
-       default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
+       default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info')
     parser.add_argument('--inputPath_dtm', type=str, 
-       default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C')
+       default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C')
     parser.add_argument('--outputPath', type=str, 
-       default='../../../../shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/topic_allocation')
+       default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/topic_allocation')
     parser.add_argument('--n_topics', type=int, default=7)
     opt = parser.parse_args()
     return opt
