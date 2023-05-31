@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import itertools
 import os
-from tqdm import tqdm
+#from tqdm import tqdm
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -49,7 +49,7 @@ def main():
             missingTags = {}
             missing_tags_subjects_list = []
 
-        for file in tqdm(file_list):
+        for file in file_list:
             YYYYMM = file[:6]
             old = pd.read_csv(f'{opt.oldPath}/DataProcessing/topic_allocation/{file}')
             new = pd.read_csv(f'{opt.newPath}/DataProcessing/article_measure/topic_allocation/{YYYYMM}_topic_alloc.csv')
@@ -97,19 +97,19 @@ def main():
     else:
         file_list = os.listdir(f'{opt.oldPath}/DataProcessing/info')
         file_list.sort()
-        for file in tqdm(file_list):
+        for file in file_list:
             YYYYMM = file[:6]
             old = pd.read_csv(f'{opt.oldPath}/DataProcessing/info/{file}')
             
             if opt.check == 'entropy':
-                new = pd.read_csv(f'{opt.newPath}/DataProcessing/article_measure/topic_allocation/entropy/{YYYYMM}_entropy.csv')
+                new = pd.read_csv(f'{opt.newPath}/DataProcessing/article_measure/entropy/{YYYYMM}_entropy.csv')
 
             elif opt.check == 'sentiment':
-                new = pd.read_csv(f'{opt.newPath}/DataProcessing/article_measure/topic_allocation/sentiment/{YYYYMM}_sent.csv')
-                new.rename({'sent':'sentiment'}, inplace=True)
+                new = pd.read_csv(f'{opt.newPath}/DataProcessing/article_measure/sentiment/{YYYYMM}_sent.csv')
+                new.rename(columns={'sent':'sentiment'}, inplace=True)
                 
             elif opt.check == 'total':
-                new = pd.read_csv(f'{opt.newPath}/DataProcessing/article_measure/topic_allocation/total/{YYYYMM}_total.csv')
+                new = pd.read_csv(f'{opt.newPath}/DataProcessing/article_measure/total/{YYYYMM}_total.csv')
                 
             if len(old) == len(new):
                 corr = np.corrcoef(old[opt.check], new[opt.check]).min()
