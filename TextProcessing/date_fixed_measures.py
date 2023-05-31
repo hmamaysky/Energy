@@ -6,8 +6,6 @@ Adapted from Roya's codes
 import pandas as pd
 import calendar
 import datetime
-from pandarallel import pandarallel
-pandarallel.initialize(progress_bar=False)
 
 ###########################################
 ###########################################
@@ -42,7 +40,7 @@ def oil_date(sample):
 
 
 
-df['date'] = df['TimeStamp_NY'].parallel_apply(oil_date)
+df['date'] = df['TimeStamp_NY'].apply(oil_date)
 df = df[df['date']!='weekend']
 
 df.to_csv('/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat/date_fixed_article_level_measures.csv', index=False)
