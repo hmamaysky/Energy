@@ -81,16 +81,16 @@ chmod 700 concat.py
 9. Fix the dates on info files based on the oil price eastern closing time 
 
 ```
-chmod u+x date_fixed_measures.py
+chmod 700 date_fixed_measures.py
 
-sge_run --grid_mem=32G --grid_ncpus=1 --grid_submit=batch ./date_fixed_measures.py
+./date_fixed_measures.py
 ```
-10. ![#f03c15](https://placehold.co/15x15/f03c15/f03c15.png) Aggregate from transcripts to daily measure (we take weighted average of each measure where the weights are word counts of a transcript)
+10. Aggregate from transcripts to daily measure (we take weighted average of each measure where the weights are word counts of a transcript)
 
 ```
-chmod u+x agg_daily.py
+chmod 700 agg_daily.py
 
-sge_run --grid_mem=32G --grid_ncpus=1 --grid_submit=batch ./agg_daily.py
+./agg_daily.py
 ```
 
 *** to run the code for cosine file and clustering***
