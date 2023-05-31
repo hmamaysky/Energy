@@ -61,10 +61,7 @@ if __name__ == "__main__":
         df_sent.rename(columns={'sent': 'sentiment'}, inplace=True)
         df_topic = pd.read_csv(f"{opt.measurePath}/topic_allocation/{YYYYMM}_topic_alloc.csv", delimiter=',')
         df_topic.drop(['headline'], axis=1, inplace=True)
-        try:
-            df_entropy = pd.read_csv(f"{opt.measurePath}/entropy/{YYYYMM}_entropy.csv", delimiter=',')
-        except FileNotFoundError:
-            df_entropy = pd.DataFrame(columns=['entropy'])
+        df_entropy = pd.read_csv(f"{opt.measurePath}/entropy/{YYYYMM}_entropy.csv", delimiter=',')
         df_total = pd.read_csv(f"{opt.measurePath}/total/{YYYYMM}_total.csv", delimiter=',')
     
         df = df_info.join(df_sent['sentiment'])\
