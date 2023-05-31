@@ -1,22 +1,21 @@
-#!/apps/anaconda2/bin/python
+#!/user/kh3191/.conda/envs/nlp/bin/python
 """
-@author: Roya
-
+Adapted from Roya's codes
     Function           : This code fixes the dates on info files based on the oil price eastern closing time 
-
 """
 import pandas as pd
 import calendar
 import datetime
+from pandarallel import pandarallel
+pandarallel.initialize(progress_bar=False)
 
 ###########################################
 ###########################################
 
 # This file is the concatenation of all files in '/NOBACKUP/scratch/ra2826/oil-project/info'
-df = pd.read_csv('/NOBACKUP/scratch/ra2826/oil-project/concat/info_concatenate.csv', sep=',')
+df = pd.read_csv('/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat/info_concatenate.csv', sep=',')
 
 
- 
 ####################
 ##### FUNCTION #####
 ####################
@@ -26,14 +25,14 @@ def oil_date(sample):
     my_date = my_datetime.date()
     my_time = my_datetime.time()
     
-    if (my_weekday=='Friday' and my_time > datetime.time(14, 30, 00)):
+    if (my_weekday=='Friday' and my_time > datetime.time(14, 30, 0)):
         result = my_date + datetime.timedelta(days=3)
         result = result.strftime('%Y%m%d')
     elif (my_weekday=='Saturday'):
         result = 'weekend'
-    elif (my_weekday=='Sunday' and my_time < datetime.time(14, 30, 00)):
+    elif (my_weekday=='Sunday' and my_time < datetime.time(14, 30, 0)):
         result = 'weekend'    
-    elif (my_time > datetime.time(14, 30, 00)):
+    elif (my_time > datetime.time(14, 30, 0)):
         result = my_date + datetime.timedelta(days=1)
         result = result.strftime('%Y%m%d')
     else:
@@ -43,7 +42,7 @@ def oil_date(sample):
 
 
 
-df['date'] = df['TimeStamp_NY'].apply(oil_date)
+df['date'] = df['TimeStamp_NY'].parallel_apply(oil_date)
 df = df[df['date']!='weekend']
 
-df.to_csv('/NOBACKUP/scratch/ra2826/oil-project/concat/date_fixed_article_level_measures.csv', index=False)
+df.to_csv('/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat/date_fixed_article_level_measures.csv', index=False)
