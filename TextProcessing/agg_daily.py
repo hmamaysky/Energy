@@ -1,68 +1,45 @@
-#!/apps/anaconda2/bin/python
+#!/user/kh3191/.conda/envs/nlp/bin/python
 
 
 #This code gets the daily aggregates 
 import pandas as pd
+from tqdm import tqdm
 
 ##########################
 #Read the input
 
-def Unclassified_func(s):
-    if s>.98: return 0
-    else: return 1
-    
+wkdir = '/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat'
+df = pd.read_csv(f"{wkdir}/date_fixed_article_level_measures.csv", sep=',')
 
-wkdir = '/work/hw2676/Energy/concat/'
+topic_cols = [i.startswith('Topic') for i in df.columns]
+n_topics = sum(topic_cols)
+df['sum'] = df.loc[:,topic_cols].sum(axis=1)
+df['Unclassified'] = (df['sum'] <= 0.98).astype(int)
 
-df = pd.read_csv(wkdir + 'date_fixed_article_level_measures.csv',sep=',')
-df['sum'] = df['Topic1'] + df['Topic2'] + df['Topic3'] + df['Topic4'] + df['Topic5'] + df['Topic6'] + df['Topic7']
-df['Unclassified'] = df['sum'].apply(Unclassified_func)
-
-
-
-df=df.dropna()
+df = df.dropna()
+df_daily = df.groupby('date')
 ##########################
 
 #one measure count of articles
-df_count=df.groupby('date').size()
+df_count = df_daily.size()
 
 #one entropy measure
-df_ent=df.groupby('date').apply(lambda dfx: (dfx['entropy'] * dfx['total']).sum() / dfx['total'].sum())
+df_ent = df_daily.apply(lambda dfx: (dfx['entropy'] * dfx['total']).sum() / dfx['total'].sum())
 
-#six topic measures
-df_t1=df.groupby('date').apply(lambda dfx: (dfx['Topic1'] * dfx['total']).sum() / float(dfx['total'].sum()))
+#topic measures
+df_t1, df_t2, df_t3, df_t4, df_t5, df_t6, df_t7 = [df_daily.apply(
+    lambda dfx: (dfx[f'Topic{i+1}'] * dfx['total']).sum() / float(dfx['total'].sum())
+) for i in tqdm(range(7))]
 
-df_t2=df.groupby('date').apply(lambda dfx: (dfx['Topic2'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t3=df.groupby('date').apply(lambda dfx: (dfx['Topic3'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t4=df.groupby('date').apply(lambda dfx: (dfx['Topic4'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t5=df.groupby('date').apply(lambda dfx: (dfx['Topic5'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t6=df.groupby('date').apply(lambda dfx: (dfx['Topic6'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t7=df.groupby('date').apply(lambda dfx: (dfx['Topic7'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t8=df.groupby('date').apply(lambda dfx: (dfx['Unclassified'] * dfx['total']).sum() / float(dfx['total'].sum()))
+df_t8 = df_daily.apply(lambda dfx: (dfx['Unclassified'] * dfx['total']).sum() / float(dfx['total'].sum()))
 
 
-#six topic-sentiment measures
-df_t1_s=df.groupby('date').apply(lambda dfx: (dfx['Topic1'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum()))
+#topic-sentiment measures
+df_t1_s, df_t2_s, df_t3_s, df_t4_s, df_t5_s, df_t6_s, df_t7_s = [df_daily.apply(
+    lambda dfx: (dfx[f'Topic{i+1}'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum())
+) for i in tqdm(range(7))]
 
-df_t2_s=df.groupby('date').apply(lambda dfx: (dfx['Topic2'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t3_s=df.groupby('date').apply(lambda dfx: (dfx['Topic3'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t4_s=df.groupby('date').apply(lambda dfx: (dfx['Topic4'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t5_s=df.groupby('date').apply(lambda dfx: (dfx['Topic5'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t6_s=df.groupby('date').apply(lambda dfx: (dfx['Topic6'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t7_s=df.groupby('date').apply(lambda dfx: (dfx['Topic7'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
-df_t8_s=df.groupby('date').apply(lambda dfx: (dfx['Unclassified'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum()))
+df_t8_s = df_daily.apply(lambda dfx: (dfx['Unclassified'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum()))
 
 
 
@@ -82,4 +59,4 @@ cols = ['article count','entropy',
      'Topic-Sentiment 4','Topic-Sentiment 5','Topic-Sentiment 6','Topic-Sentiment 7',
      'Unclassified-Sentiment']
 df_out = df_out[cols]
-df_out.to_csv('NYtime_daily_level_measures_C_2020-05-03.csv')
+df_out.to_csv('NYtime_daily_level_measures_C_2023.csv')
