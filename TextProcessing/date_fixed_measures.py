@@ -12,7 +12,7 @@ pandarallel.initialize(progress_bar=False)
 ###########################################
 ###########################################
 
-# This file is the concatenation of all files in '/NOBACKUP/scratch/ra2826/oil-project/info'
+# This file is the concatenation of all info files from /combined_info
 df = pd.read_csv('/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat/info_concatenate.csv', sep=',')
 
 
