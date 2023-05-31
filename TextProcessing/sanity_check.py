@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import itertools
 import os
-#from tqdm import tqdm
+from tqdm import tqdm
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -19,6 +19,7 @@ def parse_option():
     parser.add_argument('--check', type=str, default='topic')
     parser.add_argument('--getDifference', type=bool, default=False)
     parser.add_argument('--getAllMissingSubjects', type=bool, default=True)
+    parser.add_argument('--showMismatchingProportion', type=bool, default=True)
     opt = parser.parse_args()
     return opt
 
@@ -36,7 +37,26 @@ def flatten(lists, filterN2=True):
 
 
 def main():
-    if opt.check.lower().startswith('topic'):
+    
+    if opt.showMismatchingProportion:
+        
+        file_list = os.listdir(f'{opt.oldPath}/DataProcessing/topic_allocation')
+        file_list.sort()
+        
+        new_sum, old_sum = 0, 0
+        for file in tqdm(file_list):
+            YYYYMM = file[:6]
+            old = pd.read_csv(f'{opt.oldPath}/DataProcessing/topic_allocation/{file}')
+            new = pd.read_csv(f'{opt.newPath}/DataProcessing/article_measure/topic_allocation/{YYYYMM}_topic_alloc.csv')
+            new_sum += len(new)
+            old_sum += len(old)
+            
+        print(f"#New Articles: {new_sum}\n\
+#Old Articles: {old_sum}\n\
+Mismatching Proportion: {(old_sum-new_sum)/old_sum*100:.2f}%")
+    
+    
+    if opt.check == 'topic':
 
         col_names = [f'Topic{i+1}' for i in range(7)]
         print('---- Correlation should be close to 1 if outputs are reliable.')
