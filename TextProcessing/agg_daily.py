@@ -27,36 +27,30 @@ df_count = df_daily.size()
 df_ent = df_daily.apply(lambda dfx: (dfx['entropy'] * dfx['total']).sum() / dfx['total'].sum())
 
 #topic measures
-df_t1, df_t2, df_t3, df_t4, df_t5, df_t6, df_t7 = [df_daily.apply(
+df_t_list = [df_daily.apply(
     lambda dfx: (dfx[f'Topic{i+1}'] * dfx['total']).sum() / float(dfx['total'].sum())
-) for i in tqdm(range(7))]
+) for i in tqdm(range(n_topics))]
 
-df_t8 = df_daily.apply(lambda dfx: (dfx['Unclassified'] * dfx['total']).sum() / float(dfx['total'].sum()))
+df_t_unclass = df_daily.apply(lambda dfx: (dfx['Unclassified'] * dfx['total']).sum() / float(dfx['total'].sum()))
 
 
 #topic-sentiment measures
-df_t1_s, df_t2_s, df_t3_s, df_t4_s, df_t5_s, df_t6_s, df_t7_s = [df_daily.apply(
+df_t_s_list = [df_daily.apply(
     lambda dfx: (dfx[f'Topic{i+1}'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum())
-) for i in tqdm(range(7))]
+) for i in tqdm(range(n_topics))]
 
-df_t8_s = df_daily.apply(lambda dfx: (dfx['Unclassified'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum()))
-
+df_t_s_unclass = df_daily.apply(lambda dfx: (dfx['Unclassified'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum()))
 
 
 d = {'article count' : df_count, 'entropy': df_ent, 
-     'Topic 1' : df_t1, 'Topic 2' : df_t2,'Topic 3' : df_t3, 
-     'Topic 4' : df_t4, 'Topic 5' : df_t5, 'Topic 6' : df_t6, 'Topic 7' : df_t7,
-     'Unclassified' : df_t8,
-     'Topic-Sentiment 1' : df_t1_s, 'Topic-Sentiment 2' : df_t2_s,'Topic-Sentiment 3' : df_t3_s, 
-     'Topic-Sentiment 4' : df_t4_s, 'Topic-Sentiment 5' : df_t5_s, 'Topic-Sentiment 6' : df_t6_s, 'Topic-Sentiment 7' : df_t7_s,
-     'Unclassified-Sentiment' : df_t8_s}
+     'Unclassified' : df_t_unclass, 'Unclassified-Sentiment' : df_t_s_unclass}
+for i, df_t in enumerate(df_t_list):
+    d[f"Topic {i+1}"] = df_t
+for i, df_t_s in enumerate(df_t_s_list):
+    d[f"Topic-Sentiment {i+1}"] = df_t_s
 df_out = pd.DataFrame(d)
 
-cols = ['article count','entropy',
-     'Topic 1','Topic 2','Topic 3', 
-     'Topic 4','Topic 5','Topic 6','Topic 7','Unclassified',
-     'Topic-Sentiment 1','Topic-Sentiment 2','Topic-Sentiment 3',
-     'Topic-Sentiment 4','Topic-Sentiment 5','Topic-Sentiment 6','Topic-Sentiment 7',
-     'Unclassified-Sentiment']
-df_out = df_out[cols]
+# cols = ['article count','entropy'] + [f"Topic {i+1}" for i in range(n_topics)] + ['Unclassified'] +\
+#         [f"Topic-Sentiment {i+1}" for i in range(n_topics)] + ['Unclassified-Sentiment']
+# df_out = df_out[cols]
 df_out.to_csv('NYtime_daily_level_measures_C_2023.csv')
