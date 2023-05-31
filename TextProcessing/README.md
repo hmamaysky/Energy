@@ -37,6 +37,8 @@ chmod 700 entropy.py
 
 ./entropy.py
 
+./sanity_check.py --check=entropy
+
 ```
 5.  Calculate the sentiments and count the total number of words in each article after cleaning (20min on 64 CPUs)
 ```
@@ -46,12 +48,18 @@ pip install textmining3
 
 ./sentcode.py
 
+./sanity_check.py --check=sentiment
+
+./sanity_check.py --check=total
+
 ```
 6.  Calculates the allocation of the topics for each article
 ```
 chmod 700 topic_allocation.py
 
 grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./topic_allocation.py
+
+./sanity_check.py --check=topic
 
 ```
 7. Combine all the article measures and change the time to NY to create final info files
