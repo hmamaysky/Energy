@@ -39,5 +39,6 @@
 │           └── cosine_20230524.csv
 └── /data/ThomsonReuters_NewsArchive
     ├── YYYY
+    │   └── News.RTRS.YYYYMM.0214.txt
     └── count_of_articles.txt
 ```
