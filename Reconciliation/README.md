@@ -1,3 +1,7 @@
+The file `2018-05-04 energy word grouping 387 words.xlsx` contains the initial hand-selected list of 387 energy words from which we constructed the list of 441 words ultimately used in the paper.
+* The topic model was first estimated using the DTM for these 387 words, and later words were added to the existing topics from the initial topic model run.
+
+Below is the directory tree for the project:
 ```
 ├── /shared/share_mamaysky-glasserman/energy_drivers
 │   ├── 2020-11-16
