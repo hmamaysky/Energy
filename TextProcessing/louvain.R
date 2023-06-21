@@ -2,6 +2,7 @@
 ### 	Input: cosine similarity matrix, Output: Clusters 
 
 install.packages('igraph')
+library(igraph)
 
 rm(list = ls())
 setwd("/Users/Roya/Desktop/cosine/louvain")
@@ -20,7 +21,7 @@ names.shuffle <- sample(names)
 df.shuffle <- df[names.shuffle,names.shuffle] 
 m <- as.matrix(df.shuffle)
 mode(m) <- "numeric"
-library(igraph)
+
 ig <- graph.adjacency(m, mode="undirected", weighted=TRUE,diag = FALSE)
 c1 = cluster_louvain(ig)
 if (modularity(c1) > s) {s = modularity(c1)
@@ -28,7 +29,7 @@ s.names = names.shuffle}
 }
 
 
-#get the comunities for the best permutation of words
+#get the communities for the best permutation of words
 df.final <- df[s.names,s.names] 
 m <- as.matrix(df.final)
 mode(m) <- "numeric"
