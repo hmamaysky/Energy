@@ -14,7 +14,8 @@ from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--inputWordsPath', type=str, 
-           default='clustering_C.csv')
+           #default='clustering_C.csv')
+           default='2018-05-04 energy word grouping 387 words.xlsx')
     parser.add_argument('--dtmPath', type=str, 
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C')
     parser.add_argument('--concatInfoPath', type=str, 
@@ -28,17 +29,22 @@ opt = parse_option()
 print(opt)
 
 
-words_test = pd.read_csv(opt.inputWordsPath, sep=',', names=['word','Topic','freq'])
-word_set = words_test['word'][1:].tolist()
+if opt.inputWordsPath.endswith('csv'):
+    words_test = pd.read_csv(opt.inputWordsPath, sep=',', names=['word','Topic','freq'])
+    word_set = words_test['word'][1:].tolist()
+elif opt.inputWordsPath.endswith('xlsx'):
+    words_test = pd.read_excel(opt.inputWordsPath)
+    word_set = words_test['Word'].tolist()
+    
 dic_word = {k: v for v, k in enumerate(word_set)}
 def func_word(item):
-    return dic_word[item]
+    return dic_word.get(item, -1)
 
 df_selected = pd.read_csv(opt.concatInfoPath, sep=',')
 id_set = df_selected.Id.tolist()
 dic_id = {k: v for v, k in enumerate(id_set)}
 def func_id(item):
-    return dic_id[item]
+    return dic_id.get(item, -1)
 
 
 if __name__ == "__main__":
@@ -63,5 +69,3 @@ if __name__ == "__main__":
         df_out['words'] = J
 
         df_out.to_csv(f"{opt.outputPath}/{file}",index=False)
-
-
