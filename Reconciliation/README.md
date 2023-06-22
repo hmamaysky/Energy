@@ -39,9 +39,9 @@ Below is the directory tree for the project:
 │           │   └── cosine.csv
 │           ├── dtm_Clustering_C
 │           │   └── YYYYMM_dtm.csv
-│           ├── info
-│           │   └── YYYYMM_info.csv
-│           └── cosine_20230524.csv
+│           └── info
+│               └── YYYYMM_info.csv
+│
 └── /data/ThomsonReuters_NewsArchive
     ├── YYYY
     │   └── News.RTRS.YYYYMM.0214.txt
