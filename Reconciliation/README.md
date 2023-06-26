@@ -27,7 +27,7 @@ Below is the directory tree for the project:
 │           │       └── YYYYMM_total.csv
 │           ├── concat
 │           │   ├── date_fixed_article_level_measures.csv
-│           │   ├── dtm_numeric_concatenate.csv
+│           │   ├── dtm_concatenate.npz
 │           │   └── info_concatenate.csv
 │           ├── dtm_numeric
 │           │   └── YYYYMM_dtm.csv
