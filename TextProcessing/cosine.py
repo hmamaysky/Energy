@@ -43,7 +43,7 @@ print(f'Number of words to create cosine-similarity matrix: {len(word_set)}')
 pathin = [f"{opt.dtmPath}/{f}" for f in os.listdir(opt.dtmPath)]
 frames = [pd.read_csv(j, delimiter=',') for j in tqdm(pathin)]
 df = pd.concat(frames)
-df.to_csv(f'{opt.outputDtmPath}/dtm_numeric_concatenate.csv')
+#df.to_csv(f'{opt.outputDtmPath}/dtm_numeric_concatenate.csv')
 print(f"Length of df: {len(df)}")
 
 df = df.query('words>=0')
