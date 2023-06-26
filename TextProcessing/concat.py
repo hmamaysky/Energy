@@ -23,7 +23,6 @@ csv_files.sort()
 
 concatenated_df = pd.concat([pd.read_csv(file) for file in tqdm(csv_files)], ignore_index=True)
 output_file = '/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat/dtm_concatenate.npz'
-#concatenated_df.iloc[:,2:].to_csv(output_file, index=False)
 print('Converting to sparse matrix')
 sparse_matrix = sparse.csr_matrix(concatenated_df.iloc[:,2:])
 print('Writing concatenated df')
