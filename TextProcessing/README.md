@@ -97,18 +97,16 @@ chmod 700 agg_daily.py
 
 1. Process the dtm files for the cosine code 
 ```
-chmod u+x dtm_numeric.py
+chmod 700 dtm_numeric.py
 
-chmod u+x run_dtm_numeric.sh
-
-./run_dtm_numeric.sh
+./dtm_numeric.py
 
 ```
 2. Prepare the cosine file
 ```
-chmod u+x cosine.py
+chmod 700 cosine.py
 
-sge_run --grid_mem=128G --grid_ncpus=2 --grid_submit=batch ./cosine.py
+./cosine.py
 ```
 3. louvain.R is used for clustering
 
