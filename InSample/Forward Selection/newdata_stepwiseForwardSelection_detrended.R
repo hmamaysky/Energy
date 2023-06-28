@@ -23,7 +23,7 @@ library(imputeTS)
 # Set working directory
 #dir <- "/Users/Economist/Dropbox/Research/ncm_research/forwardSelection/"
 #setwd(dir)
-setwd("C:/Users/j1kxb09/Downloads/MNSC/R/Energy-015cb58076dcd3385f5c7a8fb29aa516000e4ba5/data")
+setwd("C:/Users/j1kxb09/Downloads/MNSC/R/Energy/data")
 # ------------------------------------------------------------------------
 # Create detrended, 4- and 8-week lagged data frames (Friday EOP)  
 # ------------------------------------------------------------------------
