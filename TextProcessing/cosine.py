@@ -12,16 +12,17 @@ import numpy as np
 import os
 from tqdm import tqdm
 
-
+# TODO: add a boolean argument indicating using 387/441 words instead of using 'xlsx'/'csv' to decide
 import argparse
 from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--inputWordsPath', type=str, 
-           #default='clustering_C.csv')
-           default='2018-05-04 energy word grouping 387 words.xlsx')
+           default='clustering_C.csv')
+           #default='2018-05-04 energy word grouping 387 words.xlsx')
     parser.add_argument('--dtmPath', type=str, 
-           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric_441')
+           #default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric')
     parser.add_argument('--outputDtmPath', type=str, 
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat')
     parser.add_argument('--outputCosinePath', type=str, 
@@ -46,6 +47,7 @@ df = pd.concat(frames)
 #df.to_csv(f'{opt.outputDtmPath}/dtm_numeric_concatenate.csv')
 print(f"Length of df: {len(df)}")
 
+#if opt.inputWordsPath.endswith('xlsx'):
 df = df.query('words>=0')
 print(f"Length of filtered df: {len(df)}")
 
