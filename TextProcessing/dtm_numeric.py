@@ -14,14 +14,15 @@ from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--inputWordsPath', type=str, 
-           #default='clustering_C.csv')
-           default='2018-05-04 energy word grouping 387 words.xlsx')
+           default='clustering_C.csv')
+           #default='2018-05-04 energy word grouping 387 words.xlsx')
     parser.add_argument('--dtmPath', type=str, 
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C')
     parser.add_argument('--concatInfoPath', type=str, 
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat/info_concatenate.csv')
     parser.add_argument('--outputPath', type=str, 
-           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric_441')
+           #default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric')
     opt = parser.parse_args()
     return opt
 
