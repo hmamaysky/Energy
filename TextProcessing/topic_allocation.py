@@ -34,26 +34,17 @@ for file in tqdm(os.listdir(opt.inputPath_dtm)):
 
     df_dtm = pd.read_csv(f'{opt.inputPath_dtm}/{YYYYMM}_dtm.csv', delimiter=',')
     df_info = pd.read_csv(f'{opt.inputPath_info}/oil_{YYYYMM}_info.csv', delimiter=',')
-    topics = pd.read_csv(opt.inputWordsPath, sep=',', index_col=0)
+    df_topics = pd.read_csv(opt.inputWordsPath, sep=',', index_col=0)
+    topics_list = [df_topics.index[df_topics['Topic'] == i].tolist() for i in range(1,opt.n_topics+1)]
 
-    topics_list = [topics.index[topics['Topic'] == i].tolist() for i in range(1,opt.n_topics+1)]
-
-    df0=pd.DataFrame()
-    for i in range(opt.n_topics):
-        data=[]
-        for index, row in df_dtm.iterrows():
-            #print(index)
-            x=sum(df_dtm.loc[index,topics_list[i]])
-            data.append(x)
-        df0['Topic'+str(i+1)]=data
-
+    df0 = pd.DataFrame()
+    for i, topics in enumerate(topics_list):
+        df0['Topic'+str(i+1)] = df_dtm[topics].sum(axis=1)
 
     df0['sum'] = df0.sum(axis=1)
     df0 = df0.loc[:,'Topic1':f'Topic{opt.n_topics}'].div(df0['sum'], axis=0)
-    df0=df0.fillna(0)
-
+    df0 = df0.fillna(0)
 
     df0['headline']=df_info['headline']
     df0.to_csv(f'{opt.outputPath}/{YYYYMM}_topic_alloc.csv',index=False)
-
 
