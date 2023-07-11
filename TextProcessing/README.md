@@ -93,7 +93,7 @@ chmod 700 agg_daily.py
 ./agg_daily.py
 ```
 
-*** to run the code for cosine file and clustering***
+*** to run the code for cosine file and clustering ***
 
 1. Process the dtm files for the cosine code 
 ```
@@ -108,6 +108,21 @@ chmod 700 cosine.py
 
 ./cosine.py
 ```
-3. louvain.R is used for clustering
+3. use Louvain algorithm for clustering
 
+*** to process texts based on two new topic allocations ***
 
+1. Create symbolic links to old files
+```
+chmod 700 create_links.sh
+
+./create_links.sh
+
+```
+2. Repeat text-processing to get daily aggregate data
+```
+chmod 700 repeat_new_topic.sh
+
+./repeat_new_topic.sh
+
+```
