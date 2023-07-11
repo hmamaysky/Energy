@@ -7,12 +7,23 @@ import pandas as pd
 import calendar
 import datetime
 
+import argparse
+from argparse import RawTextHelpFormatter
+def parse_option():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--concatPath', type=str, 
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat')
+    opt = parser.parse_args()
+    return opt
+
+opt = parse_option()
+print(opt)
+
 ###########################################
 ###########################################
 
 # This file is the concatenation of all info files from /combined_info
-df = pd.read_csv('/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat/info_concatenate.csv', sep=',')
-
+df = pd.read_csv(f'{opt.concatPath}/info_concatenate.csv', sep=',')
 
 ####################
 ##### FUNCTION #####
@@ -39,8 +50,7 @@ def oil_date(sample):
     return result   
 
 
-
 df['date'] = df['TimeStamp_NY'].apply(oil_date)
 df = df[df['date']!='weekend']
 
-df.to_csv('/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat/date_fixed_article_level_measures.csv', index=False)
+df.to_csv(f'{opt.concatPath}/date_fixed_article_level_measures.csv', index=False)
