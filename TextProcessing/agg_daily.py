@@ -5,11 +5,25 @@
 import pandas as pd
 from tqdm import tqdm
 
-##########################
-#Read the input
+import argparse
+from argparse import RawTextHelpFormatter
+def parse_option():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--concatPath', type=str, 
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat')
+    parser.add_argument('--outputPath', type=str, 
+           default='NYtime_daily_level_measures_C_2023.csv')
+    opt = parser.parse_args()
+    return opt
 
-wkdir = '/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat'
-df = pd.read_csv(f"{wkdir}/date_fixed_article_level_measures.csv", sep=',')
+opt = parse_option()
+print(opt)
+
+
+##########################
+# Read the input
+
+df = pd.read_csv(f"{opt.concatPath}/date_fixed_article_level_measures.csv", sep=',')
 
 topic_cols = [i.startswith('Topic') for i in df.columns]
 n_topics = sum(topic_cols)
@@ -20,13 +34,13 @@ df = df.dropna()
 df_daily = df.groupby('date')
 ##########################
 
-#one measure count of articles
+# one measure count of articles
 df_count = df_daily.size()
 
-#one entropy measure
+# one entropy measure
 df_ent = df_daily.apply(lambda dfx: (dfx['entropy'] * dfx['total']).sum() / dfx['total'].sum())
 
-#topic measures
+# topic measures
 df_t_list = [df_daily.apply(
     lambda dfx: (dfx[f'Topic{i+1}'] * dfx['total']).sum() / float(dfx['total'].sum())
 ) for i in tqdm(range(n_topics))]
@@ -34,7 +48,7 @@ df_t_list = [df_daily.apply(
 df_t_unclass = df_daily.apply(lambda dfx: (dfx['Unclassified'] * dfx['total']).sum() / float(dfx['total'].sum()))
 
 
-#topic-sentiment measures
+# topic-sentiment measures
 df_t_s_list = [df_daily.apply(
     lambda dfx: (dfx[f'Topic{i+1}'] * dfx['sentiment'] * dfx['total']).sum() / float(dfx['total'].sum())
 ) for i in tqdm(range(n_topics))]
@@ -53,4 +67,4 @@ df_out = pd.DataFrame(d)
 # cols = ['article count','entropy'] + [f"Topic {i+1}" for i in range(n_topics)] + ['Unclassified'] +\
 #         [f"Topic-Sentiment {i+1}" for i in range(n_topics)] + ['Unclassified-Sentiment']
 # df_out = df_out[cols]
-df_out.to_csv('NYtime_daily_level_measures_C_2023.csv')
+df_out.to_csv(opt.outputPath)
