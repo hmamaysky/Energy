@@ -6,7 +6,7 @@
 
 import os
 import pandas as pd
-from dateutil import tz
+from dateutil import tz, parser
 from datetime import datetime
 from tqdm import tqdm
 
@@ -30,20 +30,13 @@ print(opt)
 #################
 ####FUNCTIONS####
 #################
+# Hardcode zones:
+from_zone = tz.gettz('UTC')
+to_zone = tz.gettz('America/New_York')
+    
 def UTC_to_NY(row):
     x = row['TimeStamp']
-    # Hardcode zones:
-    from_zone = tz.gettz('UTC')
-    to_zone = tz.gettz('America/New_York')
-    
-    utc = datetime.strptime(x[0:19], '%Y-%m-%dT%H:%M:%S')
-    
-    # Tell the datetime object that it's in UTC time zone since 
-    # datetime objects are 'naive' by default
-    utc = utc.replace(tzinfo=from_zone)
-    
-    # Convert time zone
-    est = utc.astimezone(to_zone)
+    est = parser.parse(x).replace(tzinfo=from_zone).astimezone(to_zone)
     est_timestamp = est.strftime('%Y-%m-%dT%H:%M:%S')+x[19:]
     return est_timestamp
 ################
@@ -77,7 +70,6 @@ if __name__ == "__main__":
         df = df[cols]
 
         df.to_csv(f"{opt.outputPath}/{YYYYMM}_info.csv",index=False)
-
 
 
 
