@@ -1,7 +1,7 @@
 #!/user/kh3191/.conda/envs/nlp/bin/python
 
 
-#This code gets the daily aggregates 
+# This code computes the daily aggregates, using weighted average of each measure where the weights are word counts of an article
 import pandas as pd
 from tqdm import tqdm
 
