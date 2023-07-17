@@ -1,128 +1,104 @@
-# Energy
+# Energy Data Processing
 
-Contains codes for textual data processing in Energy Project. Please make sure the read through the contents of each code and change the directories to proper ones before running the analysis.
+This directory contains code for processing textual data in the Energy Project. Before running the analysis, please read through the contents of each code and ensure that you change the directories and the virtual environment to the appropriate ones.
 
+## Processing for Info Files
 
-*** to run the code for info files***
-
-1. Generate monthly csv info files (raw info files)
-```
+***Step :one:: Generate Monthly CSV Info Files (Raw Info Files)***
+```bash
 chmod 700 raw_info.py
-
 ./raw_info.py
+```
 
-```
-2. Select the oil articles and generate the oil-related monthly raw info files
-```
+***Step :two:: Select Oil Articles and Generate Oil-Related Monthly Raw Info Files***
+```bash
 chmod 700 oil_article_selection.py
-
 ./oil_article_selection.py
+```
 
-```
-3. Prepare the dtm files
-```
+***Step :three:: Prepare the Document-Term Matrix (DTM) Files***
+```bash
 chmod 700 dtm.py
-
 grid_run --grid_mem=50G --grid_ncpus=16 --grid_submit=batch ./dtm.py --usePandas '' 
+```
 
-```
-4.  Calculate the entropy (first step takes 6h without parallelizing; second step takes 75min)
-```
+***Step :four:: Calculate Entropy***
+```bash
 chmod 700 ngram.py
-
 grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./ngram.py
 
-
 chmod 700 entropy.py
-
 ./entropy.py
-
 ./sanity_check.py --check=entropy
+```
 
-```
-5.  Calculate the sentiments and count the total number of words in each article after cleaning (20min on 64 CPUs)
-```
+***Step :five:: Calculate Sentiments and Total Word Count for Each Article***
+```bash
 chmod 700 sentcode.py
-
 pip install textmining3
-
 ./sentcode.py
-
 ./sanity_check.py --check=sentiment
-
 ./sanity_check.py --check=total
+```
 
-```
-6.  Calculates the allocation of the topics for each article
-```
+***Step :six:: Calculate Topic Allocation for Each Article***
+```bash
 chmod 700 topic_allocation.py
-
 grid_run --grid_mem=50G --grid_ncpus=32 --grid_submit=batch ./topic_allocation.py
-
 ./sanity_check.py --check=topic
+```
 
-```
-7. Combine all the article measures and change the time to NY to create final info files
-```
+***Step :seven:: Combine Article Measures and Change Time to NY for Final Info Files***
+```bash
 chmod 700 info.py
-
 ./info.py
-
 ```
 All outputs are stored under `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/combined_info`.
 
-8. Concat all info files
-```
+***Step :eight:: Concatenate All Info Files***
+```bash
 chmod 700 concat.py
-
 ./concat.py
-
 ```
-9. Fix the dates on info files based on the oil price eastern closing time 
 
-```
+***Step :nine:: Fix Dates on Info Files Based on Oil Price Eastern Closing Time***
+```bash
 chmod 700 date_fixed_measures.py
-
 ./date_fixed_measures.py
 ```
-10. Aggregate from transcripts to daily measure (we take weighted average of each measure where the weights are word counts of a transcript)
 
-```
+***Step :one::zero:: Aggregate from Article-Level to Daily Measures***
+```bash
 chmod 700 agg_daily.py
-
 ./agg_daily.py
 ```
 
-*** to run the code for cosine file and clustering ***
+## Processing for Cosine File and Clustering
 
-1. Process the dtm files for the cosine code 
-```
+***Step :one:: Process the DTM Files for Cosine Code***
+```bash
 chmod 700 dtm_numeric.py
-
 ./dtm_numeric.py
+```
 
-```
-2. Prepare the cosine file
-```
+***Step :two:: Prepare the Cosine File***
+```bash
 chmod 700 cosine.py
-
 ./cosine.py
 ```
-3. use Louvain algorithm for clustering
 
-*** to process texts based on two new topic allocations ***
+***Step :three:: Use Louvain Algorithm for Clustering
 
-1. Create symbolic links to old files
-```
+## Processing Texts Based on Two New Topic Allocations
+
+***Step :one:: Create Symbolic Links to Old Files***
+```bash
 chmod 700 create_links.sh
-
 ./create_links.sh
+```
 
-```
-2. Repeat text-processing to get daily aggregate data
-```
+***Step :two:: Repeat Text-Processing to Get Daily Aggregate Measures***
+```bash
 chmod 700 repeat_new_topic.sh
-
 ./repeat_new_topic.sh
-
 ```
