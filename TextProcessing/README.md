@@ -87,7 +87,7 @@ chmod 700 cosine.py
 ./cosine.py
 ```
 
-***Step :three:: Use Louvain Algorithm for Clustering
+***Step :three:: Use Louvain Algorithm for Clustering***
 
 ## Processing Texts Based on Two New Topic Allocations
 
