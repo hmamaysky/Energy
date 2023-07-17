@@ -2,7 +2,7 @@
 
 This directory contains code for processing textual data in the Energy Project. Before running the analysis, please read through the contents of each code and ensure that you change the directories and the virtual environment to the appropriate ones.
 
-## Processing for Info Files
+## :file_folder: Processing for Info Files
 
 ***Step :one:: Generate Monthly CSV Info Files (Raw Info Files)***
 ```bash
@@ -73,7 +73,7 @@ chmod 700 agg_daily.py
 ./agg_daily.py
 ```
 
-## Processing for Cosine File and Clustering
+## :file_folder: Processing for Cosine File and Clustering
 
 ***Step :one:: Process the DTM Files for Cosine Code***
 ```bash
@@ -89,7 +89,7 @@ chmod 700 cosine.py
 
 ***Step :three:: Use Louvain Algorithm for Clustering***
 
-## Processing Texts Based on Two New Topic Allocations
+## :file_folder: Processing Texts Based on Two New Topic Allocations
 
 ***Step :one:: Create Symbolic Links to Old Files***
 ```bash
@@ -102,3 +102,5 @@ chmod 700 create_links.sh
 chmod 700 repeat_new_topic.sh
 ./repeat_new_topic.sh
 ```
+
+***Step :three:: Generate Stata Files***
