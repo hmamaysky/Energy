@@ -1,6 +1,6 @@
 # Energy Data Processing
 
-This directory contains code for processing textual data in the Energy Project. Before running, please read through the contents of each code and ensure that you change the directories and the virtual environment to the appropriate ones.
+This directory contains code for processing textual data in the Energy Project. Before running, please read through the contents of each code and ensure that you change the directories (and the virtual environment) to the appropriate ones.
 
 ## :file_folder: Processing for Info Files
 
