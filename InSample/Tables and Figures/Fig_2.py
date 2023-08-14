@@ -34,30 +34,30 @@ def plot_freq(dataset, event_dates):
 #     topic_ytick_dict={'Co':[0,0.1,0.2,0.3,0.4], 'Gom':[0,0.1,0.2,0.3,0.4,0.5,0.6], 'Env':[0,0.05,0.1,0.15],
 #                       'Bbl':[0,0.05,0.1],'Rpc':[0,0.01,0.02,0.03,0.04],
 #                       'Ep':[0,0.05,0.1,0.15],'Epg':[0.2,0.3,0.4,0.5]}
-    fig,axe=plt.subplots(4,2,figsize=(16,20),dpi=200)
+    fig, axes = plt.subplots(4,2,figsize=(16,20),dpi=200)
     for k in range(7):
-        i=int(k/2)
-        j=k%2
+        i = int(k/2)
+        j = k%2
         # get topic name
         topic = topic_name_dict[str(k+1)]
         # get topic title
-        topic_title=topic_title_dict[topic]
-        axe[i,j].plot(dataset['date'], dataset['ftopic'+str(k+1)+'_4wk'], color='b')
+        topic_title = topic_title_dict[topic]
+        axes[i,j].plot(dataset['date'], dataset['ftopic'+str(k+1)+'_4wk'], color='b')
         # turn off the axis
         # set title and take care of color as well as padding
-        axe[i,j].set_title(topic_title, color='black', pad=25)
+        axes[i,j].set_title(topic_title, color='black', pad=25)
         
-        axe[i,j].set_xlim(dataset['date'].values[0],dataset['date'].values[-1])
-        axe[i,j].xaxis.set_major_locator(FixedLocator(xtick_locations))
-        axe[i,j].set_xticklabels(xtick_locations)
+        axes[i,j].set_xlim(dataset['date'].values[0],dataset['date'].values[-1])
+        axes[i,j].xaxis.set_major_locator(FixedLocator(xtick_locations))
+        axes[i,j].set_xticklabels(xtick_locations)
         
-        if event_dates[str(k+1)] != None:
+        if event_dates[str(k+1)]:
             event_date = event_dates[str(k+1)][0]
-            axe[i,j].plot(datetime.strptime(event_date,'%Y-%m-%d'),
+            axes[i,j].plot(datetime.strptime(event_date,'%Y-%m-%d'),
                     dataset.loc[dataset.date_Wed == event_date,'ftopic'+str(k+1)+'_4wk'],
                     marker='*',color='red',markersize=16)
     # do not forget disguise the last plot
-    axe[3,1].axis('off')
+    axes[3,1].axis('off')
     fig.suptitle('Panel A: Topical Frequency', fontsize=30)
     fig.tight_layout()
     fig.subplots_adjust(top=0.90)
@@ -71,33 +71,33 @@ def plot_sent(dataset, event_dates):
 #                       'Bbl':0.05,'Rpc':0.06,
 #                       'Ep':0.1,'Epg':0.26}
     yscale = 1000
-    fig,axe=plt.subplots(4,2,figsize=(16,20),dpi=200)
+    fig, axes = plt.subplots(4,2,figsize=(16,20),dpi=200)
     for k in range(7):
-        i=int(k/2)
-        j=k%2
+        i = int(k/2)
+        j = k%2
         # get topic name
         topic = topic_name_dict[str(k+1)]
         # get topic title
-        topic_title=topic_title_dict[topic]
+        topic_title = topic_title_dict[topic]
         
-        axe[i,j].plot(dataset['date'], yscale*dataset['stopic'+str(k+1)+'_4wk'], color='b')
+        axes[i,j].plot(dataset['date'], yscale*dataset['stopic'+str(k+1)+'_4wk'], color='b')
         # turn off the axis
         # set title and take care of color as well as padding
-        axe[i,j].set_title(topic_title, color='black', pad=25)
+        axes[i,j].set_title(topic_title, color='black', pad=25)
         
-        axe[i,j].set_xlim(dataset['date'].values[0],dataset['date'].values[-1])
-        axe[i,j].xaxis.set_major_locator(FixedLocator(xtick_locations))
-        axe[i,j].set_xticklabels(xtick_locations)
+        axes[i,j].set_xlim(dataset['date'].values[0],dataset['date'].values[-1])
+        axes[i,j].xaxis.set_major_locator(FixedLocator(xtick_locations))
+        axes[i,j].set_xticklabels(xtick_locations)
         #axe[i,j].text(pd.Timestamp('1998-05-01'),annotation_y_dict[topic],r'$\times 10^{-3}$',fontsize=12)
-        axe[i,j].set_ylabel('x$10^{-3}$', rotation=0, labelpad=20, verticalalignment='center', fontsize=12)
+        axes[i,j].set_ylabel('x$10^{-3}$', rotation=0, labelpad=20, verticalalignment='center', fontsize=12)
         
-        if event_dates[str(k+1)] != None:
+        if event_dates[str(k+1)]:
             event_date = event_dates[str(k+1)][0]
-            axe[i,j].plot(datetime.strptime(event_date,'%Y-%m-%d'),
+            axes[i,j].plot(datetime.strptime(event_date,'%Y-%m-%d'),
                     yscale*dataset.loc[dataset.date_Wed == event_date,'stopic'+str(k+1)+'_4wk'],
                     marker='*',color='red',markersize=16)
     # do not forget disguise the last plot
-    axe[3,1].axis('off')
+    axes[3,1].axis('off')
     fig.suptitle('Panel B: Topical Sentiment', fontsize=30)
     fig.tight_layout()
     fig.subplots_adjust(top=0.90)
@@ -112,25 +112,25 @@ def plot_others(dataset):
     # Get title of each topic
     topic_title_dict={'artcount_4wk':'Article Counts', 'entropy_4wk':'Entropy', 'PCAsent':'First PC of Normalized Topical Sentimant',
                       'PCAfreq':'First PC of Normalized Topical Frequency','PCAall':'First PC of Normalized all Text Variables'}
-    fig,axe=plt.subplots(3,2,figsize=(16,15),dpi=200)
+    fig, axes = plt.subplots(3,2,figsize=(16,15),dpi=200)
     for k in range(5):
-        i=int(k/2)
-        j=k%2
+        i = int(k/2)
+        j = k%2
         # get topic name
         topic = topic_name_dict[str(k+1)]
         # get topic title
-        topic_title=topic_title_dict[topic]
+        topic_title = topic_title_dict[topic]
         
-        axe[i,j].plot(dataset['date'], dataset[topic_name_dict[str(k+1)]], color='b')
+        axes[i,j].plot(dataset['date'], dataset[topic_name_dict[str(k+1)]], color='b')
         # turn off the axis
         # set title and take care of color as well as padding
-        axe[i,j].set_title(topic_title, color='black', pad=25)
+        axes[i,j].set_title(topic_title, color='black', pad=25)
         
-        axe[i,j].set_xlim(dataset['date'].values[0],dataset['date'].values[-1])
-        axe[i,j].xaxis.set_major_locator(FixedLocator(xtick_locations))
-        axe[i,j].set_xticklabels(xtick_locations)
+        axes[i,j].set_xlim(dataset['date'].values[0],dataset['date'].values[-1])
+        axes[i,j].xaxis.set_major_locator(FixedLocator(xtick_locations))
+        axes[i,j].set_xticklabels(xtick_locations)
     # do not forget disguise the last plot
-    axe[2,1].axis('off')
+    axes[2,1].axis('off')
     fig.suptitle('Panel C: Article Counts, Unusualness and PCA series', fontsize=30)
     fig.tight_layout()
     fig.subplots_adjust(top=0.90)
@@ -146,7 +146,6 @@ def get_dataset(file_dir):
 
     # remedy missing var in in-sample analysis
     dataset = dataset.rename(columns={'date_Fri':'date'})
-    # remedy missing var in in-sample analysis
     dataset['sent'] = dataset['sCo']+dataset['sGom']+dataset['sEnv']\
                      +dataset['sEpg']+dataset['sBbl']+dataset['sRpc']+dataset['sEp']
     return dataset
