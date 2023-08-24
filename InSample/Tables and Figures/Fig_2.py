@@ -7,7 +7,6 @@ This file plots the freq, sent of textual vars, and some other related quantitie
 # %% Import Packages
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FixedLocator
 import seaborn as sns
 sns.set(rc={"axes.labelsize": 15, 
             "axes.labelweight": 'bold',
@@ -22,11 +21,18 @@ from datetime import datetime
 topic_name_dict={'1':'Co','2':'Gom','3':'Env','4':'Epg',
                  '5':'Bbl','6':'Rpc','7':'Ep'}
 # Get title of each topic
-topic_title_dict={'Co':'Company (Co)', 'Gom':'Global Oil Market (Gom)', 'Env':'Environment (Env)',
-                  'Bbl':'Crude Oil Physical (Bbl)','Rpc':'Refining & Pertrochemicals (Rpc)',
-                  'Ep':'Exploration & Production (Ep)','Epg':'Energy/Power Generation (Epg)'}
-
-xtick_locations = [1996, 2000, 2004, 2008, 2012, 2016, 2020]
+# topic_title_dict={'Co':'Company (Co)', 'Gom':'Global Oil Market (Gom)', 'Env':'Environment (Env)',
+#                   'Bbl':'Crude Oil Physical (Bbl)','Rpc':'Refining & Pertrochemicals (Rpc)',
+#                   'Ep':'Exploration & Production (Ep)','Epg':'Energy/Power Generation (Epg)'}
+# old topic names
+old2new = {'Env':'Dist', 'Epg':'Ge'}
+topic_title_dict={'Co':'Company (Co)', 
+                  'Gom':'Global Oil Market (Gom)', 
+                  'Dist':'Distribution (Dist)',
+                  'Bbl':'Crude Oil Physical (Bbl)',
+                  'Rpc':'Refining & Pertrochemicals (Rpc)',
+                  'Ep':'Exploration & Production (Ep)',
+                  'Ge':'Generation & Environment (Ge)'}
 
 # %% Defining Functions
 def plot_freq(dataset, event_dates):
@@ -41,15 +47,16 @@ def plot_freq(dataset, event_dates):
         # get topic name
         topic = topic_name_dict[str(k+1)]
         # get topic title
-        topic_title = topic_title_dict[topic]
+        try:
+            topic_title = topic_title_dict[topic]
+        except KeyError:
+            topic_title = topic_title_dict[old2new[topic]]
+        
         axes[i,j].plot(dataset['date'], dataset['ftopic'+str(k+1)+'_4wk'], color='b')
         # turn off the axis
         # set title and take care of color as well as padding
         axes[i,j].set_title(topic_title, color='black', pad=25)
-        
         axes[i,j].set_xlim(dataset['date'].values[0],dataset['date'].values[-1])
-        axes[i,j].xaxis.set_major_locator(FixedLocator(xtick_locations))
-        axes[i,j].set_xticklabels(xtick_locations)
         
         if event_dates[str(k+1)]:
             event_date = event_dates[str(k+1)][0]
@@ -78,18 +85,19 @@ def plot_sent(dataset, event_dates):
         # get topic name
         topic = topic_name_dict[str(k+1)]
         # get topic title
-        topic_title = topic_title_dict[topic]
+        try:
+            topic_title = topic_title_dict[topic]
+        except KeyError:
+            topic_title = topic_title_dict[old2new[topic]]
         
         axes[i,j].plot(dataset['date'], yscale*dataset['stopic'+str(k+1)+'_4wk'], color='b')
         # turn off the axis
         # set title and take care of color as well as padding
         axes[i,j].set_title(topic_title, color='black', pad=25)
-        
         axes[i,j].set_xlim(dataset['date'].values[0],dataset['date'].values[-1])
-        axes[i,j].xaxis.set_major_locator(FixedLocator(xtick_locations))
-        axes[i,j].set_xticklabels(xtick_locations)
-        #axe[i,j].text(pd.Timestamp('1998-05-01'),annotation_y_dict[topic],r'$\times 10^{-3}$',fontsize=12)
-        axes[i,j].set_ylabel('x$10^{-3}$', rotation=0, labelpad=20, verticalalignment='center', fontsize=12)
+        ymin, ymax = axes[i,j].get_ylim()
+        axes[i,j].text(pd.Timestamp('1998-05-01'), ymin, r'$\times 10^{-3}$', fontsize=12)
+        #axes[i,j].set_ylabel('x$10^{-3}$', rotation=0, labelpad=20, verticalalignment='center', fontsize=12)
         
         if event_dates[str(k+1)]:
             event_date = event_dates[str(k+1)][0]
@@ -125,10 +133,8 @@ def plot_others(dataset):
         # turn off the axis
         # set title and take care of color as well as padding
         axes[i,j].set_title(topic_title, color='black', pad=25)
-        
         axes[i,j].set_xlim(dataset['date'].values[0],dataset['date'].values[-1])
-        axes[i,j].xaxis.set_major_locator(FixedLocator(xtick_locations))
-        axes[i,j].set_xticklabels(xtick_locations)
+        
     # do not forget disguise the last plot
     axes[2,1].axis('off')
     fig.suptitle('Panel C: Article Counts, Unusualness and PCA series', fontsize=30)
