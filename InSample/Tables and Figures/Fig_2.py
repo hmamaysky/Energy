@@ -120,7 +120,7 @@ def plot_others(dataset):
     # Get title of each topic
     topic_title_dict={'artcount_4wk':'Article Counts', 'entropy_4wk':'Entropy', 'PCAsent':'First PC of Normalized Topical Sentimant',
                       'PCAfreq':'First PC of Normalized Topical Frequency','PCAall':'First PC of Normalized all Text Variables'}
-    fig, axes = plt.subplots(3,2,figsize=(16,15),dpi=200)
+    fig, axes = plt.subplots(4,2,figsize=(16,20),dpi=200)
     for k in range(5):
         i = int(k/2)
         j = k%2
@@ -137,6 +137,8 @@ def plot_others(dataset):
         
     # do not forget disguise the last plot
     axes[2,1].axis('off')
+    axes[3,0].axis('off')
+    axes[3,1].axis('off')
     fig.suptitle('Panel C: Article Counts, Unusualness and PCA series', fontsize=30)
     fig.tight_layout()
     fig.subplots_adjust(top=0.90)
