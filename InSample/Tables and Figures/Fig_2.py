@@ -7,6 +7,7 @@ This file plots the freq, sent of textual vars, and some other related quantitie
 # %% Import Packages
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import seaborn as sns
 sns.set(rc={"axes.labelsize": 15, 
             "axes.labelweight": 'bold',
@@ -65,6 +66,9 @@ def plot_freq(dataset, event_dates):
                     marker='*',color='red',markersize=16)
     # do not forget disguise the last plot
     axes[3,1].axis('off')
+    
+    rect = Rectangle((0, 0), 1, 1, linewidth=3, edgecolor='k', facecolor='none', transform=fig.transFigure, clip_on=False)
+    fig.patches.extend([rect])
     fig.suptitle('Panel A: Topical Frequency', fontsize=30)
     fig.tight_layout()
     fig.subplots_adjust(top=0.90)
@@ -106,6 +110,9 @@ def plot_sent(dataset, event_dates):
                     marker='*',color='red',markersize=16)
     # do not forget disguise the last plot
     axes[3,1].axis('off')
+    
+    rect = Rectangle((0, 0), 1, 1, linewidth=3, edgecolor='k', facecolor='none', transform=fig.transFigure, clip_on=False)
+    fig.patches.extend([rect])
     fig.suptitle('Panel B: Topical Sentiment', fontsize=30)
     fig.tight_layout()
     fig.subplots_adjust(top=0.90)
@@ -139,6 +146,9 @@ def plot_others(dataset):
     axes[2,1].axis('off')
     axes[3,0].axis('off')
     axes[3,1].axis('off')
+    
+    rect = Rectangle((0, 0), 1, 1, linewidth=3, edgecolor='k', facecolor='none', transform=fig.transFigure, clip_on=False)
+    fig.patches.extend([rect])
     fig.suptitle('Panel C: Article Counts, Unusualness and PCA series', fontsize=30)
     fig.tight_layout()
     fig.subplots_adjust(top=0.90)
