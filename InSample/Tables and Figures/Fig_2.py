@@ -16,7 +16,72 @@ sns.set(rc={"axes.labelsize": 15,
             "xtick.labelsize": 15, 
             "ytick.labelsize": 15})
 # plt.rcParams["font.family"] = "Times New Roman"
-from datetime import datetime
+from datetime import datetime, timedelta
+
+def generate_date_list(start, end):
+    if isinstance(start, int):
+        start_date = datetime.strptime(str(start), '%Y%m%d')
+    else:
+        start_date = datetime.strptime(start, '%Y-%m-%d')
+    if isinstance(end, int):
+        end_date = datetime.strptime(str(end), '%Y%m%d')
+    else:
+        end_date = datetime.strptime(end, '%Y-%m-%d')
+    date_list = []
+    while start_date <= end_date:
+        date_list.append(int(start_date.strftime('%Y%m%d')))
+        start_date += timedelta(days=1)
+    return date_list
+
+# need to modify the text: topic > 0.25
+def get_headlines(df_all, topic, event_dates, use_list=False, top=None):
+    start_date, end_date = event_dates[str(topic)][0]
+    if use_list:
+        date_list = generate_date_list(start_date, end_date)
+        filtered_df = df_all.query(
+            f"`date` in {date_list} and `entropy` >= 2 and `total` >= 100 and `Topic{topic}` > 0.25"
+        ).copy()
+    else:
+        if isinstance(start_date, str):
+            start_date = int(datetime.strptime(start_date, '%Y-%m-%d').strftime('%Y%m%d'))
+        if isinstance(end_date, str):
+            end_date = int(datetime.strptime(end_date, '%Y-%m-%d').strftime('%Y%m%d'))
+        filtered_df = df_all.query(
+            f"@start_date <= date <= @end_date and `entropy` >= 2 and `total` >= 100 and `Topic{topic}` > 0.25"
+        ).copy()
+    filtered_df['weight'] = filtered_df[f'Topic{topic}'] * filtered_df['sentiment']
+    filtered_df = filtered_df.sort_values('weight', ascending=True)
+    filtered_df = filtered_df[['sentiment', 'entropy', 'date', 'headline']]
+    if top:
+        filtered_df = filtered_df.head(top)
+    return filtered_df
+
+def format_float(value):
+    if isinstance(value, float):
+        return '{:.3f}'.format(value)
+    else:
+        return value
+    
+def int_to_date(value):
+    if isinstance(value, int):
+        date_obj = datetime.strptime(str(value), '%Y%m%d')
+        return date_obj.strftime('%-m/%-d/%Y')
+    else:
+        return value
+
+def find_next_wednesday(date_str, date_format="%Y-%m-%d"):
+    given_date = datetime.strptime(date_str, date_format)
+    weekday = given_date.weekday()
+    days_to_add = (2 - weekday) % 7  # 2 corresponds to Wednesday
+    next_wednesday = given_date + timedelta(days=days_to_add)
+    return next_wednesday.strftime(date_format)
+
+def find_previous_wednesday(date_str, date_format="%Y-%m-%d"):
+    given_date = datetime.strptime(date_str, date_format)
+    weekday = given_date.weekday()
+    days_to_subtract = (weekday - 2) % 7  # 2 corresponds to Wednesday
+    previous_wednesday = given_date - timedelta(days=days_to_subtract)
+    return previous_wednesday.strftime(date_format)
 
 # Arrange the plotting order of topics
 topic_name_dict={'1':'Co','2':'Gom','3':'Env','4':'Epg',
@@ -36,7 +101,7 @@ topic_title_dict={'Co':'Company (Co)',
                   'Ge':'Generation & Environment (Ge)'}
 
 # %% Defining Functions
-def plot_freq(dataset, event_dates):
+def plot_freq(dataset, event_dates, yscale=1):
     # ytick dict by topic
 #     topic_ytick_dict={'Co':[0,0.1,0.2,0.3,0.4], 'Gom':[0,0.1,0.2,0.3,0.4,0.5,0.6], 'Env':[0,0.05,0.1,0.15],
 #                       'Bbl':[0,0.05,0.1],'Rpc':[0,0.01,0.02,0.03,0.04],
@@ -61,9 +126,21 @@ def plot_freq(dataset, event_dates):
         
         if event_dates[str(k+1)]:
             event_date = event_dates[str(k+1)][0]
-            axes[i,j].plot(datetime.strptime(event_date,'%Y-%m-%d'),
-                    dataset.loc[dataset.date_Wed == event_date,'ftopic'+str(k+1)+'_4wk'],
+            if isinstance(event_date, str):
+                axes[i,j].plot(datetime.strptime(event_date,'%Y-%m-%d'),
+                    yscale*dataset.loc[dataset['date_Wed'] == event_date,'ftopic'+str(k+1)+'_4wk'],
                     marker='*',color='red',markersize=16)
+            else:
+                start_date, end_date = event_date
+                highlight_dataset = dataset.query('@start_date <= date_Wed <= @end_date').copy()
+                axes[i,j].plot(highlight_dataset['date_Wed'],
+                        yscale*highlight_dataset['ftopic'+str(k+1)+'_4wk'],
+                        color='red')
+                for date in [find_next_wednesday(start_date), find_previous_wednesday(end_date)]:
+                    axes[i,j].plot(datetime.strptime(date,'%Y-%m-%d'),
+                            yscale*dataset.loc[dataset['date_Wed'] == date,'ftopic'+str(k+1)+'_4wk'],
+                            marker='*',color='red',markersize=8)
+
     # do not forget disguise the last plot
     axes[3,1].axis('off')
     
@@ -76,12 +153,11 @@ def plot_freq(dataset, event_dates):
     plt.subplots_adjust(wspace=0.2,hspace=0.4)
     plt.savefig('Fig2_1.pdf')
     
-def plot_sent(dataset, event_dates):
+def plot_sent(dataset, event_dates, yscale=1000):
     # y position of the scale annotation (\times 10^{-3})
 #     annotation_y_dict={'Co':0.1, 'Gom':0.24, 'Env':0.18,
 #                       'Bbl':0.05,'Rpc':0.06,
 #                       'Ep':0.1,'Epg':0.26}
-    yscale = 1000
     fig, axes = plt.subplots(4,2,figsize=(16,20),dpi=200)
     for k in range(7):
         i = int(k/2)
@@ -105,9 +181,21 @@ def plot_sent(dataset, event_dates):
         
         if event_dates[str(k+1)]:
             event_date = event_dates[str(k+1)][0]
-            axes[i,j].plot(datetime.strptime(event_date,'%Y-%m-%d'),
-                    yscale*dataset.loc[dataset.date_Wed == event_date,'stopic'+str(k+1)+'_4wk'],
+            if isinstance(event_date, str):
+                axes[i,j].plot(datetime.strptime(event_date,'%Y-%m-%d'),
+                    yscale*dataset.loc[dataset['date_Wed'] == event_date,'stopic'+str(k+1)+'_4wk'],
                     marker='*',color='red',markersize=16)
+            else:
+                start_date, end_date = event_date
+                highlight_dataset = dataset.query('@start_date <= date_Wed <= @end_date').copy()
+                axes[i,j].plot(highlight_dataset['date_Wed'],
+                        yscale*highlight_dataset['stopic'+str(k+1)+'_4wk'],
+                        color='red')
+                for date in [find_next_wednesday(start_date), find_previous_wednesday(end_date)]:
+                    axes[i,j].plot(datetime.strptime(date,'%Y-%m-%d'),
+                            yscale*dataset.loc[dataset['date_Wed'] == date,'stopic'+str(k+1)+'_4wk'],
+                            marker='*',color='red',markersize=8)
+                    
     # do not forget disguise the last plot
     axes[3,1].axis('off')
     
