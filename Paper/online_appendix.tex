@@ -1,0 +1,34 @@
+\documentclass[12pt]{article}
+
+\input{common_defs}
+
+\singlespacing
+
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{A\arabic{figure}}
+\setcounter{table}{0}
+\renewcommand{\thetable}{A\arabic{table}}
+
+\begin{document}
+\setcounter{page}{20} %% this is the page number where to start
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% figures %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.8\textwidth]{results/sample-image-1}
+  \caption{An economist working on OOS testing.}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% tables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+
+\begin{table}
+  \centering
+  \input{results/sample-table-1}
+  \caption{Sample table.}
+\end{table}
+
+
+\end{document}
