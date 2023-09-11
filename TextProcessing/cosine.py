@@ -30,63 +30,84 @@ def parse_option():
     opt = parser.parse_args()
     return opt
 
-opt = parse_option()
-print(opt)
+def get_word_set(inputWordsPath, silent=False):
+    
+    if inputWordsPath.endswith('csv'):
+        words_test = pd.read_csv(inputWordsPath, sep=',')
+        word_set = words_test.word.tolist()
+    elif inputWordsPath.endswith('xlsx'):
+        words_test = pd.read_excel(inputWordsPath)
+        word_set = words_test.Word.tolist()
+        
+    if not silent:
+        print(f'Number of words to create cosine-similarity matrix: {len(word_set)}')
+    
+    return word_set
 
-if opt.inputWordsPath.endswith('csv'):
-    words_test = pd.read_csv(opt.inputWordsPath, sep=',')
-    word_set = words_test.word.tolist()
-elif opt.inputWordsPath.endswith('xlsx'):
-    words_test = pd.read_excel(opt.inputWordsPath)
-    word_set = words_test.Word.tolist()
-print(f'Number of words to create cosine-similarity matrix: {len(word_set)}')
+def get_cosine(df, word_set, silent=False):
 
-pathin = [f"{opt.dtmPath}/{f}" for f in os.listdir(opt.dtmPath)]
-frames = [pd.read_csv(j, delimiter=',') for j in tqdm(pathin)]
-df = pd.concat(frames)
-#df.to_csv(f'{opt.outputDtmPath}/dtm_numeric_concatenate.csv')
-print(f"Length of df: {len(df)}")
+    word_column = df.words.tolist()
+    id_column = df.Id.tolist()
+    freq_column = df.freq.tolist()
 
-#if opt.inputWordsPath.endswith('xlsx'):
-df = df.query('words>=0')
-print(f"Length of filtered df: {len(df)}")
+    del df #release memory
 
-word_column = df.words.tolist()
-id_column = df.Id.tolist()
-freq_column = df.freq.tolist()
+    if not silent:
+        print(len(word_column))
+        print(len(id_column))
+        print(len(freq_column))
+        print(len(list(set(word_column))))
+        print(len(list(set(id_column))))
 
-del df #release memory
+    V = np.array(freq_column)
+    I = np.array(id_column)
+    J = np.array(word_column)
 
-print(len(word_column))
-print(len(id_column))
-print(len(freq_column))
-print(len(list(set(word_column))))
-print(len(list(set(id_column))))
+    del freq_column #release memory
+    del id_column #release memory
+    del word_column #release memory
 
+    A = sparse.csr_matrix((V,(J,I)))
+    
+    if not silent:
+        print(V.shape)
+        print(I.shape)
+        print(J.shape)
+        print(A.shape)
+        
+    del V
+    del I
+    del J
 
-V = np.array(freq_column)
-I = np.array(id_column)
-J = np.array(word_column)
+    similarities = cosine_similarity(A)
+    
+    if not silent:
+        print(similarities.shape)
+        
+    del A
 
-del freq_column #release memory
-del id_column #release memory
-del word_column #release memory
+    df_cosine = pd.DataFrame(data=similarities, index=word_set, columns=word_set)
+    return df_cosine
+    
 
+if __name__ == '__main__':
+    
+    opt = parse_option()
+    print(opt)
+    
+    word_set = get_word_set(opt.inputWordsPath)
+    
+    pathin = [f"{opt.dtmPath}/{f}" for f in os.listdir(opt.dtmPath)]
+    pathin.sort()
+    frames = [pd.read_csv(j, delimiter=',') for j in tqdm(pathin)]
+    df = pd.concat(frames)
+    #df.to_csv(f'{opt.outputDtmPath}/dtm_numeric_concatenate.csv')
+    print(f"Length of df: {len(df)}")
 
-print(V.shape)
-print(I.shape)
-print(J.shape)
+    #if opt.inputWordsPath.endswith('xlsx'):
+    df = df.query('words>=0')
+    print(f"Length of filtered df: {len(df)}")
+    
+    df_cosine = get_cosine(df, word_set)
+    df_cosine.to_csv(f"{opt.outputCosinePath}/cosine.csv")
 
-A = sparse.csr_matrix((V,(J,I)))
-print(A.shape)
-del V
-del I
-del J
-
-similarities = cosine_similarity(A)
-print(similarities.shape)
-del A
-
-
-df_cosine = pd.DataFrame(data=similarities, index=word_set, columns=word_set)
-df_cosine.to_csv(f"{opt.outputCosinePath}/cosine.csv")
