@@ -40,7 +40,7 @@ if opt.local_topic_model:
     YYYYMM_start_list = [file[-17:-11] for file in inputWordsFiles]
 else:
     assert opt.inputWordsPath.endswith('csv')
-    YYYYMM_list = [file[-15:-8] for file in os.listdir(opt.inputPath_dtm)]
+    YYYYMM_list = [file[-14:-8] for file in os.listdir(opt.inputPath_dtm)]
     
 
 for k, YYYYMM_end in enumerate(tqdm(YYYYMM_list)):
