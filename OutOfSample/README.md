@@ -17,6 +17,16 @@ Contains codes for OOS analysis for the Energy Project
 - Please change the working directory and the saving directory in each file before running the program.
 - Please find the data (v14 for the latest analysis) on the research grid under folder shared/energy_drivers/2020-11-16/data
 
+### Pre-steps
+1. Obtain rolling topic models using Louvain and Genetic Algorithm, and store the membership
+
+2. Generate clustering_C.csv
+
+3. Run topic allocation for each month based on backward-looking topic models
+```
+./topic_allocation.py --inputWordsPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/rolling_clustering_C' --outputPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/rolling_topic_allocation' --local_topic_model=True
+```
+
 ### Procedures
 1. OOS test of the Forward Selection Model
 ```
