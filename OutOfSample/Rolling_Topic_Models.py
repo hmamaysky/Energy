@@ -41,7 +41,14 @@ def parse_option():
     opt = parser.parse_args()
     return opt
     
-def allocate_small_topics_genetic(graph, membership_new, remainder_topic,
+def replace_remainder_topics(original_list, replacement_list, indices_remainder_topic):
+    replacement_iter = iter(replacement_list)
+    replaced_list = original_list.copy()
+    for index in indices_remainder_topic:
+        replaced_list[index] = next(replacement_iter)
+    return replaced_list
+        
+def allocate_remainder_topics_genetic(graph, membership_new, remainder_topic,
                                   npop, ngen, prob_crossing, prob_mutating,
                                   record_stats):
     
@@ -49,15 +56,17 @@ def allocate_small_topics_genetic(graph, membership_new, remainder_topic,
     creator.create("Individual", list, fitness=creator.FitnessMax)
     toolbox = base.Toolbox()
 
+    indices_remainder_topic = [i for i, x in enumerate(membership_new) if x == opt.remainder_topic]
     existing_topic = list(set(membership_new).difference([remainder_topic]))
     def init_individual():
-        return [random.choice(existing_topic) if x == remainder_topic else x for x in membership_new]
+        return random.choices(existing_topic, k=len(indices_remainder_topic))
 
     toolbox.register("individual", tools.initIterate, creator.Individual, init_individual)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
     def evaluate(individual):
-        return graph.modularity(individual, weights='cosine'),
+        membership = replace_remainder_topics(membership_new, individual, indices_remainder_topic)
+        return graph.modularity(membership, weights='cosine'),
     
     def mutate(individual, mutate_prob=0.1):
         for i in range(len(individual)):
@@ -87,6 +96,7 @@ def allocate_small_topics_genetic(graph, membership_new, remainder_topic,
     population.sort(key=lambda x: x.fitness.values[0], reverse=True)
     index_99th_percentile = int(len(population) * 0.01)
     best_individual = population[index_99th_percentile]
+    assert set(best_individual) == set(existing_topic)
     best_modularity = evaluate(best_individual)[0]
     return best_individual, best_modularity
 
@@ -108,9 +118,8 @@ if __name__ == "__main__":
         for i in [opt.rolling_index]:
             assert max_rolling_index == 266
             assert 0 <= i <= max_rolling_index
-            YYYYMM = pathin[i+update_window*12-1][-14:-8]
-#             for key in res.keys():
-#                 res[key][YYYYMM] = []
+            YYYYMM_start = pathin[i][-14:-8]
+            YYYYMM_end = pathin[i+update_window*12-1][-14:-8]
                 
             frames = [pd.read_csv(j, delimiter=',') for j in pathin[i:i+update_window*12]]
             df_rolling = pd.concat(frames)
@@ -124,19 +133,19 @@ if __name__ == "__main__":
                 c = get_clusters(s, graph)
                 filtered_idx = set(filter(lambda x: c.sizes()[x] < opt.min_topic_words, range(len(c.sizes()))))
                 membership_new = list(map(lambda x: opt.remainder_topic if x in filtered_idx else x, c.membership))
-                best_membership, best_modularity = allocate_small_topics_genetic(graph, 
-                                                                                 membership_new, 
-                                                                                 opt.remainder_topic, 
-                                                                                 npop=opt.GA_npop, 
-                                                                                 ngen=opt.GA_ngen, 
-                                                                                 prob_crossing=opt.GA_prob_crossing,
-                                                                                 prob_mutating=opt.GA_prob_mutating,
-                                                                                 record_stats=opt.GA_record_stats)
+                best_membership, best_modularity = allocate_remainder_topics_genetic(graph, 
+                                                                                     membership_new, 
+                                                                                     opt.remainder_topic, 
+                                                                                     npop=opt.GA_npop, 
+                                                                                     ngen=opt.GA_ngen, 
+                                                                                     prob_crossing=opt.GA_prob_crossing,
+                                                                                     prob_mutating=opt.GA_prob_mutating,
+                                                                                     record_stats=opt.GA_record_stats)
 
                 mod_list.append(best_modularity) 
                 membership_list.append(best_membership)
             best_s = np.argmax(mod_list)
-            res['mod'][YYYYMM] = mod_list[best_s]
-            res['membership'][YYYYMM] = membership_list[best_s]
+            res['mod'][YYYYMM_end] = mod_list[best_s]
+            res['membership'][YYYYMM_end] = membership_list[best_s]
 
-    torch.save(res, f'{opt.outputPath}/res_{YYYYMM}.pt')
+    torch.save(res, f'{opt.outputPath}/res_{YYYYMM_start}_{YYYYMM_end}.pt')
