@@ -38,6 +38,7 @@ def parse_option():
     parser.add_argument('--GA_prob_mutating', type=float, default=0.2)
     parser.add_argument('--GA_record_stats', type=bool, default=False)
     parser.add_argument('--rolling_index', type=int, default=0)
+    parser.add_argument('--n_runs', type=int, default=10)
     opt = parser.parse_args()
     return opt
     
@@ -96,9 +97,10 @@ def allocate_remainder_topics_genetic(graph, membership_new, remainder_topic,
     population.sort(key=lambda x: x.fitness.values[0], reverse=True)
     index_99th_percentile = int(len(population) * 0.01)
     best_individual = population[index_99th_percentile]
-    assert set(best_individual) == set(existing_topic)
+    best_membership = replace_remainder_topics(membership_new, best_individual, indices_remainder_topic)
+    assert set(best_membership) == set(existing_topic)
     best_modularity = evaluate(best_individual)[0]
-    return best_individual, best_modularity
+    return best_membership, best_modularity
 
 
 if __name__ == "__main__":
@@ -129,7 +131,7 @@ if __name__ == "__main__":
             graph = ig.Graph.Weighted_Adjacency(df_cosine.values, mode='undirected', attr='cosine', loops=False)
 
             mod_list, membership_list = [], []
-            for s in tqdm(range(10)):
+            for s in tqdm(range(opt.n_runs)):
                 c = get_clusters(s, graph)
                 filtered_idx = set(filter(lambda x: c.sizes()[x] < opt.min_topic_words, range(len(c.sizes()))))
                 membership_new = list(map(lambda x: opt.remainder_topic if x in filtered_idx else x, c.membership))
