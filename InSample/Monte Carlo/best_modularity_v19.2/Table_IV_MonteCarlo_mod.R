@@ -899,13 +899,3 @@ figure <- ggarrange(FutRet_8wk$plot.tstat, DOilVol_8wk$plot.tstat, nrow = 2, nco
 annotate_figure(figure, top = text_grob("", just = "center", face = "bold", size = 14))
 dev.off()
 
-#####aug13th### -> only things I changed are these two below, and futret and doilvol comments today
-pdf("Table4/mod/MonteCarlo/Fig3.doc", paper = "letter", width = 7.5, height = 10, family = "Times")
-figure <- ggarrange(FutRet_8wk$plot.rsq, DOilVol_8wk$plot.rsq, nrow = 3, ncol = 2)
-annotate_figure(figure, top = text_grob("", just = "center", face = "bold", size = 14))
-dev.off()
-
-pdf("Table4/mod/MonteCarlo/Fig4.doc", paper = "letter", width = 7.5, height = 10, family = "Times")
-figure <- ggarrange(FutRet_8wk$plot.tstat, DOilVol_8wk$plot.tstat, nrow = 2, ncol = 1)
-annotate_figure(figure, top = text_grob("", just = "center", face = "bold", size = 14))
-dev.off()
