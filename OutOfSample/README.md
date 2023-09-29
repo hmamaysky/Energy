@@ -27,6 +27,12 @@ Contains codes for OOS analysis for the Energy Project
 ./topic_allocation.py --inputWordsPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/rolling_clustering_C' --outputPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/rolling_topic_allocation' --local_topic_model=True
 ```
 
+4. Combine info (less than 3min)
+```
+./info.py --outputPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --local_topic_model=True
+```
+   
+
 ### Procedures
 1. OOS test of the Forward Selection Model
 ```
