@@ -40,8 +40,10 @@ Contains codes for OOS analysis for the Energy Project
 ```
 ./date_fixed_measures.py --concatPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_concat'
 ```
-7. 
-8. 
+7. Daily aggregates
+```
+./agg_daily.py --concatPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_concat' --outputPath='rolling_NYtime_daily_level_measures_C_2023.csv'
+```
    
 
 ### Procedures
