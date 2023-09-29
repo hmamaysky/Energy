@@ -31,6 +31,13 @@ Contains codes for OOS analysis for the Energy Project
 ```
 ./info.py --outputPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --local_topic_model=True
 ```
+
+5. Concat
+```
+./concat.py --combinedInfoPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --outputPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat' --concat_dtm=''
+```
+6. 
+7. 
    
 
 ### Procedures
