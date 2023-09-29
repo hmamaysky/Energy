@@ -36,8 +36,12 @@ Contains codes for OOS analysis for the Energy Project
 ```
 ./concat.py --combinedInfoPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --outputPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_concat' --concat_dtm=''
 ```
-6. 
+6. Fix dates
+```
+./date_fixed_measures.py --concatPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_concat'
+```
 7. 
+8. 
    
 
 ### Procedures
