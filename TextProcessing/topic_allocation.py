@@ -70,3 +70,4 @@ for k, YYYYMM_end in enumerate(tqdm(YYYYMM_list)):
         df0.to_csv(f'{opt.outputPath}/{YYYYMM_start}_{YYYYMM_end}_topic_alloc.csv', index=False)
     else:
         df0.to_csv(f'{opt.outputPath}/{YYYYMM_end}_topic_alloc.csv', index=False)
+        
