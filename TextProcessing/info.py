@@ -20,6 +20,8 @@ def parse_option():
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure')
     parser.add_argument('--outputPath', type=str, 
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/combined_info')
+    parser.add_argument('--local_topic_model', type=bool, 
+           default=False)
     opt = parser.parse_args()
     return opt
 
@@ -51,18 +53,31 @@ def UTC_to_NY(row):
 
 if __name__ == "__main__":
 
-    for file in tqdm(os.listdir(opt.inputPath)):
-        YYYYMM = file[-15:-9]
+    if opt.local_topic_model:
+        topic_alloc_files = os.listdir(f'{opt.measurePath}/rolling_topic_allocation')
+        YYYYMM_start_list = [file[-29:-23] for file in topic_alloc_files]
+    else:
+        topic_alloc_files = os.listdir(f'{opt.measurePath}/topic_allocation')
+    YYYYMM_list = [file[-22:-16] for file in topic_alloc_files]
         
-        df_info = pd.read_csv(f"{opt.inputPath}/{file}", delimiter=',')
+    for k, YYYYMM_end in enumerate(tqdm(YYYYMM_list)):
+        
+        df_info = pd.read_csv(f"{opt.inputPath}/oil_{YYYYMM_end}_info.csv", delimiter=',')
         df_info.drop(['augbod'], axis=1, inplace=True)
         
-        df_sent = pd.read_csv(f"{opt.measurePath}/sentiment/{YYYYMM}_sent.csv", delimiter=',')
+        df_sent = pd.read_csv(f"{opt.measurePath}/sentiment/{YYYYMM_end}_sent.csv", delimiter=',')
         df_sent.rename(columns={'sent': 'sentiment'}, inplace=True)
-        df_topic = pd.read_csv(f"{opt.measurePath}/topic_allocation/{YYYYMM}_topic_alloc.csv", delimiter=',')
+        
+        if opt.local_topic_model:
+            YYYYMM_start = YYYYMM_start_list[k]
+            df_topic = pd.read_csv(f"{opt.measurePath}/rolling_topic_allocation/{YYYYMM_start}_{YYYYMM_end}_topic_alloc.csv",
+                                   delimiter=',')
+        else:
+            df_topic = pd.read_csv(f"{opt.measurePath}/topic_allocation/{YYYYMM_end}_topic_alloc.csv", delimiter=',')
         df_topic.drop(['headline'], axis=1, inplace=True)
-        df_entropy = pd.read_csv(f"{opt.measurePath}/entropy/{YYYYMM}_entropy.csv", delimiter=',')
-        df_total = pd.read_csv(f"{opt.measurePath}/total/{YYYYMM}_total.csv", delimiter=',')
+        
+        df_entropy = pd.read_csv(f"{opt.measurePath}/entropy/{YYYYMM_end}_entropy.csv", delimiter=',')
+        df_total = pd.read_csv(f"{opt.measurePath}/total/{YYYYMM_end}_total.csv", delimiter=',')
     
         df = df_info.join(df_sent['sentiment'])\
                     .join(df_topic)\
@@ -72,8 +87,13 @@ if __name__ == "__main__":
         df['TimeStamp_NY'] = df.apply(UTC_to_NY, axis=1)
         df.rename(columns={'TimeStamp': 'TimeStamp_UTC'}, inplace=True)
 
-        cols = ['Id', 'TimeStamp_UTC', 'TimeStamp_NY', 'subject', 'headline', 'entropy', 'total', 'sentiment', 
-                'Topic1', 'Topic2', 'Topic3', 'Topic4', 'Topic5', 'Topic6', 'Topic7']
+        cols = ['Id', 'TimeStamp_UTC', 'TimeStamp_NY', 'subject', 'headline', 'entropy', 'total', 'sentiment'] + \
+                list(df_topic.columns)
         df = df[cols]
 
-        df.to_csv(f"{opt.outputPath}/{YYYYMM}_info.csv",index=False)
+        if opt.local_topic_model:
+            df.to_csv(f"{opt.outputPath}/{YYYYMM_start}_{YYYYMM_end}_info.csv",index=False)
+        else:
+            df.to_csv(f"{opt.outputPath}/{YYYYMM_end}_info.csv",index=False)
+        
+        
