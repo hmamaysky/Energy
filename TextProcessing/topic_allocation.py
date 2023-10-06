@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import os
 from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -36,6 +37,7 @@ print(opt)
 if opt.local_topic_model:
     assert not opt.inputWordsPath.endswith('csv')
     inputWordsFiles = os.listdir(opt.inputWordsPath)
+    inputWordsFiles.sort()
     YYYYMM_list = [file[-10:-4] for file in inputWordsFiles]
     YYYYMM_start_list = [file[-17:-11] for file in inputWordsFiles]
 else:
@@ -45,13 +47,27 @@ else:
 
 for k, YYYYMM_end in enumerate(tqdm(YYYYMM_list)):
     
-    df_dtm = pd.read_csv(f'{opt.inputPath_dtm}/{YYYYMM_end}_dtm.csv', delimiter=',')
-    df_info = pd.read_csv(f'{opt.inputPath_info}/oil_{YYYYMM_end}_info.csv', delimiter=',')
-    
     if opt.local_topic_model:
+        date_range_list = YYYYMM_start_list[k:YYYYMM_start_list.index(YYYYMM_end)]
+        with ThreadPoolExecutor() as executor:
+            dtm_frames = list(executor.map(lambda YYYYMM: pd.read_csv(f'{opt.inputPath_dtm}/{YYYYMM}_dtm.csv', 
+                                                                      delimiter=','),
+                                           date_range_list))
+            df_dtm = pd.concat(dtm_frames)
+        with ThreadPoolExecutor() as executor:
+            info_frames = list(executor.map(lambda YYYYMM: pd.read_csv(f'{opt.inputPath_info}/oil_{YYYYMM}_info.csv',
+                                                                       delimiter=','), 
+                                            date_range_list))
+            df_info = pd.concat(info_frames)
+#         df_dtm = pd.concat([pd.read_csv(f'{opt.inputPath_dtm}/{YYYYMM}_dtm.csv', delimiter=',') 
+#                             for YYYYMM in date_range_list])
+#         df_info = pd.concat([pd.read_csv(f'{opt.inputPath_info}/oil_{YYYYMM}_info.csv', delimiter=',') 
+#                              for YYYYMM in date_range_list])
         YYYYMM_start = YYYYMM_start_list[k]
         df_topics = pd.read_csv(f'{opt.inputWordsPath}/clustering_C_{YYYYMM_start}_{YYYYMM_end}.csv', sep=',', index_col=0)
     else:
+        df_dtm = pd.read_csv(f'{opt.inputPath_dtm}/{YYYYMM_end}_dtm.csv', delimiter=',')
+        df_info = pd.read_csv(f'{opt.inputPath_info}/oil_{YYYYMM_end}_info.csv', delimiter=',')
         df_topics = pd.read_csv(opt.inputWordsPath, sep=',', index_col=0)
         
     n_topics = df_topics['Topic'].max()
@@ -70,4 +86,3 @@ for k, YYYYMM_end in enumerate(tqdm(YYYYMM_list)):
         df0.to_csv(f'{opt.outputPath}/{YYYYMM_start}_{YYYYMM_end}_topic_alloc.csv', index=False)
     else:
         df0.to_csv(f'{opt.outputPath}/{YYYYMM_end}_topic_alloc.csv', index=False)
-        
