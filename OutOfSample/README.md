@@ -32,11 +32,9 @@ Contains codes for OOS analysis for the Energy Project
 ./info.py --outputPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --local_topic_model=True
 ```
 
-5. Concat
-```
-./concat.py --combinedInfoPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --outputPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_concat' --concat_dtm=''
-```
-6. Fix dates
+NOTE: No need to concat all files
+
+5. Fix dates
 ```
 ./date_fixed_measures.py --concatPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_concat'
 ```
