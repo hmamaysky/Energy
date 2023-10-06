@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import os
 from tqdm import tqdm
-from concurrent.futures import ThreadPoolExecutor
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -48,6 +47,7 @@ else:
 for k, YYYYMM_end in enumerate(tqdm(YYYYMM_list)):
     
     if opt.local_topic_model:
+        from concurrent.futures import ThreadPoolExecutor
         date_range_list = YYYYMM_start_list[k:YYYYMM_start_list.index(YYYYMM_end)]
         with ThreadPoolExecutor() as executor:
             dtm_frames = list(executor.map(lambda YYYYMM: pd.read_csv(f'{opt.inputPath_dtm}/{YYYYMM}_dtm.csv', 
