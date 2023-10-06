@@ -13,17 +13,10 @@ def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--concatPath', type=str, 
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat')
+    parser.add_argument('--local_topic_model', type=bool, 
+           default=False)
     opt = parser.parse_args()
     return opt
-
-opt = parse_option()
-print(opt)
-
-###########################################
-###########################################
-
-# This file is the concatenation of all info files from /combined_info
-df = pd.read_csv(f'{opt.concatPath}/info_concatenate.csv', sep=',')
 
 ####################
 ##### FUNCTION #####
@@ -49,8 +42,34 @@ def oil_date(sample):
         result = result.strftime('%Y%m%d') 
     return result   
 
+###########################################
+###########################################
+if __name__ == "__main__":
+    opt = parse_option()
+    print(opt)
 
-df['date'] = df['TimeStamp_NY'].apply(oil_date)
-df = df[df['date']!='weekend']
+    if not opt.local_topic_model:
+        # This file is the concatenation of all info files from /combined_info
+        df = pd.read_csv(f'{opt.concatPath}/info_concatenate.csv', sep=',')
 
-df.to_csv(f'{opt.concatPath}/date_fixed_article_level_measures.csv', index=False)
+        df['date'] = df['TimeStamp_NY'].apply(oil_date)
+        df = df[df['date']!='weekend']
+
+        df.to_csv(f'{opt.concatPath}/date_fixed_article_level_measures.csv', index=False)
+        
+    else:
+        from glob import glob
+        from tqdm import tqdm
+        
+        info_files = glob(opt.concatPath + '/*_info.csv')
+        info_files.sort()
+        
+        for file in tqdm(info_files):
+            date_range = file[-22:-9]
+            
+            df = pd.read_csv(file, sep=',')
+
+            df['date'] = df['TimeStamp_NY'].apply(oil_date)
+            df = df[df['date']!='weekend']
+
+            df.to_csv(f'{opt.concatPath}/{date_range}_date_fixed_article_level_measures.csv', index=False)
