@@ -38,9 +38,9 @@ NOTE: No need to concat all files
 ```
 ./date_fixed_measures.py --concatPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --local_topic_model=True
 ```
-7. Daily aggregates
+6. Daily aggregates
 ```
-./agg_daily.py --concatPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_concat' --outputPath='rolling_NYtime_daily_level_measures_C_2023.csv'
+./agg_daily.py --concatPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --local_topic_model=True
 ```
    
 
