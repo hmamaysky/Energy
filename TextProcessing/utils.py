@@ -116,3 +116,22 @@ class NGRAM(object):
         # Add to total document count for each word
         for word in word_counts:
             self.doc_count[word] = self.doc_count.get(word, 0) + 1
+            
+            
+def generate_month_list(start_month, end_month):
+    start_year = int(str(start_month)[:4])
+    start_month_num = int(str(start_month)[4:])
+    
+    end_year = int(str(end_month)[:4])
+    end_month_num = int(str(end_month)[4:])
+    
+    month_list = []
+    
+    for year in range(start_year, end_year + 1):
+        start = start_month_num if year == start_year else 1
+        end = end_month_num + 1 if year == end_year else 13
+        
+        for month in range(start, end):
+            month_list.append(f"{year}{month:02}")
+    
+    return month_list
