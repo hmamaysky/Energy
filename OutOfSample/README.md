@@ -19,6 +19,9 @@ Contains codes for OOS analysis for the Energy Project
 
 ### Pre-steps
 1. Obtain rolling topic models using Louvain and Genetic Algorithm, and store the membership
+```
+./run_Rolling_Topic_Models.sh
+```
 
 2. Generate clustering_C.csv
 
