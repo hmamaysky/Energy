@@ -30,7 +30,7 @@ Contains codes for OOS analysis for the Energy Project
 ./run_topic_allocation.sh
 ```
 
-4. Combine info (less than 3min)
+4. Combine info (less than 10min)
 ```
 ./info.py --outputPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --local_topic_model=True
 ```
