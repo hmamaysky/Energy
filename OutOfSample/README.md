@@ -23,7 +23,7 @@ Contains codes for OOS analysis for the Energy Project
 ./run_Rolling_Topic_Models.sh
 ```
 
-2. Generate clustering_C.csv
+2. Generate clustering_C.csv (refer to `louvain_rolling.ipynb`)
 
 3. Run topic allocation for each month based on backward-looking topic models (less than 3min)
 ```
