@@ -38,7 +38,7 @@ NOTE: No need to concat all files
 
 5. Fix dates
 ```
-./date_fixed_measures.py --concatPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --local_topic_model=True
+./run_date_fixed_measures.sh
 ```
 6. Daily aggregates
 ```
