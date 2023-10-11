@@ -134,4 +134,3 @@ if __name__ == "__main__":
         else:
             df.to_csv(f"{opt.outputPath}/{YYYYMM_end}_info.csv",index=False)
         
-        
