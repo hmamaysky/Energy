@@ -9,6 +9,7 @@ import pandas as pd
 from dateutil import tz
 from datetime import datetime
 from tqdm import tqdm
+from utils import generate_month_list
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -20,13 +21,10 @@ def parse_option():
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure')
     parser.add_argument('--outputPath', type=str, 
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/combined_info')
-    parser.add_argument('--local_topic_model', type=bool, 
-           default=False)
+    parser.add_argument('--local_topic_model', type=bool, default=False)
+    parser.add_argument('--rolling_index', type=int, default=0)
     opt = parser.parse_args()
     return opt
-
-opt = parse_option()
-print(opt)
 
 
 #################
@@ -48,46 +46,86 @@ def UTC_to_NY(row):
     est = utc.astimezone(to_zone)
     est_timestamp = est.strftime('%Y-%m-%dT%H:%M:%S')+x[19:]
     return est_timestamp
+
+def read_csv_file(opt, file_type, YYYYMM):
+    
+    if file_type == "info":
+        path = f"{opt.inputPath}/oil_{YYYYMM}_info.csv"
+        return pd.read_csv(path, delimiter=',').drop(['augbod'], axis=1)
+    
+    elif file_type == "sent":
+        path = f"{opt.measurePath}/sentiment/{YYYYMM}_sent.csv"
+        return pd.read_csv(path, delimiter=',').rename(columns={'sent': 'sentiment'})
+    
+    elif file_type == "topic":
+        path = f"{opt.measurePath}/topic_allocation/{YYYYMM}_topic_alloc.csv"
+        return pd.read_csv(path, delimiter=',').drop(['headline'], axis=1)
+    
+    elif file_type == "entropy":
+        path = f"{opt.measurePath}/entropy/{YYYYMM}_entropy.csv"
+        return pd.read_csv(path, delimiter=',')
+    
+    elif file_type == "total":
+        path = f"{opt.measurePath}/total/{YYYYMM}_total.csv"
+        return pd.read_csv(path, delimiter=',')
+    
+    else:
+        raise ValueError("Invalid file type")
+
 ################
 
 
 if __name__ == "__main__":
+    
+    opt = parse_option()
+    print(opt)
 
     if opt.local_topic_model:
         topic_alloc_files = os.listdir(f'{opt.measurePath}/rolling_topic_allocation')
-        YYYYMM_start_list = [file[-29:-23] for file in topic_alloc_files]
     else:
         topic_alloc_files = os.listdir(f'{opt.measurePath}/topic_allocation')
+    topic_alloc_files.sort()
+    YYYYMM_start_list = [file[-29:-23] for file in topic_alloc_files]
     YYYYMM_list = [file[-22:-16] for file in topic_alloc_files]
         
-    for k, YYYYMM_end in enumerate(tqdm(YYYYMM_list)):
-        
-        df_info = pd.read_csv(f"{opt.inputPath}/oil_{YYYYMM_end}_info.csv", delimiter=',')
-        df_info.drop(['augbod'], axis=1, inplace=True)
-        
-        df_sent = pd.read_csv(f"{opt.measurePath}/sentiment/{YYYYMM_end}_sent.csv", delimiter=',')
-        df_sent.rename(columns={'sent': 'sentiment'}, inplace=True)
+    file_types = ['info', 'sent', 'topic', 'entropy', 'total']
+    
+    for k in [opt.rolling_index]:
+        assert 0 <= k <= 266
+        YYYYMM_end = YYYYMM_list[k]
         
         if opt.local_topic_model:
             YYYYMM_start = YYYYMM_start_list[k]
-            df_topic = pd.read_csv(f"{opt.measurePath}/rolling_topic_allocation/{YYYYMM_start}_{YYYYMM_end}_topic_alloc.csv",
-                                   delimiter=',')
-        else:
-            df_topic = pd.read_csv(f"{opt.measurePath}/topic_allocation/{YYYYMM_end}_topic_alloc.csv", delimiter=',')
-        df_topic.drop(['headline'], axis=1, inplace=True)
+            date_range_list = generate_month_list(YYYYMM_start, YYYYMM_end)
         
-        df_entropy = pd.read_csv(f"{opt.measurePath}/entropy/{YYYYMM_end}_entropy.csv", delimiter=',')
-        df_total = pd.read_csv(f"{opt.measurePath}/total/{YYYYMM_end}_total.csv", delimiter=',')
-    
-        df = df_info.join(df_sent['sentiment'])\
-                    .join(df_topic)\
-                    .join(df_entropy['entropy'])\
-                    .join(df_total['total'])
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor() as executor:
+                info_frames = list(executor.map(lambda YYYYMM: read_csv_file(opt, "info", YYYYMM), date_range_list))
+                sent_frames = list(executor.map(lambda YYYYMM: read_csv_file(opt, "sent", YYYYMM), date_range_list))
+                entropy_frames = list(executor.map(lambda YYYYMM: read_csv_file(opt, "entropy", YYYYMM), date_range_list))
+                total_frames = list(executor.map(lambda YYYYMM: read_csv_file(opt, "total", YYYYMM), date_range_list))
+
+            df_info = pd.concat(info_frames).reset_index(drop=True)
+            df_sent = pd.concat(sent_frames).reset_index(drop=True)
+            df_topic = pd.read_csv(f"{opt.measurePath}/rolling_topic_allocation/{YYYYMM_start}_{YYYYMM_end}_topic_alloc.csv",
+                                   delimiter=',').reset_index(drop=True)
+            df_entropy = pd.concat(entropy_frames).reset_index(drop=True)
+            df_total = pd.concat(total_frames).reset_index(drop=True)
+        
+        else:
+            df_info, df_sent, df_topic, df_entropy, df_total = [read_csv_file(opt, 
+                                                                              file_type, 
+                                                                              YYYYMM_end) for file_type in file_types]
+        
+        df = pd.concat([df_info, df_sent['sentiment'], df_topic.iloc[:,:-1], df_entropy['entropy'], df_total['total']], axis=1)
         
         df['TimeStamp_NY'] = df.apply(UTC_to_NY, axis=1)
         df.rename(columns={'TimeStamp': 'TimeStamp_UTC'}, inplace=True)
 
-        cols = ['Id', 'TimeStamp_UTC', 'TimeStamp_NY', 'subject', 'headline', 'entropy', 'total', 'sentiment'] + \
+        if opt.local_topic_model:
+            cols = ['Id', 'TimeStamp_UTC', 'TimeStamp_NY', 'entropy', 'total', 'sentiment'] + list(df_topic.columns)
+        else:
+            cols = ['Id', 'TimeStamp_UTC', 'TimeStamp_NY', 'subject', 'headline', 'entropy', 'total', 'sentiment'] + \
                 list(df_topic.columns)
         df = df[cols]
 
