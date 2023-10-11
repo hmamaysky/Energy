@@ -13,8 +13,8 @@ def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--concatPath', type=str, 
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat')
-    parser.add_argument('--local_topic_model', type=bool, 
-           default=False)
+    parser.add_argument('--local_topic_model', type=bool, default=False)
+    parser.add_argument('--rolling_index', type=int, default=0)
     opt = parser.parse_args()
     return opt
 
@@ -59,12 +59,12 @@ if __name__ == "__main__":
         
     else:
         from glob import glob
-        from tqdm import tqdm
         
         info_files = glob(opt.concatPath + '/*_info.csv')
         info_files.sort()
         
-        for file in tqdm(info_files):
+        for k in [opt.rolling_index]:
+            file = info_files[k]
             date_range = file[-22:-9]
             
             df = pd.read_csv(file, sep=',')
