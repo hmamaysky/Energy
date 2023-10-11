@@ -26,6 +26,7 @@ def parse_option():
        default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/topic_allocation')
     parser.add_argument('--local_topic_model', type=bool, 
        default=False)
+    parser.add_argument('--rolling_index', type=int, default=0)
     opt = parser.parse_args()
     return opt
 
@@ -44,7 +45,10 @@ else:
     YYYYMM_list = [file[-14:-8] for file in os.listdir(opt.inputPath_dtm)]
     
 
-for k, YYYYMM_end in enumerate(tqdm(YYYYMM_list)):
+for k in [opt.rolling_index]:
+    assert 0 <= k <= 266
+    YYYYMM_end = YYYYMM_list[k]
+#for k, YYYYMM_end in enumerate(tqdm(YYYYMM_list)):
     
     if opt.local_topic_model:
         from concurrent.futures import ThreadPoolExecutor
