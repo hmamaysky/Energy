@@ -25,7 +25,7 @@ Contains codes for OOS analysis for the Energy Project
 
 2. Generate clustering_C.csv (refer to `louvain_rolling.ipynb`)
 
-3. Run topic allocation for each month based on backward-looking topic models (less than 3min)
+3. Run topic allocation for each month based on backward-looking topic models (less than 30min)
 ```
 ./topic_allocation.py --inputWordsPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/rolling_clustering_C' --outputPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/rolling_topic_allocation' --local_topic_model=True
 ```
