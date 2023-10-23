@@ -29,7 +29,10 @@ Contains codes for OOS analysis for the Energy Project
 ./run_Rolling_Topic_Models.sh
 ```
 
-3. Generate clustering_C.csv (refer to `louvain_rolling.ipynb`)
+3. Generate clustering_C.csv (refer to `louvain_rolling.ipynb`) after storing monthly dtm word frequencies
+```
+./concat.py --concat_info='' --concat_dtm='' --dtmPath=/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/NYtime_dtm_Clustering_C --save_monthly_freq=True
+```
 
 4. Run topic allocation for each month based on backward-looking topic models
 ```
