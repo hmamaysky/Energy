@@ -19,7 +19,8 @@ def parse_option():
     parser.add_argument('--dtmPath', type=str, 
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C')
     parser.add_argument('--concatInfoPath', type=str, 
-           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat/info_concatenate.csv')
+           default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat/info_concatenate.csv',
+           help='Only used to get IDs of selected articles, without using other information, e.g., topic allocations.')
     parser.add_argument('--outputPath', type=str, 
            default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric_441')
            #default='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric')
