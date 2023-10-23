@@ -20,10 +20,7 @@ Contains codes for OOS analysis for the Energy Project
 ### Pre-steps
 1. Preprocessing for rolling topics
 ```
-chmod 700 NYtime_dtm.py
 ./NYtime_dtm.py
-
-chmod 700 dtm_numeric.py
 ./dtm_numeric.py --dtmPath=/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/NYtime_dtm_Clustering_C --outputPath=/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/NYtime_dtm_numeric_441
 ```
 
