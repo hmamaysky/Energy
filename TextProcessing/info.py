@@ -34,7 +34,7 @@ def parse_option():
 from_zone = tz.gettz('UTC')
 to_zone = tz.gettz('America/New_York')
     
-def UTC_to_NY(row):
+def UTC_to_NY(row, to_str=True):
     x = row['TimeStamp']
     utc = datetime.strptime(x[0:19], '%Y-%m-%dT%H:%M:%S')
 
@@ -44,8 +44,9 @@ def UTC_to_NY(row):
 
     # Convert time zone
     est = utc.astimezone(to_zone)
-    est_timestamp = est.strftime('%Y-%m-%dT%H:%M:%S')+x[19:]
-    return est_timestamp
+    if to_str:
+        est = est.strftime('%Y-%m-%dT%H:%M:%S')+x[19:] # use x[19:-1]: don't include Z, which stands for UTC!!!
+    return est
 
 def read_csv_file(opt, file_type, YYYYMM):
     
@@ -119,11 +120,14 @@ if __name__ == "__main__":
         
         df = pd.concat([df_info, df_sent['sentiment'], df_topic.iloc[:,:-1], df_entropy['entropy'], df_total['total']], axis=1)
         
-        df['TimeStamp_NY'] = df.apply(UTC_to_NY, axis=1)
-        df.rename(columns={'TimeStamp': 'TimeStamp_UTC'}, inplace=True)
+        if not opt.local_topic_model:
+            df['TimeStamp_NY'] = df.apply(UTC_to_NY, axis=1)
+            df.rename(columns={'TimeStamp': 'TimeStamp_UTC'}, inplace=True)
+        else: # time has already been converted when forming monthly dtm
+            df.rename(columns={'TimeStamp': 'TimeStamp_NY'}, inplace=True)
 
         if opt.local_topic_model:
-            cols = ['Id', 'TimeStamp_UTC', 'TimeStamp_NY', 'entropy', 'total', 'sentiment'] + list(df_topic.columns)
+            cols = ['Id', 'TimeStamp_NY', 'entropy', 'total', 'sentiment'] + list(df_topic.columns)
         else:
             cols = ['Id', 'TimeStamp_UTC', 'TimeStamp_NY', 'subject', 'headline', 'entropy', 'total', 'sentiment'] + \
                 list(df_topic.columns)
