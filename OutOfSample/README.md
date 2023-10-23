@@ -18,29 +18,38 @@ Contains codes for OOS analysis for the Energy Project
 - Please find the data (v14 for the latest analysis) on the research grid under folder shared/energy_drivers/2020-11-16/data
 
 ### Pre-steps
-1. Obtain rolling topic models using Louvain and Genetic Algorithm, and store the membership
+1. Preprocessing for rolling topics
+```
+chmod 700 NYtime_dtm.py
+./NYtime_dtm.py
+
+chmod 700 dtm_numeric.py
+./dtm_numeric.py --dtmPath=/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/NYtime_dtm_Clustering_C --outputPath=/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/NYtime_dtm_numeric_441
+```
+
+2. Obtain rolling topic models using Louvain and Genetic Algorithm, and store the membership
 ```
 ./run_Rolling_Topic_Models.sh
 ```
 
-2. Generate clustering_C.csv (refer to `louvain_rolling.ipynb`)
+3. Generate clustering_C.csv (refer to `louvain_rolling.ipynb`)
 
-3. Run topic allocation for each month based on backward-looking topic models
+4. Run topic allocation for each month based on backward-looking topic models
 ```
 ./run_topic_allocation.sh
 ```
 
-4. Combine info
+5. Combine info
 ```
 ./run_info.sh
 ```
 NOTE: No need to concat all files
 
-5. Fix dates
+6. Fix dates
 ```
 ./run_date_fixed_measures.sh
 ```
-6. Daily aggregates (~20min)
+7. Daily aggregates (~20min)
 ```
 ./agg_daily.py --concatPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --local_topic_model=True
 ```
