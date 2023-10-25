@@ -94,10 +94,14 @@ if __name__ == "__main__":
     for k in [opt.rolling_index]:
         assert 0 <= k <= 266
         YYYYMM_end = YYYYMM_list[k]
+        if k < 266:
+            YYYYMM_end_next = YYYYMM_list[k+1]
+        else:
+            YYYYMM_end_next = YYYYMM_end
         
         if opt.local_topic_model:
             YYYYMM_start = YYYYMM_start_list[k]
-            date_range_list = generate_month_list(YYYYMM_start, YYYYMM_end)
+            date_range_list = generate_month_list(YYYYMM_start, YYYYMM_end_next)
         
             from concurrent.futures import ThreadPoolExecutor
             with ThreadPoolExecutor() as executor:
@@ -112,22 +116,21 @@ if __name__ == "__main__":
                                    delimiter=',').reset_index(drop=True)
             df_entropy = pd.concat(entropy_frames).reset_index(drop=True)
             df_total = pd.concat(total_frames).reset_index(drop=True)
+            df = pd.concat([df_info, df_sent['sentiment'], df_entropy['entropy'], df_total['total']], axis=1)
+            df = df_topic.merge(df, on='Id')
         
         else:
             df_info, df_sent, df_topic, df_entropy, df_total = [read_csv_file(opt, 
                                                                               file_type, 
                                                                               YYYYMM_end) for file_type in file_types]
+            df_topic = df_topic.loc[:,df_topic.columns.str.startswith('Topic')]
+            df = pd.concat([df_info, df_sent['sentiment'], df_topic, df_entropy['entropy'], df_total['total']], axis=1)
         
-        df = pd.concat([df_info, df_sent['sentiment'], df_topic.iloc[:,:-1], df_entropy['entropy'], df_total['total']], axis=1)
-        
-        if not opt.local_topic_model:
-            df['TimeStamp_NY'] = df.apply(UTC_to_NY, axis=1)
-            df.rename(columns={'TimeStamp': 'TimeStamp_UTC'}, inplace=True)
-        else: # time has already been converted when forming monthly dtm
-            df.rename(columns={'TimeStamp': 'TimeStamp_NY'}, inplace=True)
+        df['TimeStamp_NY'] = df.apply(UTC_to_NY, axis=1)
+        df.rename(columns={'TimeStamp': 'TimeStamp_UTC'}, inplace=True)
 
         if opt.local_topic_model:
-            cols = ['Id', 'TimeStamp_NY', 'entropy', 'total', 'sentiment'] + list(df_topic.columns)
+            cols = ['Id', 'TimeStamp_UTC', 'TimeStamp_NY', 'entropy', 'total', 'sentiment'] + list(df_topic.columns)
         else:
             cols = ['Id', 'TimeStamp_UTC', 'TimeStamp_NY', 'subject', 'headline', 'entropy', 'total', 'sentiment'] + \
                 list(df_topic.columns)
