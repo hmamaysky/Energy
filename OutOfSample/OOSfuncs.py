@@ -13,7 +13,7 @@ would be modified a little.
 
 import pandas as pd
 import numpy as np
-seed = 12345f
+seed = 12345
 np.random.seed(seed)
 import statsmodels.api as sm
 import statsmodels.regression.linear_model as lm
