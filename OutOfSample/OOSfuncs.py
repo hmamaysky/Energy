@@ -1,9 +1,7 @@
-#!/apps/anaconda3/bin/python
 # -*- coding: utf-8 -*-
 """
-Created on Tue Apr 28 16:59:34 2020
-
-@author: Hongyu Wu
+Modified by Kaiwen Hou on Wed Oct 25 12:05am 2023
+Originally created on Tue Apr 28 16:59:34 2020 by @author: Hongyu Wu
 
 This file defines all the functions used in the OOS analysis.
 The functions varies from data reader to model selector, all commented
@@ -15,6 +13,8 @@ would be modified a little.
 
 import pandas as pd
 import numpy as np
+seed = 12345f
+np.random.seed(seed)
 import statsmodels.api as sm
 import statsmodels.regression.linear_model as lm
 import os
@@ -153,7 +153,7 @@ def PCA_augment(data):
     freq_vars_drop = ['fGom', 'fEnv', 'fEpg', 'fBbl', 'fRpc', 'fEp']
     sent_vars = ['sCo', 'sGom', 'sEnv', 'sEpg', 'sBbl', 'sRpc', 'sEp']
     ## PCA instance with first components on
-    pca = PCA(n_components=1)
+    pca = PCA(n_components=1, random_state=seed)
     data_temp = data.copy()
     ## Augment the data with three PCA series
     data_temp['PCAsent'] = pca.fit_transform(data_temp[sent_vars])
@@ -388,7 +388,7 @@ def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
     else:
         y_train=data_ytrain[d_var+'_t4']
     ## Set up Lasso instance and grid search for penalty coefficient
-    pre_model=Lasso()
+    pre_model=Lasso(random_state=seed)
     param_grid=[{'alpha':np.linspace(0,2,40)}]
     grid_search = GridSearchCV(pre_model, param_grid, cv=cvs, scoring='neg_mean_squared_error')
     train_xy=pd.concat([X_train,y_train],axis=1).dropna()
@@ -397,7 +397,7 @@ def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
     grid_search.fit(X_train, y_train)
     best_lambda=grid_search.best_params_['alpha']
     ## Update the coefficients using the selected penalty 
-    reg=Lasso(alpha=best_lambda)
+    reg=Lasso(alpha=best_lambda, random_state=seed)
     reg.fit(X_train,y_train)
     x_test=data_xtest.loc[:,ind_vars]
     X_test=sm.add_constant(x_test, has_constant='add')
@@ -470,7 +470,7 @@ def rolling_diff_forward(data, d_var, ind_vars, forecast_start, wk=8, window=5, 
         y_train=data_ytrain[d_var+'_t8']
     else:
         y_train=data_ytrain[d_var+'_t4']
-    pre_model=Lasso()
+    pre_model=Lasso(random_state=seed)
     param_grid=[{'alpha':np.linspace(0,2,40)}]
     grid_search = GridSearchCV(pre_model, param_grid, cv=cvs, scoring='neg_mean_squared_error')
     
@@ -481,7 +481,7 @@ def rolling_diff_forward(data, d_var, ind_vars, forecast_start, wk=8, window=5, 
 
     best_lambda=grid_search.best_params_['alpha']
         
-    reg=Lasso(alpha=best_lambda)
+    reg=Lasso(alpha=best_lambda, random_state=seed)
     reg.fit(X_train,y_train)
     x_test=data_xtest.loc[:,ind_vars]
     X_test=sm.add_constant(x_test, has_constant='add')
@@ -672,7 +672,7 @@ def rolling_diff_stability_coef(data, d_var, ind_vars, forecast_start, wk=8, win
     else:
         y_train=data_ytrain[d_var+'_t4']
     ## Set up Lasso instance and grid search for penalty coefficient
-    pre_model=Lasso()
+    pre_model=Lasso(random_state=seed)
     param_grid=[{'alpha':np.linspace(0,2,40)}]
     grid_search = GridSearchCV(pre_model, param_grid, cv=cvs, scoring='neg_mean_squared_error')
     train_xy=pd.concat([X_train,y_train],axis=1).dropna()
@@ -681,7 +681,7 @@ def rolling_diff_stability_coef(data, d_var, ind_vars, forecast_start, wk=8, win
     grid_search.fit(X_train, y_train)
     best_lambda=grid_search.best_params_['alpha']
     ## Update the coefficients using the selected penalty 
-    reg=Lasso(alpha=best_lambda)
+    reg=Lasso(alpha=best_lambda, random_state=seed)
     reg.fit(X_train,y_train)
     x_test=data_xtest.loc[:,ind_vars]
     X_test=sm.add_constant(x_test, has_constant='add')
