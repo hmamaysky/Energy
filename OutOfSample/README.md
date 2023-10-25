@@ -51,7 +51,7 @@ NOTE: No need to concat all files
 ```
 7. Daily aggregates (~20min)
 ```
-./agg_daily.py --concatPath='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info' --local_topic_model=True
+./agg_daily.py --concatPath=/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info --local_topic_model=True
 ```
    
 
