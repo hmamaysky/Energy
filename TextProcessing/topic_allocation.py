@@ -89,8 +89,9 @@ if __name__ == '__main__':
         df0 = df0.loc[:,'Topic1':f'Topic{n_topics}'].div(df0['sum'], axis=0)
         df0 = df0.fillna(0)
 
-        df0['headline'] = df_info['headline']
         if opt.local_topic_model:
+            df0 = pd.concat([df_dtm['Id'], df0], axis=1)
             df0.to_csv(f'{opt.outputPath}/{YYYYMM_start}_{YYYYMM_end}_topic_alloc.csv', index=False)
         else:
+            df0['headline'] = df_info['headline']
             df0.to_csv(f'{opt.outputPath}/{YYYYMM_end}_topic_alloc.csv', index=False)
