@@ -21,26 +21,37 @@ def parse_option():
 ####################
 ##### FUNCTION #####
 ####################
-def oil_date(sample):
+def oil_date(sample, store_date=False):
     my_datetime = datetime.datetime.strptime(sample[0:19], '%Y-%m-%dT%H:%M:%S')
     my_weekday = calendar.day_name[my_datetime.weekday()] 
     my_date = my_datetime.date()
     my_time = my_datetime.time()
     
-    if (my_weekday=='Friday' and my_time > datetime.time(14, 30, 0)):
+    if (my_weekday=='Friday' and my_time >= datetime.time(14, 30, 0)):
         result = my_date + datetime.timedelta(days=3)
         result = result.strftime('%Y%m%d')
     elif (my_weekday=='Saturday'):
-        result = 'weekend'
+        if store_date:
+            result = my_date + datetime.timedelta(days=2)
+            result = result.strftime('%Y%m%d')
+        else:
+            result = 'weekend'
     elif (my_weekday=='Sunday' and my_time < datetime.time(14, 30, 0)):
-        result = 'weekend'    
-    elif (my_time > datetime.time(14, 30, 0)):
+        if store_date:
+            result = my_date + datetime.timedelta(days=1)
+            result = result.strftime('%Y%m%d')
+        else:
+            result = 'weekend'    
+    elif (my_time >= datetime.time(14, 30, 0)):
         result = my_date + datetime.timedelta(days=1)
         result = result.strftime('%Y%m%d')
     else:
         result = my_date
         result = result.strftime('%Y%m%d') 
-    return result   
+    return result 
+# Move Friday>14.30pm, Saturday, Sunday => Monday
+# add additional flag storing dates and weekend (two columns)
+# reconstruct dtms
 
 ###########################################
 ###########################################
