@@ -136,7 +136,7 @@ if __name__ == "__main__":
         max_rolling_index = len(pathin)-update_window*12
         #for i in tqdm(range(len(pathin)-update_window*12+1)):
         for i in [opt.rolling_index]:
-            assert max_rolling_index == 266
+            assert max_rolling_index == 267
             assert 0 <= i <= max_rolling_index
             YYYYMM_start = pathin[i][-14:-8]
             YYYYMM_end = pathin[i+update_window*12-1][-14:-8]
