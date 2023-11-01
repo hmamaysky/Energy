@@ -43,7 +43,7 @@ def RMSE(x):
     return RMSE
 
 ### 1.2 Load dataset according to different dependent variable ###
-def data_set(d_var):
+def data_set(d_var, check_idx_list=None):
     ## change directory
     wkdir = '/user/kh3191/codes/nlp'
     os.chdir(wkdir)
@@ -52,27 +52,31 @@ def data_set(d_var):
     prices_var = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol']
 
     if d_var in prices_var:
-        data = pd.read_stata('transformed_data_prices_v19.dta').rename(columns={'date_Fri':'date'})
-#         SDFpremium_growing = pd.read_excel('data/SDFgrowing_fut_thurs.xls')
-#         SDFpremium_rolling = pd.read_excel('data/SDF756rolling_fut_thurs.xls')
+        data = pd.read_stata('transformed_data_prices_v18.dta').rename(columns={'date_Fri':'date'})
+        SDFpremium_growing = pd.read_excel('SDFgrowing_fut_thurs.xls')
+        SDFpremium_rolling = pd.read_excel('SDF756rolling_fut_thurs.xls')
     else:
-        data = pd.read_stata('transformed_data_physical_v19.dta').rename(columns={'date_Tue':'date'})
+        data = pd.read_stata('transformed_data_physical_v18.dta').rename(columns={'date_Tue':'date'})
         data['date'] = data['date'].apply(lambda x:x+pd.Timedelta('3 days'))
-#         SDFpremium_growing = pd.read_excel('data/SDFgrowing_fut_tues.xls')
-#         SDFpremium_rolling = pd.read_excel('data/SDF756rolling_fut_tues.xls')
+        SDFpremium_growing = pd.read_excel('SDFgrowing_fut_tues.xls')
+        SDFpremium_rolling = pd.read_excel('SDF756rolling_fut_tues.xls')
     
     # Rename columns, expect the date variables and the trend
     all_columns = list(data.columns.values)
     all_columns.remove('trend')
-#     all_columns.remove('StikIdx')
+    #all_columns.remove('StikIdx')
     all_columns = [x for x in all_columns if 'date' not in x]
     
     data = data.rename(columns={x:'_'.join(x.split('_')[:-1]) for x in set(all_columns)})
-#     data = pd.merge(data, SDFpremium_growing, on='date', how='left')
-#     data = pd.merge(data, SDFpremium_rolling, on='date', how='left')
+    data = pd.merge(data, SDFpremium_growing, on='date', how='left')
+    data = pd.merge(data, SDFpremium_rolling, on='date', how='left')
     
     ## Constructed the Sent var here
     data['sent']=data['sCo']+data['sGom']+data['sEnv']+data['sEpg']+data['sBbl']+data['sRpc']+data['sEp']
+    
+    ## Ensure the data contains relevant columns
+    if check_idx_list:
+        assert not set(check_idx_list).difference(data.columns)
     
     ## Drop the top 4 rows because no text vars available there
     return data.iloc[3:,:].reset_index(drop=True)
@@ -123,13 +127,8 @@ def ind_var_list(d_var,weeks):
     as well as pull all the relevant data from the main dataset.
     """
     ### All candidates of RHS vars
-#     full_list=['DOilVol', 'OilVol', 'DInv', 'DProd', 'DSpot', 'FutRet', 'StikIdx', 'xomRet', 'bpRet', 'rdsaRet',
-#               'tnote_10y', 'DFX', 'sp500Ret', 'basis', 'WIPI_{}wk'.format(weeks), 'trend', 'VIX', 'vix_diff', 'ovx_diff', 'RPsdf_growing', 'RPsdf_rolling',
-#               'BEME', 'Mom', 'BasMom', 'DolBeta', 'InflaBeta', 'HedgPres', 'liquidity', 'OpenInt',
-#               'artcount', 'entropy', 'sent', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
-#               'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp']
-    full_list=['DOilVol', 'OilVol', 'DInv', 'DProd', 'DSpot', 'FutRet', 'xomRet', 'bpRet', 'rdsaRet',
-              'tnote_10y', 'DFX', 'sp500Ret', 'basis', 'WIPI_{}wk'.format(weeks), 'trend', 'VIX', 'vix_diff', 'ovx_diff', 
+    full_list=['DOilVol', 'OilVol', 'DInv', 'DProd', 'DSpot', 'FutRet', 'StkIdx', 'xomRet', 'bpRet', 'rdsaRet',
+              'tnote_10y', 'DFX', 'sp500Ret', 'basis', 'WIPI_{}wk'.format(weeks), 'trend', 'VIX', 'vix_diff', 'ovx_diff', 'RPsdf_growing', 'RPsdf_rolling',
               'BEME', 'Mom', 'BasMom', 'DolBeta', 'InflaBeta', 'HedgPres', 'liquidity', 'OpenInt',
               'artcount', 'entropy', 'sent', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
               'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp']
@@ -394,7 +393,7 @@ def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
         y_train=data_ytrain[d_var+'_t4']
     ## Set up Lasso instance and grid search for penalty coefficient
     pre_model=Lasso(random_state=seed)
-    param_grid=[{'alpha':np.linspace(0,2,40)}]
+    param_grid=[{'alpha':np.linspace(1e-3,2,40)}]
     grid_search = GridSearchCV(pre_model, param_grid, cv=cvs, scoring='neg_mean_squared_error', n_jobs=-1)
     train_xy=pd.concat([X_train,y_train],axis=1).dropna()
     y_train=train_xy.iloc[:,-1]
@@ -476,7 +475,7 @@ def rolling_diff_forward(data, d_var, ind_vars, forecast_start, wk=8, window=5, 
     else:
         y_train=data_ytrain[d_var+'_t4']
     pre_model=Lasso(random_state=seed)
-    param_grid=[{'alpha':np.linspace(0,2,40)}]
+    param_grid=[{'alpha':np.linspace(1e-3,2,40)}]
     grid_search = GridSearchCV(pre_model, param_grid, cv=cvs, scoring='neg_mean_squared_error', n_jobs=-1)
     
     train_xy=pd.concat([X_train,y_train],axis=1).dropna()
@@ -678,7 +677,7 @@ def rolling_diff_stability_coef(data, d_var, ind_vars, forecast_start, wk=8, win
         y_train=data_ytrain[d_var+'_t4']
     ## Set up Lasso instance and grid search for penalty coefficient
     pre_model=Lasso(random_state=seed)
-    param_grid=[{'alpha':np.linspace(0,2,40)}]
+    param_grid=[{'alpha':np.linspace(1e-3,2,40)}]
     grid_search = GridSearchCV(pre_model, param_grid, cv=cvs, scoring='neg_mean_squared_error', n_jobs=-1)
     train_xy=pd.concat([X_train,y_train],axis=1).dropna()
     y_train=train_xy.iloc[:,-1]
