@@ -24,7 +24,7 @@ Contains codes for OOS analysis for the Energy Project
 ./dtm_numeric.py --dtmPath=/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/NYtime_dtm_Clustering_C --outputPath=/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/NYtime_dtm_numeric_441
 ```
 
-2. Obtain rolling topic models using Louvain and Genetic Algorithm, and store the membership
+2. Obtain rolling topic models using Louvain and Genetic Algorithm, and store the membership (30min at most for each rolling model)
 ```
 ./run_Rolling_Topic_Models.sh
 ```
