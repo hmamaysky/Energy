@@ -45,7 +45,7 @@ def UTC_to_NY(row, to_str=True):
     # Convert time zone
     est = utc.astimezone(to_zone)
     if to_str:
-        est = est.strftime('%Y-%m-%dT%H:%M:%S')+x[19:] # use x[19:-1]: don't include Z, which stands for UTC!!!
+        est = est.strftime('%Y-%m-%dT%H:%M:%S')# don't include Z, which stands for UTC!!!
     return est
 
 def read_csv_file(opt, file_type, YYYYMM):
