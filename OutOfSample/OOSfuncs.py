@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/user/kh3191/.conda/envs/nlp/bin/python
 """
 Modified by Kaiwen Hou on Wed Oct 25 12:05am 2023
 Originally created on Tue Apr 28 16:59:34 2020 by @author: Hongyu Wu
@@ -20,11 +20,11 @@ import statsmodels.regression.linear_model as lm
 import os
 import sys
 import concurrent.futures
-import warnings
 from sklearn.linear_model import Lasso
 from sklearn.model_selection import GridSearchCV
 from sklearn.decomposition import PCA
-warnings.filterwarnings('ignore')
+# import warnings
+# warnings.filterwarnings('ignore')
 
 # %% 1. All the functions for the OOS Analysis
 
@@ -151,10 +151,9 @@ def PCA_augment(data):
     '''
     This function augments the PCA series for a given lookback window
     '''
-    ## Drop fCo in textual var list and freq var list to avoid collinearity
-    textual_vars_drop = ['artcount', 'entropy', 'sCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
+    textual_vars_drop = ['artcount', 'entropy', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
               'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp']  
-    freq_vars_drop = ['fGom', 'fEnv', 'fEpg', 'fBbl', 'fRpc', 'fEp']
+    freq_vars_drop = ['fCo', 'fGom', 'fEnv', 'fEpg', 'fBbl', 'fRpc', 'fEp']
     sent_vars = ['sCo', 'sGom', 'sEnv', 'sEpg', 'sBbl', 'sRpc', 'sEp']
     ## PCA instance with first components on
     pca = PCA(n_components=1, random_state=seed)
@@ -334,7 +333,7 @@ def rolling_diff_OLS(d_var, ind_vars, forecast_start, wk=8, window=5):
 
 
 ### 2.2 Custom Rolling Diff function for Lasso Updating method
-def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
+def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5, predict=True):
     '''
     This function calculates the weekly prediction error of the Lasso Model.
     Inputs:
@@ -403,27 +402,36 @@ def rolling_diff_Lasso(d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
     ## Update the coefficients using the selected penalty 
     reg=Lasso(alpha=best_lambda, random_state=seed)
     reg.fit(X_train,y_train)
-    x_test=data_xtest.loc[:,ind_vars]
-    X_test=sm.add_constant(x_test, has_constant='add')
     
-    ## Predict and record the difference
-    # Choose the correct LHS var according to forecasting duration
-    if wk==8:
-        y_test=data_ytest[d_var+'_t8']
-    else:
-        y_test=data_ytest[d_var+'_t4']
-    # Prepare proper test data and predict   
-    test_xy=pd.concat([X_test,y_test],axis=1).dropna()
-    y_test=test_xy.iloc[:,-1]
-    X_test=test_xy.iloc[:,0:-1]
-    
-    ### 6. Return if valid o/w return np.nan
-    if len(y_test)==0:
-        return [np.nan]
-    else:
-        diff = reg.predict(X_test) - y_test
+    if predict:
+        x_test=data_xtest.loc[:,ind_vars]
+        X_test=sm.add_constant(x_test, has_constant='add')
 
-    return diff
+        ## Predict and record the difference
+        # Choose the correct LHS var according to forecasting duration
+        if wk==8:
+            y_test=data_ytest[d_var+'_t8']
+        else:
+            y_test=data_ytest[d_var+'_t4']
+        # Prepare proper test data and predict   
+        test_xy=pd.concat([X_test,y_test],axis=1).dropna()
+        y_test=test_xy.iloc[:,-1]
+        X_test=test_xy.iloc[:,0:-1]
+
+        ### 6. Return if valid o/w return np.nan
+        if len(y_test)==0:
+            return [np.nan]
+        else:
+            diff = reg.predict(X_test) - y_test
+
+        return diff
+    
+    else: # save nonzero coefficients
+        coefficients = reg.coef_
+        # Identify the indices of the features that were selected (non-zero coefficients)
+        selected_features_indices = [i for i, coef in enumerate(coefficients) if coef != 0]
+        return X_train.columns[selected_features_indices].to_list()
+        
 
 ### 2.3 Custom Rolling Diff function for Forward Model 
 def rolling_diff_forward(data, d_var, ind_vars, forecast_start, wk=8, window=5, cvs=5):
