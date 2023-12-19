@@ -18,6 +18,20 @@ from glob import glob
 
 import torch
 
+import argparse
+from argparse import RawTextHelpFormatter
+def parse_option():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--wk', type=int, default=8)
+    parser.add_argument('--window', type=int, default=5)
+    parser.add_argument('--frequency', type=int, default=1)
+    parser.add_argument('--cvs', type=int, default=3)
+    parser.add_argument('--rolling', type=bool, default=True)
+    parser.add_argument('--select_significant', type=bool, default=True)
+    parser.add_argument('--top_R2', type=int, default=None)
+    opt = parser.parse_args()
+    return opt
+
 def standardize(df):
 #     if window:
 #         rolling_mean = df.rolling(window).mean()
@@ -125,15 +139,8 @@ def get_train_test_split(d_var, forecast_start, wk, window, rolling,
     
 if __name__ == '__main__':
     
-    wk = 8
-    window = 5
-    frequency = 1
-    cvs = 3
-    rolling = True
-    select_significant = False
-    top_R2 = None
-    #rolling = False
-
+    opt = parse_option()
+    print(opt)
 
     for d_var in ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']:
 
@@ -142,7 +149,7 @@ if __name__ == '__main__':
         time_col = data_set(d_var)['date'] 
         time_lower = time_col[0]
         # time_lower= pd.Timestamp('2014-05-03')
-        test_week_list = [time for time in time_col if time>=time_lower+pd.Timedelta(str(7*window*52)+'days')][::frequency]
+        test_week_list = [time for time in time_col if time>=time_lower+pd.Timedelta(str(7*opt.window*52)+'days')][::opt.frequency]
 
         best_lambda_dic = {}
         significant_ind_vars_dic = {}
@@ -152,14 +159,14 @@ if __name__ == '__main__':
             try:
                 x_train, data_xtest, y_train, data_ytest, YYYYMM_end, scaler = get_train_test_split(d_var, 
                                                                                             forecast_start, 
-                                                                                            wk, 
-                                                                                            window, 
-                                                                                            rolling)
+                                                                                            opt.wk, 
+                                                                                            opt.window, 
+                                                                                            opt.rolling)
                 
                 ## alpha = 0: Manual Cross-Validation for OLS
-                kf = KFold(n_splits=cvs)
+                kf = KFold(n_splits=opt.cvs)
 
-                if select_significant:
+                if opt.select_significant:
                     avg_r2_score = {}
                     for d_var_one_predictor in x_train.columns:
                         x_train_one_predictor = x_train[d_var_one_predictor]
@@ -173,7 +180,7 @@ if __name__ == '__main__':
                             r2_scores.append(r2_score(y_cv_test, y_cv_pred))
 
                         avg_r2_score[d_var_one_predictor] = np.mean(r2_scores)
-                    significant_ind_vars = [key for key, value in sorted(avg_r2_score.items(), key=lambda item: item[1], reverse=True)[:top_R2]]
+                    significant_ind_vars = [key for key, value in sorted(avg_r2_score.items(), key=lambda item: item[1], reverse=True)[:opt.top_R2]]
                     significant_ind_vars_dic[str(forecast_start)[:10]] = significant_ind_vars
                     
                     x_train = x_train[significant_ind_vars]
@@ -193,8 +200,8 @@ if __name__ == '__main__':
 
                 ## Set up Lasso instance and grid search for penalty coefficient
                 pre_model = Lasso(random_state=seed, fit_intercept=False)
-                param_grid = [{'alpha': np.exp(np.linspace(-10, 0, 40))}]
-                grid_search = GridSearchCV(pre_model, param_grid, cv=cvs, scoring='neg_mean_squared_error', n_jobs=-1)
+                param_grid = [{'alpha': np.exp(np.linspace(-7, 0, 40))}]
+                grid_search = GridSearchCV(pre_model, param_grid, cv=opt.cvs, scoring='neg_mean_squared_error', n_jobs=-1)
                 grid_search.fit(x_train, y_train)
 
                 if neg_avg_mse > grid_search.best_score_:
@@ -203,7 +210,7 @@ if __name__ == '__main__':
                     best_lambda = grid_search.best_params_['alpha']
 
                     
-                if not rolling:
+                if not opt.rolling:
                     best_lambda_dic[str(forecast_start)[:10]] = best_lambda
                 else:
                     best_lambda_dic[str(forecast_start)[:10]] = [YYYYMM_end, best_lambda, scaler]
@@ -212,10 +219,10 @@ if __name__ == '__main__':
                 break
 
 
-        if not rolling:
-            torch.save(best_lambda_dic, f'res_all_variables/{cvs}fold/forward_best_lambda_{d_var}.pt')
+        if not opt.rolling:
+            torch.save(best_lambda_dic, f'res_all_variables/{opt.cvs}fold/forward_best_lambda_{d_var}.pt')
             
         else:
-            torch.save(best_lambda_dic, f'res_all_variables/{cvs}fold/forward_rolling_best_lambda_{d_var}.pt')
-            if select_significant:
-                torch.save(significant_ind_vars_dic, f'res_all_variables/{cvs}fold/forward_rolling_selected_{d_var}.pt')
+            torch.save(best_lambda_dic, f'res_all_variables/{opt.cvs}fold/forward_rolling_best_lambda_{d_var}.pt')
+            if opt.select_significant:
+                torch.save(significant_ind_vars_dic, f'res_all_variables/{opt.cvs}fold/forward_rolling_selected_{d_var}.pt')
