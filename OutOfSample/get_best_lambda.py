@@ -29,6 +29,7 @@ def parse_option():
     parser.add_argument('--rolling', type=bool, default=True)
     parser.add_argument('--select_significant', type=bool, default=True)
     parser.add_argument('--top_R2', type=int, default=None)
+    parser.add_argument('--save_folder_rolling', type=str, default='res_all_variables_v19.2')
     opt = parser.parse_args()
     return opt
 
@@ -78,6 +79,8 @@ def get_train_test_split(d_var, forecast_start, wk, window, rolling,
     ### 4. Prepare RHS data for training and testing   
     # 4.1 Add PCA series
     data_x_pca = data_x[date_pca_range]
+    timestamp = data_x_pca['date'].max()
+    YYYYMM_end = get_last_month_yyyymm(timestamp)
 
     if not rolling:
         data_x_pca = PCA_augment(data_x_pca)
@@ -86,8 +89,6 @@ def get_train_test_split(d_var, forecast_start, wk, window, rolling,
         data_xtrain = data_x_pca.iloc[:np.sum(date_update_range),:]
 
     else:
-        timestamp = data_x_pca['date'].max()
-        YYYYMM_end = get_last_month_yyyymm(timestamp)
 
         agg_path_list = glob(f'{concat_path}/*{YYYYMM_end}_NYtime_daily_level_measures_C_2023.csv')
         assert len(agg_path_list) == 1
@@ -220,9 +221,12 @@ if __name__ == '__main__':
 
 
         if not opt.rolling:
-            torch.save(best_lambda_dic, f'res_all_variables/{opt.cvs}fold/forward_best_lambda_{d_var}.pt')
+            torch.save(best_lambda_dic, 
+                       f'res_global_topic/{opt.cvs}fold/forward_best_lambda_{d_var}.pt')
             
         else:
-            torch.save(best_lambda_dic, f'res_all_variables/{opt.cvs}fold/forward_rolling_best_lambda_{d_var}.pt')
+            torch.save(best_lambda_dic, 
+                       f'{opt.save_folder_rolling}/{opt.cvs}fold/forward_rolling_best_lambda_{d_var}.pt')
             if opt.select_significant:
-                torch.save(significant_ind_vars_dic, f'res_all_variables/{opt.cvs}fold/forward_rolling_selected_{d_var}.pt')
+                torch.save(significant_ind_vars_dic, 
+                           f'{opt.save_folder_rolling}/{opt.cvs}fold/forward_rolling_selected_{d_var}.pt')
