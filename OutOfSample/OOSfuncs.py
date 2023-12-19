@@ -42,6 +42,15 @@ def RMSE(x):
     RMSE = np.sqrt(np.sum(np.power(x_s,2))/(length-1))
     return RMSE
 
+def get_end_of_week(d_var):
+    prices_var = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol']
+    if d_var in prices_var:
+        end_of_week = 'Fri'
+    else:
+        end_of_week = 'Tue'
+    return end_of_week
+
+
 ### 1.2 Load dataset according to different dependent variable ###
 def data_set(d_var, check_idx_list=None):
     ## change directory
@@ -52,11 +61,11 @@ def data_set(d_var, check_idx_list=None):
     prices_var = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol']
 
     if d_var in prices_var:
-        data = pd.read_stata('transformed_data_prices_v18.dta').rename(columns={'date_Fri':'date'})
+        data = pd.read_stata('transformed_data_prices_v19.2_mod.dta').rename(columns={'date_Fri':'date'})
         SDFpremium_growing = pd.read_excel('SDFgrowing_fut_thurs.xls')
         SDFpremium_rolling = pd.read_excel('SDF756rolling_fut_thurs.xls')
     else:
-        data = pd.read_stata('transformed_data_physical_v18.dta').rename(columns={'date_Tue':'date'})
+        data = pd.read_stata('transformed_data_physical_v19.2_mod.dta').rename(columns={'date_Tue':'date'})
         data['date'] = data['date'].apply(lambda x:x+pd.Timedelta('3 days'))
         SDFpremium_growing = pd.read_excel('SDFgrowing_fut_tues.xls')
         SDFpremium_rolling = pd.read_excel('SDF756rolling_fut_tues.xls')
@@ -147,21 +156,28 @@ def ind_var_list(d_var,weeks):
     return full_list
 
 ### 1.5 Dynamically calculate the 1st PCA components in the 5-yr lookback window ###
-def PCA_augment(data):
+def PCA_augment(data, topic_labels=True):
     '''
     This function augments the PCA series for a given lookback window
     '''
-    textual_vars_drop = ['artcount', 'entropy', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
-              'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp']  
-    freq_vars_drop = ['fCo', 'fGom', 'fEnv', 'fEpg', 'fBbl', 'fRpc', 'fEp']
-    sent_vars = ['sCo', 'sGom', 'sEnv', 'sEpg', 'sBbl', 'sRpc', 'sEp']
-    ## PCA instance with first components on
+    if topic_labels:
+        textual_vars = ['artcount', 'entropy', 'sCo', 'fCo', 'sGom', 'fGom', 'sEnv', 'fEnv',
+                  'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc', 'fRpc', 'sEp', 'fEp']  
+        freq_vars = ['fCo', 'fGom', 'fEnv', 'fEpg', 'fBbl', 'fRpc', 'fEp']
+        sent_vars = ['sCo', 'sGom', 'sEnv', 'sEpg', 'sBbl', 'sRpc', 'sEp']
+        
+    else:
+        freq_vars = data.filter(regex='^f\d+$').columns.to_list()
+        sent_vars = data.filter(regex='^s\d+$').columns.to_list()
+        textual_vars = ['artcount', 'entropy'] + freq_vars + sent_vars
+        
+        ## PCA instance with first components on
     pca = PCA(n_components=1, random_state=seed)
     data_temp = data.copy()
     ## Augment the data with three PCA series
     data_temp['PCAsent'] = pca.fit_transform(data_temp[sent_vars])
-    data_temp['PCAall'] = pca.fit_transform(data_temp[textual_vars_drop])
-    data_temp['PCAfreq'] = pca.fit_transform(data_temp[freq_vars_drop])
+    data_temp['PCAall'] = pca.fit_transform(data_temp[textual_vars])
+    data_temp['PCAfreq'] = pca.fit_transform(data_temp[freq_vars])
     ## Return the results
     return data_temp
 
