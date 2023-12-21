@@ -211,11 +211,7 @@ if __name__ == '__main__':
                 else:
                     best_lambda = grid_search.best_params_['alpha']
 
-                    
-                if not opt.rolling:
-                    best_lambda_dic[str(forecast_start)[:10]] = best_lambda
-                else:
-                    best_lambda_dic[str(forecast_start)[:10]] = [YYYYMM_end, best_lambda, scaler]
+                best_lambda_dic[str(forecast_start)[:10]] = [YYYYMM_end, best_lambda, scaler]
 
             except AssertionError:
                 break
@@ -224,6 +220,9 @@ if __name__ == '__main__':
         if not opt.rolling:
             torch.save(best_lambda_dic, 
                        f'res_global_topic/{opt.cvs}fold/forward_best_lambda_{d_var}.pt')
+            if opt.select_significant:
+                torch.save(significant_ind_vars_dic, 
+                           f'res_global_topic/{opt.cvs}fold/forward_selected_{d_var}.pt')
             
         else:
             torch.save(best_lambda_dic, 
