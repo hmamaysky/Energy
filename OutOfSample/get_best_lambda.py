@@ -29,7 +29,7 @@ def parse_option():
     parser.add_argument('--rolling', type=bool, default=True)
     parser.add_argument('--select_significant', type=bool, default=True)
     parser.add_argument('--top_R2', type=int, default=None)
-    parser.add_argument('--save_folder_rolling', type=str, default='res_all_variables_v19.2')
+    parser.add_argument('--save_folder_rolling', type=str, default='res_all_variables')
     opt = parser.parse_args()
     return opt
 
