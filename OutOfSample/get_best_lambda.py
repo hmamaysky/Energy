@@ -6,7 +6,7 @@ np.random.seed(seed)
 import statsmodels.api as sm
 import statsmodels.regression.linear_model as lm
 
-from OOSfuncs import data_set, get_end_of_week, get_test_row_range, PCA_augment, ind_var_list
+from OOSfuncs import data_set, get_test_row_range, PCA_augment, ind_var_list
 from tqdm import tqdm
 from sklearn.model_selection import KFold, GridSearchCV
 from sklearn.metrics import mean_squared_error, r2_score
@@ -99,7 +99,7 @@ def get_train_test_split(d_var, forecast_start, wk, window, rolling,
         df.columns = df.columns.str.replace('Topic ', 'f')
         df.rename(columns={'article count': 'artcount'}, inplace=True)
         df.set_index('date', inplace=True)
-        df = df.resample(f'W-{get_end_of_week(d_var).upper()}').mean().rolling(4).mean()
+        df = df.resample(f'W-FRI').mean().rolling(4).mean() # do not use "get_end_of_week" or Tuesday
         df = df.shift(wk)
 
         data_x_pca = pd.merge(data_x_pca[['date']], df, on='date', how='left')
@@ -144,6 +144,7 @@ if __name__ == '__main__':
     print(opt)
 
     for d_var in ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']:
+    #for d_var in ['DInv', 'DProd']:
 
         print(d_var)
 
