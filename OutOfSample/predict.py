@@ -25,6 +25,7 @@ def parse_option():
     parser.add_argument('--rolling', type=bool, default=True)
     parser.add_argument('--select_significant', type=bool, default=True)
     parser.add_argument('--top_R2', type=int, default=None)
+    parser.add_argument('--save_folder_rolling', type=str, default='res_all_variables')
     opt = parser.parse_args()
     return opt
 
@@ -61,8 +62,12 @@ if __name__ == '__main__':
         print(d_var)
         res[d_var] = {'MSE': {}, 'true': {}, 'pred': {}, 'pred_wls': {}, 'trend': {}}
 
-        best_lambda_dic = torch.load(f'res_all_variables/{opt.cvs}fold/forward_rolling_best_lambda_{d_var}.pt')
-        significant_ind_vars_dic = torch.load(f'res_all_variables/{opt.cvs}fold/forward_rolling_selected_{d_var}.pt')
+        if not opt.rolling:
+            best_lambda_dic = torch.load(f'res_global_topic/{opt.cvs}fold/forward_best_lambda_{d_var}.pt')
+            significant_ind_vars_dic = torch.load(f'res_global_topic/{opt.cvs}fold/forward_selected_{d_var}.pt')
+        else:
+            best_lambda_dic = torch.load(f'res_all_variables/{opt.cvs}fold/forward_rolling_best_lambda_{d_var}.pt')
+            significant_ind_vars_dic = torch.load(f'res_all_variables/{opt.cvs}fold/forward_rolling_selected_{d_var}.pt')
         res[d_var]['dir'] = {'best_lambda_dic': best_lambda_dic, 'significant_ind_vars_dic': significant_ind_vars_dic}
         
 
@@ -94,7 +99,6 @@ if __name__ == '__main__':
                 res[d_var]['MSE'][forecast_start] = (diff ** 2).sum()
 
                 model = lm.WLS(y_train,x_train, missing='drop',weights=np.linspace(1,2,len(x_train))).fit()
-
                 res[d_var]['pred_wls'][forecast_start] = model.predict(x_test).squeeze() * scaler['ystd'] + scaler['ymean']
 
 
@@ -106,4 +110,7 @@ if __name__ == '__main__':
         df_all_features = pd.DataFrame(frequency_all_features_list, columns=all_features, index=forecast_start_list).T
         res[d_var]['df_all_features'] = df_all_features
 
-        torch.save(res, f'res_all_variables/{opt.cvs}fold/forward_rolling_res.pt')
+        if not opt.rolling:
+            torch.save(res, f'res_global_topic/{opt.cvs}fold/forward_res.pt')
+        else:
+            torch.save(res, f'{opt.save_folder_rolling}/{opt.cvs}fold/forward_rolling_res.pt')
