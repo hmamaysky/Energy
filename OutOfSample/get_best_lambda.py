@@ -15,6 +15,7 @@ from sklearn.linear_model import Lasso
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from glob import glob
+import os
 
 import torch
 
@@ -28,8 +29,8 @@ def parse_option():
     parser.add_argument('--cvs', type=int, default=3)
     parser.add_argument('--rolling', type=bool, default=True)
     parser.add_argument('--select_significant', type=bool, default=True)
-    parser.add_argument('--top_R2', type=int, default=None)
-    parser.add_argument('--save_folder_rolling', type=str, default='res_all_variables')
+    parser.add_argument('--top_R2', type=int, default=2)
+    parser.add_argument('--normalize', type=bool, default=True)
     opt = parser.parse_args()
     return opt
 
@@ -53,7 +54,7 @@ def get_last_month_yyyymm(timestamp):
         return last_month.strftime("%Y%m")
 
     
-def get_train_test_split(d_var, forecast_start, wk, window, rolling, 
+def get_train_test_split(d_var, forecast_start, opt,
                  concat_path='/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info',
                 ind_vars = ['entropy', 'artcount', 'sCo', 'fCo',
            'sGom', 'fGom', 'sEnv', 'fEnv', 'sEpg', 'fEpg', 'sBbl', 'fBbl', 'sRpc',
@@ -62,15 +63,15 @@ def get_train_test_split(d_var, forecast_start, wk, window, rolling,
     data = data_set(d_var)
 
     ### 1. Get update and forecast window
-    date_update_range, date_test_range, date_pca_range=get_test_row_range(data['date'], forecast_start, wk=wk, update_window=window)
+    date_update_range, date_test_range, date_pca_range=get_test_row_range(data['date'], forecast_start, wk=opt.wk, update_window=opt.window)
 
     ### 2. Shift x to match the lag 
-    lag_vars = ind_var_list(d_var, weeks=wk)
+    lag_vars = ind_var_list(d_var, weeks=opt.wk)
     # trend and WIPIyoy will not lag
     lag_vars.remove('trend')
-    lag_vars.remove('WIPI_{}wk'.format(wk))
+    lag_vars.remove('WIPI_{}wk'.format(opt.wk))
     data_x = data.copy()
-    data_x.loc[:,lag_vars] = data_x.loc[:,lag_vars].shift(wk)
+    data_x.loc[:,lag_vars] = data_x.loc[:,lag_vars].shift(opt.wk)
 
     ### 3. Prepare LHS data for training and testing
     data_ytrain = data[date_update_range]
@@ -82,7 +83,7 @@ def get_train_test_split(d_var, forecast_start, wk, window, rolling,
     timestamp = data_x_pca['date'].max()
     YYYYMM_end = get_last_month_yyyymm(timestamp)
 
-    if not rolling:
+    if not opt.rolling:
         data_x_pca = PCA_augment(data_x_pca)
 
         # 4.2 Select the train set (first few rows) and the test set (the last row)
@@ -100,12 +101,13 @@ def get_train_test_split(d_var, forecast_start, wk, window, rolling,
         df.rename(columns={'article count': 'artcount'}, inplace=True)
         df.set_index('date', inplace=True)
         df = df.resample(f'W-FRI').mean().rolling(4).mean() # do not use "get_end_of_week" or Tuesday
-        df = df.shift(wk)
+        df = df.shift(opt.wk)
 
         data_x_pca = pd.merge(data_x_pca[['date']], df, on='date', how='left')
         data_x_pca.set_index('date', inplace=True)
         data_x_pca = PCA_augment(standardize(data_x_pca).dropna(), topic_labels=False)
-        data_x_pca = standardize(data_x_pca)
+        if opt.normalize:
+            data_x_pca = standardize(data_x_pca)
 
         # 4.2 Select the train set (first few rows) and the test set (the last row)
         data_ytrain = pd.merge(data_ytrain, data_x_pca, on='date')
@@ -121,18 +123,19 @@ def get_train_test_split(d_var, forecast_start, wk, window, rolling,
     # 5.1 First, use grid search to choose the best Penalty 
     #     Then, run lasso using that panalty regression and update, 
     #     here, sm.add_constant adds a constant to RHS
-    if not rolling:
+    if not opt.rolling:
         x_train = data_xtrain.loc[:,ind_vars]
     else:
         x_train = data_xtrain.drop(columns=['date'])
 
     ## Choose the correct LHS var according to forecasting duration
-    y_train = data_ytrain[f'{d_var}_t{wk}']
+    y_train = data_ytrain[f'{d_var}_t{opt.wk}']
 
     scaler = {'ymean': y_train.mean(), 'ystd': y_train.std()}
     train_xy = pd.concat([x_train,y_train],axis=1).dropna()
     # scaling is necessary in LASSO
-    train_xy = standardize(train_xy)
+    if opt.normalize:
+        train_xy = standardize(train_xy)
     y_train = train_xy.iloc[:,-1]
     x_train = train_xy.iloc[:,0:-1]
     
@@ -142,6 +145,10 @@ if __name__ == '__main__':
     
     opt = parse_option()
     print(opt)
+    
+    directory_name = f"wk:{opt.wk}_window:{opt.window}_frequency:{opt.frequency}_cvs:{opt.cvs}_rolling:{opt.rolling}_select_significant:{opt.select_significant}_top_R2:{opt.top_R2}_normalize:{opt.normalize}"
+    directory_path = os.path.join('res_Forward_Lasso', directory_name, 'train')
+    os.makedirs(directory_path, exist_ok=True)
 
     for d_var in ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol', 'DInv', 'DProd']:
     #for d_var in ['DInv', 'DProd']:
@@ -161,9 +168,7 @@ if __name__ == '__main__':
             try:
                 x_train, data_xtest, y_train, data_ytest, YYYYMM_end, scaler = get_train_test_split(d_var, 
                                                                                             forecast_start, 
-                                                                                            opt.wk, 
-                                                                                            opt.window, 
-                                                                                            opt.rolling)
+                                                                                            opt)
                 
                 ## alpha = 0: Manual Cross-Validation for OLS
                 kf = KFold(n_splits=opt.cvs)
@@ -201,8 +206,11 @@ if __name__ == '__main__':
                 neg_avg_mse = -99999999
 
                 ## Set up Lasso instance and grid search for penalty coefficient
-                pre_model = Lasso(random_state=seed, fit_intercept=False)
-                param_grid = [{'alpha': np.exp(np.linspace(-7, 0, 40))}]
+                pre_model = Lasso(random_state=seed, fit_intercept=not opt.normalize)
+                if opt.normalize:
+                    param_grid = [{'alpha': np.exp(np.linspace(-7, 0, 40))}]
+                else:
+                    param_grid = [{'alpha': np.linspace(1e-5, 2, 40)}]
                 grid_search = GridSearchCV(pre_model, param_grid, cv=opt.cvs, scoring='neg_mean_squared_error', n_jobs=-1)
                 grid_search.fit(x_train, y_train)
 
@@ -216,17 +224,5 @@ if __name__ == '__main__':
             except AssertionError:
                 break
 
-
-        if not opt.rolling:
-            torch.save(best_lambda_dic, 
-                       f'res_global_topic/{opt.cvs}fold/forward_best_lambda_{d_var}.pt')
-            if opt.select_significant:
-                torch.save(significant_ind_vars_dic, 
-                           f'res_global_topic/{opt.cvs}fold/forward_selected_{d_var}.pt')
-            
-        else:
-            torch.save(best_lambda_dic, 
-                       f'{opt.save_folder_rolling}/{opt.cvs}fold/forward_rolling_best_lambda_{d_var}.pt')
-            if opt.select_significant:
-                torch.save(significant_ind_vars_dic, 
-                           f'{opt.save_folder_rolling}/{opt.cvs}fold/forward_rolling_selected_{d_var}.pt')
+        torch.save({'best_lambda_dic':best_lambda_dic, 'significant_ind_vars_dic':significant_ind_vars_dic},
+                   f'{directory_path}/{d_var}.pt')
