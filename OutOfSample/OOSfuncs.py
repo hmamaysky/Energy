@@ -26,6 +26,9 @@ from sklearn.decomposition import PCA
 # import warnings
 # warnings.filterwarnings('ignore')
 
+def standardize(df):
+    return (df - df.mean())/ df.std()
+
 # %% 1. All the functions for the OOS Analysis
 
 ### 1.1 Calculate RMSE ###
@@ -52,7 +55,7 @@ def get_end_of_week(d_var):
 
 
 ### 1.2 Load dataset according to different dependent variable ###
-def data_set(d_var, check_idx_list=None):
+def data_set(d_var, check_idx_list=None, replicate=False):
     ## change directory
     wkdir = '/user/kh3191/codes/nlp'
     os.chdir(wkdir)
@@ -61,11 +64,17 @@ def data_set(d_var, check_idx_list=None):
     prices_var = ['FutRet', 'xomRet', 'bpRet', 'rdsaRet', 'DSpot', 'DOilVol']
 
     if d_var in prices_var:
-        data = pd.read_stata('transformed_data_prices_v19.2_mod.dta').rename(columns={'date_Fri':'date'})
+        if replicate:
+            data = pd.read_stata('transformed_data_prices_v19.dta').rename(columns={'date_Fri':'date'})
+        else:
+            data = pd.read_stata('transformed_data_prices_v19.2_mod.dta').rename(columns={'date_Fri':'date'})
         SDFpremium_growing = pd.read_excel('SDFgrowing_fut_thurs.xls')
         SDFpremium_rolling = pd.read_excel('SDF756rolling_fut_thurs.xls')
     else:
-        data = pd.read_stata('transformed_data_physical_v19.2_mod.dta').rename(columns={'date_Tue':'date'})
+        if replicate:
+            data = pd.read_stata('transformed_data_physical_v19.dta').rename(columns={'date_Tue':'date'})
+        else:
+            data = pd.read_stata('transformed_data_physical_v19.2_mod.dta').rename(columns={'date_Tue':'date'})
         data['date'] = data['date'].apply(lambda x:x+pd.Timedelta('3 days'))
         SDFpremium_growing = pd.read_excel('SDFgrowing_fut_tues.xls')
         SDFpremium_rolling = pd.read_excel('SDF756rolling_fut_tues.xls')
@@ -171,9 +180,11 @@ def PCA_augment(data, topic_labels=True):
         sent_vars = data.filter(regex='^s\d+$').columns.to_list()
         textual_vars = ['artcount', 'entropy'] + freq_vars + sent_vars
         
-        ## PCA instance with first components on
+    ## PCA instance with first components
     pca = PCA(n_components=1, random_state=seed)
-    data_temp = data.copy()
+    
+    ## need standardized series
+    data_temp = standardize(data).copy()
     ## Augment the data with three PCA series
     data_temp['PCAsent'] = pca.fit_transform(data_temp[sent_vars])
     data_temp['PCAall'] = pca.fit_transform(data_temp[textual_vars])
