@@ -1,5 +1,7 @@
 # Data notes
 
+``full_sample.dta`` and ``restricted_sample.dta`` from Hali
+
 ## Timing
 - The variables in the .dta files are all dated with the end date of the calcuation period.  For example, the *DProd_t8_Wed* variable dated 6/24/1998 calculates the 8 week change in oil production from 4/29/1998 to 6/24/1998.
 
