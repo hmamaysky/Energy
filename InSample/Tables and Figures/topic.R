@@ -1,5 +1,5 @@
-setwd("C:/Users/j1kxb09/Downloads")
-topic <- read.csv("topicVecs (2).csv", stringsAsFactors = FALSE)
+setwd("C:/Users/j1kxb09/OneDrive - FR Banks/Documents/MNSC meetings/data")
+topic <- read.csv("topicVecs (3).csv", stringsAsFactors = FALSE)
 topic <- subset(topic, select = -X)
 #install.packages("ggpubr")
 #install.packages("factoextra")
@@ -324,15 +324,17 @@ top_30_words_cl6 <- top_30_words_cl6[-c(1,2),]
 cl6 <- wordcloud(words = top_30_words_cl6$Variable, freq = top_30_words_cl6$Average, scale = c(6,1)); title("Cluster 6: Oil/Fuel", line = 0, adj = 0.5, cex.main = 2)
 
 
-#par(mfrow = c(3,2))
-#cl1 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 1: Pipelin/Explor", line = 0, adj=0.5)
-#cl2 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 2: Gas/Energi", line = 0, adj=0.5)
-#cl3 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 3: Oil/Barrel", line = 0, adj=0.5)
-#cl4 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 4: WTI/Barrel", line = 0, adj=0.5)
-#cl5 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 5: Energi/Gas", line = 0, adj=0.5)
-#cl6 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 6: Oil/Fuel", line = 0, adj=0.5)
+par(mfrow = c(3,2))
+cl1 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 1: Pipelin/Explor", line = 0, adj=0.5)
+cl2 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 2: Gas/Energi", line = 0, adj=0.5)
+cl3 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 3: Oil/Barrel", line = 0, adj=0.5)
+cl4 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 4: WTI/Barrel", line = 0, adj=0.5)
+cl5 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 5: Energi/Gas", line = 0, adj=0.5)
+cl6 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 6: Oil/Fuel", line = 0, adj=0.5)
 
 ##### heat map ####
+setwd("C:/Users/j1kxb09/OneDrive - FR Banks/Documents/MNSC meetings/data")
+topic <- read.csv("topicVecs (3).csv", stringsAsFactors = FALSE)
 topic$X <- year(topic$X) 
 set.seed(12345)
 res.km <- kmeans(scale(topic[, -which(names(topic) == "X")]), 6, nstart = 25)
@@ -410,9 +412,3 @@ bind_sum <- ggplot(bind_sum, aes(x = X, y = as.factor(row_count), fill = row_cou
   scale_x_continuous(breaks = seq(min(cluster_topic$X), max(cluster_topic$X), by = 2)) +
   theme_minimal() + theme(axis.title.y = element_blank())
 combined_plot <- grid.arrange(p, bind_sum, ncol = 1)
-#+ theme(axis.text.y = element_blank(), axis.title.y = element_blank())
-#ggtitle("Topic Visualization by year") +
-
-#ggsave("topic_viz_by_year.pdf", width = 20, height = 20)
-
-#ggsave("topic_viz_by_cluster_year.pdf", width = 20, height = 20)
