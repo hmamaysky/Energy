@@ -253,7 +253,7 @@ top_30_words_cl1 <- head(cluster1_averages_df[order(-
 
 top_30_words_cl1 <- top_30_words_cl1[-c(1,2),]
 #cl1 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(3,0.5)); title("Cluster 1: Pipelin/Explor", line = -3, adj=0.5)
-cl1 <- wordcloud(words = top_30_words_cl1$Variable, freq = top_30_words_cl1$Average, scale = c(6,1)); title("Cluster 1: Pipelin/Explor", line = 0, adj=0.5, cex.main = 2)
+cl1 <- wordcloud(words = top_30_words_cl1$Variable, colors = c("#F8766D","#00BA38","#619CFF"), family = "Arial", freq = top_30_words_cl1$Average, scale = c(6,1)); title("Cluster 1: Pipelin/Explor", line = 0, adj=0.5, cex.main = 2)
 ###cluster 2 ###
 
 cluster2_averages <- colMeans(cluster2)
@@ -266,7 +266,7 @@ top_30_words_cl2 <- head(cluster2_averages_df[order(-
 
 top_30_words_cl2 <- top_30_words_cl2[-c(1,2),]
 #cl2 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(3,0.5)); title("Cluster 2: Gas/Energi", line = -3, adj = 0.5)
-cl2 <- wordcloud(words = top_30_words_cl2$Variable, freq = top_30_words_cl2$Average, scale = c(6,1)); title("Cluster 2: Gas/Energi", line = 0, adj = 0.5, cex.main = 2)
+cl2 <- wordcloud(words = top_30_words_cl2$Variable, colors = c("#F8766D","#00BA38","#619CFF"), family = "Arial", freq = top_30_words_cl2$Average, scale = c(6,1)); title("Cluster 2: Gas/Energi", line = 0, adj = 0.5, cex.main = 2)
 ## cluster 3 ###
 cluster3_averages <- colMeans(cluster3)
 cluster3_averages <- cluster3_averages[order(-cluster3_averages)]
@@ -284,7 +284,7 @@ top_30_words_cl3 <- top_30_words_cl3[-c(1,2),]
 #                 color = custom_colors,
 #                 freq = top_30_words$Average, scale = c(3,0.5)); title("Cluster 3: Oil/Barrel", line = -3, adj = 0.5)
 
-cl3 <- wordcloud(words = top_30_words_cl3$Variable, freq = top_30_words_cl3$Average, scale = c(6,1)); title("Cluster 3: Oil/Barrel", line = 0, adj = 0.5, cex.main = 2)
+cl3 <- wordcloud(words = top_30_words_cl3$Variable, colors = c("#F8766D","#00BA38","#619CFF"), family = "Arial", freq = top_30_words_cl3$Average, scale = c(6,1)); title("Cluster 3: Oil/Barrel", line = 0, adj = 0.5, cex.main = 2)
 ####cluster4###
 
 cluster4_averages <- colMeans(cluster4)
@@ -296,7 +296,7 @@ top_30_words_cl4 <- head(cluster4_averages_df[order(-
                                                   cluster4_averages_df$Average), ],30)
 top_30_words_cl4 <- top_30_words_cl4[-c(1,2),]
 #cl4 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(3,0.5)); title("Cluster 4: WTI/Barrel", line = - 3, adj = 0.5)
-cl4 <- wordcloud(words = top_30_words_cl4$Variable, freq = top_30_words_cl4$Average, scale = c(6,1)); title("Cluster 4: WTI/Barrel", line = 0, adj = 0.5, cex.main = 2)
+cl4 <- wordcloud(words = top_30_words_cl4$Variable, colors = c("#F8766D","#00BA38","#619CFF"), family = "Arial",freq = top_30_words_cl4$Average, scale = c(6,1)); title("Cluster 4: WTI/Barrel", line = 0, adj = 0.5, cex.main = 2)
 
 ####cluster5###
 
@@ -309,7 +309,7 @@ top_30_words_cl5 <- head(cluster5_averages_df[order(-
                                                   cluster5_averages_df$Average), ],30)
 top_30_words_cl5 <- top_30_words_cl5[-c(1,2),]
 #cl5 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(3,0.5)); title("Cluster 5: Energi/Gas", line = - 3, adj = 0.5)
-cl5 <- wordcloud(words = top_30_words_cl5$Variable, freq = top_30_words_cl5$Average, scale = c(6,1)); title("Cluster 5: Energi/Gas", line = 0, adj = 0.5, cex.main = 2)
+cl5 <- wordcloud(words = top_30_words_cl5$Variable, colors = c("#F8766D","#00BA38","#619CFF"), family = "Arial", freq = top_30_words_cl5$Average, scale = c(6,1)); title("Cluster 5: Energi/Gas", line = 0, adj = 0.5, cex.main = 2)
 
 ####cluster6###
 
@@ -321,16 +321,16 @@ cluster6_averages_df <- data.frame(Variable = names(cluster6_averages),
 top_30_words_cl6 <- head(cluster6_averages_df[order(-
                                                   cluster6_averages_df$Average), ],30)
 top_30_words_cl6 <- top_30_words_cl6[-c(1,2),]
-cl6 <- wordcloud(words = top_30_words_cl6$Variable, freq = top_30_words_cl6$Average, scale = c(6,1)); title("Cluster 6: Oil/Fuel", line = 0, adj = 0.5, cex.main = 2)
+cl6 <- wordcloud(words = top_30_words_cl6$Variable, colors = c("#F8766D","#00BA38","#619CFF"), family = "Arial", freq = top_30_words_cl6$Average, scale = c(6,1)); title("Cluster 6: Oil/Fuel", line = 0, adj = 0.5, cex.main = 2)
 
 
-par(mfrow = c(3,2))
-cl1 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 1: Pipelin/Explor", line = 0, adj=0.5)
-cl2 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 2: Gas/Energi", line = 0, adj=0.5)
-cl3 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 3: Oil/Barrel", line = 0, adj=0.5)
-cl4 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 4: WTI/Barrel", line = 0, adj=0.5)
-cl5 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 5: Energi/Gas", line = 0, adj=0.5)
-cl6 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 6: Oil/Fuel", line = 0, adj=0.5)
+#par(mfrow = c(3,2))
+#cl1 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 1: Pipelin/Explor", line = 0, adj=0.5)
+#cl2 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 2: Gas/Energi", line = 0, adj=0.5)
+#cl3 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 3: Oil/Barrel", line = 0, adj=0.5)
+#cl4 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 4: WTI/Barrel", line = 0, adj=0.5)
+#cl5 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 5: Energi/Gas", line = 0, adj=0.5)
+#cl6 <- wordcloud(words = top_30_words$Variable, freq = top_30_words$Average, scale = c(9,1)); title("Cluster 6: Oil/Fuel", line = 0, adj=0.5)
 
 ##### heat map ####
 setwd("C:/Users/j1kxb09/OneDrive - FR Banks/Documents/MNSC meetings/data")
