@@ -86,7 +86,7 @@ chmod 700 date_fixed_measures.py
 
 **Step :one::zero:: Aggregate from Article-Level to Daily Measures***
 - Input: `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat`
-- Output: `./NYtime_daily_level_measures_C_2023.csv`
+- Output: `../data/NYtime_daily_level_measures_C_2023.csv`
 ```bash
 chmod 700 agg_daily.py
 ./agg_daily.py
