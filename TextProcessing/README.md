@@ -94,32 +94,32 @@ chmod 700 agg_daily.py
 
 ## :file_folder: Processing for Cosine File and Clustering
 
-***Step :one:: Process the DTM Files for Cosine Code***
+**Step :one:: Process the DTM Files for Cosine Code***
 ```bash
 chmod 700 dtm_numeric.py
 ./dtm_numeric.py
 ```
 
-***Step :two:: Prepare the Cosine File***
+**Step :two:: Prepare the Cosine File***
 ```bash
 chmod 700 cosine.py
 ./cosine.py
 ```
 
-***Step :three:: Use Louvain Algorithm for Clustering***
+**Step :three:: Use Louvain Algorithm for Clustering***
 
 ## :file_folder: Processing Texts Based on Two New Topic Allocations
 
-***Step :one:: Create Symbolic Links to Old Files***
+**Step :one:: Create Symbolic Links to Old Files***
 ```bash
 chmod 700 create_links.sh
 ./create_links.sh
 ```
 
-***Step :two:: Repeat Text-Processing to Get Daily Aggregate Measures***
+**Step :two:: Repeat Text-Processing to Get Daily Aggregate Measures***
 ```bash
 chmod 700 repeat_new_topic.sh
 ./repeat_new_topic.sh
 ```
 
-***Step :three:: Generate Stata Files***
+**Step :three:: Generate Stata Files***
