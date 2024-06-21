@@ -13,7 +13,7 @@ chmod 700 raw_info.py
 ```
 
 **Step :two:: Select Oil Articles and Generate Oil-Related Monthly Raw Info Files***
-- Input: `energytag.csv`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/info`
+- Input: `./energytag.csv`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/info`
 - Output: `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info`
 ```bash
 chmod 700 oil_article_selection.py
@@ -21,7 +21,7 @@ chmod 700 oil_article_selection.py
 ```
 
 **Step :three:: Prepare the Document-Term Matrix (DTM) Files***
-- Input: `clustering_C.csv`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info`
+- Input: `./clustering_C.csv`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info`
 - Output: `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C`
 ```bash
 chmod 700 dtm.py
@@ -41,7 +41,7 @@ chmod 700 entropy.py
 ```
 
 **Step :five:: Calculate Sentiments and Total Word Count for Each Article***
-- Input: `2014.txt`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info`
+- Input: `./2014.txt`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info`
 - Output: `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/sentiment`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/total`
 ```bash
 chmod 700 sentcode.py
@@ -52,7 +52,7 @@ pip install textmining3
 ```
 
 **Step :six:: Calculate Topic Allocation for Each Article***
-- Input: `clustering_C.csv`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C`
+- Input: `./clustering_C.csv`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C`
 - Output: `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure/topic_allocation`
 ```bash
 chmod 700 topic_allocation.py
@@ -86,7 +86,7 @@ chmod 700 date_fixed_measures.py
 
 **Step :one::zero:: Aggregate from Article-Level to Daily Measures***
 - Input: `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat`
-- Output: `NYtime_daily_level_measures_C_2023.csv`
+- Output: `./NYtime_daily_level_measures_C_2023.csv`
 ```bash
 chmod 700 agg_daily.py
 ./agg_daily.py
