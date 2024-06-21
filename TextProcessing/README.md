@@ -9,6 +9,8 @@ This directory contains code for processing textual data in the Energy Project. 
 chmod 700 raw_info.py
 ./raw_info.py
 ```
+Input: `/data/ThomsonReuters_NewsArchive`
+Output: `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/info`
 
 ***Step :two:: Select Oil Articles and Generate Oil-Related Monthly Raw Info Files***
 ```bash
