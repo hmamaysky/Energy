@@ -46,8 +46,8 @@ chmod 700 entropy.py
 ## :file_folder: Creating the Global and Rolling Topic Models
 
 ### Step :five:.:one:: Process the DTM Files for the Global Topic Model
-- **Input:** ` `
-- **Output:** ` `
+- **Input:** `clustering_C.csv`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_Clustering_C`
+- **Output:** `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric_441`
 ```bash
 chmod 700 dtm_numeric.py
 ./dtm_numeric.py
@@ -56,19 +56,22 @@ chmod 700 dtm_numeric.py
 ### Step :five:.:two:: Compute the Cosine Similarity Matrix for the Global Topic Model
 
 - For the rolling topic models, the Cosine Similarity Matrices are computed within the loop of the Louvain algorithm, and hence do not require a separate step.
-- **Input:** ` `
-- **Output:** ` `
+- **Input:** `clustering_C.csv`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/dtm_numeric_441`
+- **Output:** `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/cosine/cosine.csv`
 ```bash
 chmod 700 cosine.py
 ./cosine.py
 ```
 
 ### Step :five:.:three:: Use Louvain Algorithm for Global and Rolling Topic Models
-- This step generates xxx global topic models and xxx rolling topic models in each 5-year rolling window moving forward monthly.
+- This step generates 12345 global topic models and 10 rolling topic models in each 5-year rolling window moving forward monthly.
 - This step then selects the topic models (both global and rolling) with xx-th percentile ... highest modularity
 - This step only saves the selected topic models; the other 9999 are discarded
 - In addition to storing the topic model with the 99-percentile modularity, we are also saving the most similar model to `clustering_C.csv`.
-
+```bash
+chmod 700 run_Rolling_Topic_Models.sh
+./run_Rolling_Topic_Models.sh
+```
 
 ## :file_folder: Processing Texts Based on Two New Topic Allocations
 - This step creates article-level topic frequencies and topic sentiments for the topic models (global and rolling) selected from the prior step. Then the article-level measures are aggregated to a daily level.
