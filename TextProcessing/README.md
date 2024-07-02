@@ -21,7 +21,7 @@ chmod 700 oil_article_selection.py
 ```
 
 ### Step :three:: Prepare the Document-Term Matrix (DTM) Files
-- `./clustering_C.csv` contains a list of xxx (441) words of manually-selected energy words.
+- `./clustering_C.csv` contains a list of 441 words of manually-selected energy words.
 - It also contains the topic labels from a previous version of the topic model (from [KC Fed RWP 20-20]([url](https://www.kansascityfed.org/research/research-working-papers/predicting-the-oil-market/))).
 
 - **Input:** `./clustering_C.csv`&`/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/oil_info`
