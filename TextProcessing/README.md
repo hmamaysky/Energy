@@ -164,7 +164,9 @@ chmod 700 date_fixed_measures.py
 - **Input:**
   - `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/concat/date_fixed_article_level_measures.csv`: The file with concatenated info.
 - **Output:**
-  - `../data/NYtime_daily_level_measures_C_2023.csv`: This CSV file will store the daily aggregated measures.
+  - `../data/NYtime_daily_level_measures_C_2023.csv`: This CSV file will store the daily aggregated measures from the old topic model.
+  - `../data/NYtime_daily_level_measures_C_2023_mod.csv`: This CSV file will store the daily aggregated measures from the topic model at 99th percentile for highest modularity.
+  - `../data/NYtime_daily_level_measures_C_2023_acc.csv`: This CSV file will store the daily aggregated measures from the topic model most similar to the old one.
 ```bash
 chmod 700 agg_daily.py
 ./agg_daily.py
