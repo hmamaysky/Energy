@@ -75,7 +75,7 @@ chmod 700 run_Rolling_Topic_Models.sh
 ./run_Rolling_Topic_Models.sh
 ```
 
-## :file_folder: Processing Texts Based on Two New Topic Allocations
+## :file_folder: Processing Texts Based on Different Topic Models
 - The following steps create article-level topic frequencies and topic sentiments for the selected topic models (both global and rolling) from the prior step. The article-level measures are then aggregated to a daily level.
 - All the article-level measures will be stored in separate folders:
   - `/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/article_measure`: an early version of the topic model named "clustering_C"
