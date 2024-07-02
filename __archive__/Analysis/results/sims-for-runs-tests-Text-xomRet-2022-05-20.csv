@@ -1,0 +1,37 @@
+,xomRet
+Runs,679
+Max Runs,690
+q,0.351
+# All/Txt,45/20
+nsims,2500
+commons,0.000-0.200-0.400-0.600-0.800-1.000
+Run0,11
+Run1,572
+Run2,259
+Run3,46
+Run4,5
+Run5,2
+Run0-sprob,0.048
+Run0-pval,(1.00)
+Run0-pval-sim,(1.00)
+Run0-common,[0.0]
+Run1-sprob,0.760
+Run1-pval,(0.00)
+Run1-pval-sim,(0.10)
+Run1-common,[0.6]
+Run2-sprob,0.336
+Run2-pval,(0.01)
+Run2-pval-sim,(0.16)
+Run2-common,[0.2]
+Run3-sprob,0.110
+Run3-pval,(1.00)
+Run3-pval-sim,(1.00)
+Run3-common,[0.0]
+Run4-sprob,0.032
+Run4-pval,(1.00)
+Run4-pval-sim,(1.00)
+Run4-common,[0.0]
+Run5-sprob,0.009
+Run5-pval,(0.95)
+Run5-pval-sim,(0.94)
+Run5-common,[0.0]

@@ -1,0 +1,37 @@
+,rdsaRet
+Runs,906
+Max Runs,990
+q,0.308
+# All/Txt,45/20
+nsims,2500
+commons,0.000-0.200-0.400-0.600-0.800-1.000
+Run0,84
+Run1,768
+Run2,346
+Run3,59
+Run4,7
+Run5,0
+Run0-sprob,0.076
+Run0-pval,(0.13)
+Run0-pval-sim,(0.36)
+Run0-common,[0.8]
+Run1-sprob,0.755
+Run1-pval,(0.06)
+Run1-pval-sim,(0.27)
+Run1-common,[0.2]
+Run2-sprob,0.291
+Run2-pval,(0.00)
+Run2-pval-sim,(0.15)
+Run2-common,[0.6]
+Run3-sprob,0.082
+Run3-pval,(1.00)
+Run3-pval-sim,(0.82)
+Run3-common,[0.4]
+Run4-sprob,0.021
+Run4-pval,(1.00)
+Run4-pval-sim,(1.00)
+Run4-common,[0.0]
+Run5-sprob,0.005
+Run5-pval,(0.99)
+Run5-pval-sim,(1.00)
+Run5-common,[0.0]

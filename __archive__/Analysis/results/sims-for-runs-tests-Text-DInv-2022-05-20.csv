@@ -1,0 +1,37 @@
+,DInv
+Runs,621
+Max Runs,690
+q,0.298
+# All/Txt,45/20
+nsims,2500
+commons,0.000-0.200-0.400-0.600-0.800-1.000
+Run0,69
+Run1,531
+Run2,170
+Run3,63
+Run4,4
+Run5,3
+Run0-sprob,0.084
+Run0-pval,(0.06)
+Run0-pval-sim,(0.24)
+Run0-common,[0.4]
+Run1-sprob,0.753
+Run1-pval,(0.14)
+Run1-pval-sim,(0.31)
+Run1-common,[0.2]
+Run2-sprob,0.280
+Run2-pval,(0.97)
+Run2-pval-sim,(0.81)
+Run2-common,[0.2]
+Run3-sprob,0.076
+Run3-pval,(0.06)
+Run3-pval-sim,(0.24)
+Run3-common,[0.4]
+Run4-sprob,0.019
+Run4-pval,(1.00)
+Run4-pval-sim,(1.00)
+Run4-common,[0.0]
+Run5-sprob,0.004
+Run5-pval,(0.37)
+Run5-pval-sim,(0.38)
+Run5-common,[0.0]

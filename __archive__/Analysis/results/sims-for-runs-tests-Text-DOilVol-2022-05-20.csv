@@ -1,0 +1,37 @@
+,DOilVol
+Runs,657
+Max Runs,690
+q,0.334
+# All/Txt,45/20
+nsims,2500
+commons,0.000-0.200-0.400-0.600-0.800-1.000
+Run0,33
+Run1,512
+Run2,267
+Run3,89
+Run4,6
+Run5,0
+Run0-sprob,0.058
+Run0-pval,(0.86)
+Run0-pval-sim,(0.64)
+Run0-common,[0.4]
+Run1-sprob,0.759
+Run1-pval,(0.84)
+Run1-pval-sim,(0.64)
+Run1-common,[0.6]
+Run2-sprob,0.319
+Run2-pval,(0.00)
+Run2-pval-sim,(0.11)
+Run2-common,[0.4]
+Run3-sprob,0.098
+Run3-pval,(0.00)
+Run3-pval-sim,(0.24)
+Run3-common,[1.0]
+Run4-sprob,0.028
+Run4-pval,(1.00)
+Run4-pval-sim,(1.00)
+Run4-common,[0.0]
+Run5-sprob,0.007
+Run5-pval,(0.99)
+Run5-pval-sim,(0.99)
+Run5-common,[0.0]
