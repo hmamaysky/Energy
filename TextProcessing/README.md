@@ -70,6 +70,9 @@ chmod 700 cosine.py
 - Next, it selects the topic models (both global and rolling) that fall in the 99th percentile for highest modularity.
 - Only the selected topic models are saved; the other 12,344 models are discarded.
 - In addition to storing the topic model with the 99th percentile modularity, we also save the model most similar to `clustering_C.csv`.
+- **Output:**
+  - `./clustering_C_mod.csv`: The global topic model that falls in the 99th percentile for highest modularity.
+  - `./clustering_C_acc.csv`: The global topic model most similar to the old topic "clustering_C".
 ```bash
 chmod 700 run_Rolling_Topic_Models.sh
 ./run_Rolling_Topic_Models.sh
