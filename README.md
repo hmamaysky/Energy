@@ -16,6 +16,7 @@ Step 2: Run analysis, first in-sample, then OOS
 Partial output of analysis:
 * `data/` -- data generated after all the processing steps, which is then used in the IS and OOS analysis (after Step 1 is done)
 * Intermediate data generated during Step 1 are stored in `/shared/share_mamaysky-glasserman/energy_drivers/`
+  *  `README` file on the grid contains additional information about directory structure
   * `2023/` -- contains the intermediate data for round 2 of MS submission
     * contains the rolling topic model intermediate data
     * contains the final OOS analysis results
