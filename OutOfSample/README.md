@@ -40,3 +40,5 @@ NOTE: No need to concat all files
 ./agg_daily.py --concatPath=/shared/share_mamaysky-glasserman/energy_drivers/2023/DataProcessing/rolling_combined_info --local_topic_model=True
 ```
 
+### Prepare the rolling text variables for OOS analysis
+Go through `train_demo.ipynb` to generate results stored under `./res_Forward_Lasso`. Then run through `Main_Table.ipynb` to generate the tables.
