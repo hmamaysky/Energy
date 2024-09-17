@@ -1,4 +1,5 @@
 setwd("C:/Users/j1kxb09/OneDrive - FR Banks/Documents/MNSC meetings/data")
+## this is a 1,579 x 441 (# topics x # words) matrix (currently in Energy/topics/ directory)
 topic <- read.csv("topicVecs (3).csv", stringsAsFactors = FALSE)
 topic <- subset(topic, select = -X)
 #install.packages("ggpubr")
