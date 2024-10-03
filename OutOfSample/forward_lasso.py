@@ -298,7 +298,7 @@ if __name__ == '__main__':
     opt = parse_option()
     print(opt)
     
-    directory_name = f"wk:{opt.wk}_window:{opt.window}_frequency:{opt.frequency}_cvs:{opt.cvs}_rolling:{opt.rolling}_select_significant:{opt.select_significant}_num_nontext_var:{opt.num_nontext_var}_num_text_var:{opt.num_text_var}_normalize:{opt.normalize}"
+    directory_name = f"wk_{opt.wk}_window_{opt.window}_frequency_{opt.frequency}_cvs_{opt.cvs}_rolling_{opt.rolling}_select_significant_{opt.select_significant}_num_nontext_var_{opt.num_nontext_var}_num_text_var_{opt.num_text_var}_normalize_{opt.normalize}"
     directory_path = os.path.join(f'res_{opt.model_name}', directory_name)
     os.makedirs(directory_path, exist_ok=True)
     
