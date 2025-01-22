@@ -962,3 +962,48 @@ def plot_depvar_corrs():
     ## show the dates of the analysis too
     print('From {} to {}'.format(dd['date_Tue'][0],dd['date_Tue'][1]))
     
+
+############################## the regression analysis ##############################
+
+class EnergyBetas:
+
+    def __init__(self,sdate='2000-01-01'):
+
+        self.sdate = sdate
+        self.rets_map = {'XLE':'Energy',
+                         'XLB':'Basics / materials',
+                         'XLI':'Industrials',
+                         'XLC':'Communications',
+                         'XLP':'Consumer staples',
+                         'XLF':'Financials',
+                         'XLV':'Healthcare',
+                         'XLK':'Technology',
+                         'XLRE':'REITs',
+                         'XLU':'Utilities',
+                         'XLY':'Consumer discretionary',
+                         'SPY':'S&P 500',
+                         'IEF':'7-10-yr Treasury',
+                         'VTV':'Value stocks',
+                         'MTUM':'Momentum stocks'}
+        
+        ## get the returns data
+        print('Getting returns data...')
+        tiks = [(el+' equity','DAY_TO_DAY_TOT_RETURN_GROSS_DVDS',el) for el in self.rets_map.keys()]
+        self.rets = pyh.bdh_data(tiks,start_date=self.sdate.replace('-',''),
+                                 periodicity='MONTHLY')
+
+        ## get the levels data, including generic 3-month T-bill
+        print('Getting levels data...')
+        levels = [('CL1 comdty','PX_LAST','Oil price'),('GB3 govt','PX_LAST','RF')]
+        self.levels = pyh.bdh_data(levels,start_date=self.sdate.replace('-',''),
+                                   periodicity='MONTHLY')
+        
+    def __repr__(self):
+
+        ret_str = f'sdate: {self.sdate}\n'
+        for el in ['rets_map','rets']:
+            if hasattr(self,el):
+                ret_str += f'{el} {type(getattr(self,el))}: has {len(getattr(self,el))} entries/rows\n'
+
+        return ret_str
+        

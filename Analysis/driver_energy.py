@@ -40,3 +40,5 @@ prun = oos.prob_of_run(0.282,3,7,verbose=True)
 print(prun)
 # %% some data plots
 en.plot_depvar_corrs()
+# %% do the beta analysis for sectors and other ETFs
+eb = en.EnergyBetas()
