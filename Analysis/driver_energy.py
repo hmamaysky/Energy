@@ -43,4 +43,4 @@ en.plot_depvar_corrs()
 # %% do the beta analysis for sectors and other ETFs
 eb = en.EnergyBetas()
 eb.calc()
-eb.regs()
+eb.regs(saveout=True)

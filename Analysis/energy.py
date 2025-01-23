@@ -1012,7 +1012,7 @@ class EnergyBetas:
                          'IWM':'Russell 2000',
                          'VXUS':'Int\'l ex-US',
                          'VGK':'Europe',
-                         'EEM':'Emerging Markets',
+                         'EEM':'Emerging markets',
                          #'MDY':'S&P MidCap 400',
                          'VTV':'Value',
                          'MTUM':'Momentum'}
@@ -1057,7 +1057,7 @@ class EnergyBetas:
         
         (1+self.factors/100).cumprod().plot(subplots=True,figsize=(8,6),layout=(4,2))
 
-    def regs(self):
+    def regs(self,saveout=False):
         '''
         Run regressions to show oil betas.
         '''
@@ -1067,8 +1067,8 @@ class EnergyBetas:
         ## get the factors (the FF ones and oil)
         factors = pd.concat([self.factors[[el for el in self.factors.columns if el != 'RF']],
                              self.rets_mo.Oil],axis=1)
-
         factors = factors.apply(lambda xx: xx * factors['Mkt-RF'].std() / xx.std(),axis=0)
+        print(factors.std())
         
         ## add constant
         factors['const'] = 1
@@ -1122,6 +1122,11 @@ class EnergyBetas:
         ax = sns.heatmap(allvals,annot=allres,fmt='s')
         ax.xaxis.tick_top()
         ax.set_title('Traded securities: factor and oil betas',y=1.06,fontsize=14)
-        ax.text(0,-0.05,transform=ax.transAxes,fontsize=12,
+        ax.text(-0.1,-0.05,transform=ax.transAxes,fontsize=12,
                 s=f'Monthly data {self.rets_mo.index[0].date()} to {self.rets_mo.index[-1].date()}' + \
-                ' | Factor vols normalized to equal Mkt-Rf')
+                ' | Factor vols normalized to equal vol of Mkt-Rf')
+
+        if saveout:
+            fname = __out_dir__+'/sector-and-asset-class-factor-and-oil-betas'+str(date.today())+'.pdf'
+            print('Saving to',fname)
+            plt.savefig(fname,bbox_inches='tight')
