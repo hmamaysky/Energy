@@ -8,6 +8,7 @@ from scipy.stats import binom, norm
 from scipy.linalg import cholesky
 from collections import Counter
 from utils import pyhelp as pyh
+import statsmodels.api as sm
 
 __text_dir__ = '/shared/share_mamaysky-glasserman/energy_drivers/2020-11-16'
 __out_dir__ = os.getenv('HOME')+'/code/Energy/Analysis/results'
@@ -969,41 +970,158 @@ class EnergyBetas:
 
     def __init__(self,sdate='2000-01-01'):
 
+        self.read_bbg(sdate)
+        self.read_french(sdate)
+        
+    def read_french(self,sdate):
+
+        f5 = pyh.FrenchReader.read_five_factor()
+        mom = pyh.FrenchReader.read_momentum()
+
+        ## drop early dates
+        f5 = f5[f5.index >= sdate]
+        mom = mom[mom.index >= sdate]
+        momf = mom[['PRIOR 8','PRIOR 9','Hi PRIOR']].mean(axis=1) - \
+            mom[['Lo PRIOR','PRIOR 2','PRIOR 3']].mean(axis=1)
+
+        ## agg to monthly
+        f5 = f5.resample('ME').apply(lambda xx: (1+xx/100).prod()*100 - 100)
+        momf = momf.resample('ME').apply(lambda xx: (1+xx/100).prod()*100 - 100)
+        momf.name = 'UMD'
+        
+        ## combine data
+        self.factors = pd.concat([f5,momf],axis=1)
+
+    def read_bbg(self,sdate):
+
         self.sdate = sdate
         self.rets_map = {'XLE':'Energy',
-                         'XLB':'Basics / materials',
+                         'XLB':'Basics/materials',
                          'XLI':'Industrials',
                          'XLC':'Communications',
-                         'XLP':'Consumer staples',
+                         'XLP':'Cons staples',
                          'XLF':'Financials',
                          'XLV':'Healthcare',
                          'XLK':'Technology',
                          'XLRE':'REITs',
                          'XLU':'Utilities',
-                         'XLY':'Consumer discretionary',
-                         'SPY':'S&P 500',
-                         'IEF':'7-10-yr Treasury',
-                         'VTV':'Value stocks',
-                         'MTUM':'Momentum stocks'}
+                         'XLY':'Cons discretionary',
+                         #'SPY':'S&P 500',
+                         #'IEF':'7-10-yr Treasury',
+                         'KBE':'Banks',
+                         'IWM':'Russell 2000',
+                         'VXUS':'Int\'l ex-US',
+                         'VGK':'Europe',
+                         'EEM':'Emerging Markets',
+                         #'MDY':'S&P MidCap 400',
+                         'VTV':'Value',
+                         'MTUM':'Momentum'}
         
         ## get the returns data
-        print('Getting returns data...')
+        print('BBG: Getting returns data...')
         tiks = [(el+' equity','DAY_TO_DAY_TOT_RETURN_GROSS_DVDS',el) for el in self.rets_map.keys()]
-        self.rets = pyh.bdh_data(tiks,start_date=self.sdate.replace('-',''),
-                                 periodicity='MONTHLY')
+        self.rets_mo = pyh.bdh_data(tiks,start_date=self.sdate.replace('-',''),
+                                    periodicity='MONTHLY')
 
         ## get the levels data, including generic 3-month T-bill
-        print('Getting levels data...')
-        levels = [('CL1 comdty','PX_LAST','Oil price'),('GB3 govt','PX_LAST','RF')]
-        self.levels = pyh.bdh_data(levels,start_date=self.sdate.replace('-',''),
+        print('BBG: Getting levels data...')
+        levels = [('CL1 comdty','PX_LAST','Oil price'),('GB1M index','PX_LAST','RF')]
+        sdate_levels = (pd.Timestamp(sdate) - pd.Timedelta(days=32)).date()
+        self.levels = pyh.bdh_data(levels,start_date=str(sdate_levels).replace('-',''),
                                    periodicity='MONTHLY')
+
+    def calc(self):
+
+        print('Calculting some relationships...')
         
+        ## add to returns data
+        self.rets_mo['Oil'] = self.levels['Oil price'].pct_change(1)*100
+        self.rets_mo['RF'] = self.levels.RF.shift(1)/12
+
+        print('Full sample annualized vols:')
+        print(self.rets_mo.std()*np.sqrt(12))
+
     def __repr__(self):
 
         ret_str = f'sdate: {self.sdate}\n'
-        for el in ['rets_map','rets']:
+        for el in ['rets_map','rets_mo','levels','factors']:
             if hasattr(self,el):
                 ret_str += f'{el} {type(getattr(self,el))}: has {len(getattr(self,el))} entries/rows\n'
 
         return ret_str
         
+    def plot(self):
+        '''
+        Show cumulative returns of FF6 factors.
+        '''
+        
+        (1+self.factors/100).cumprod().plot(subplots=True,figsize=(8,6),layout=(4,2))
+
+    def regs(self):
+        '''
+        Run regressions to show oil betas.
+        '''
+
+        print('Running OLS factor regressions...')
+
+        ## get the factors (the FF ones and oil)
+        factors = pd.concat([self.factors[[el for el in self.factors.columns if el != 'RF']],
+                             self.rets_mo.Oil],axis=1)
+
+        factors = factors.apply(lambda xx: xx * factors['Mkt-RF'].std() / xx.std(),axis=0)
+        
+        ## add constant
+        factors['const'] = 1
+        print(factors.std())
+        
+        ## run all regressions
+        allres = {}
+        for tik in [el for el in self.rets_mo.columns if el not in ['Oil','RF']]:
+
+            ## get excess returns and drop NAs
+            exret = self.rets_mo[tik] - self.factors.RF
+            alld = pd.concat([factors,exret],axis=1).dropna()
+            
+            ## get the Xs and Ys
+            XX = alld.iloc[:,:-1]
+            yy = alld.iloc[:,-1]
+
+            ## run OLS with Newey-West with lags = int(TT^0.25);
+            ##   >> for the functional form, see Hoechle, 2007, "Robust Standard Errors," Stata
+            n_lags = int(4*(len(yy)/100)**(2/9))
+            print(f'\t{tik}: N-W lags={n_lags} start={XX.index[0].date()}...')
+
+            ## model w/ oil
+            model = sm.OLS(yy,XX)
+            res = model.fit(cov_type='HAC',cov_kwds={'maxlags':n_lags})
+
+            ## model w/out oil
+            model_wo = sm.OLS(yy,XX[[el for el in XX.columns if el != 'Oil']])
+            res_wo = model_wo.fit()
+           
+            ## save results
+            get_star = lambda pv: '***' if pv <= 0.01 else '**' if pv <= 0.05 else '*' if pv <= 0.1 else ''
+            store_params = [f'{coeff:.3f}{get_star(pval)}' for coeff,pval in zip(res.params,res.pvalues)]
+            allres[tik] = pd.Series(store_params,index=res.params.index)
+            allres[tik]['R2'] = f'{res.rsquared:.3f}'
+            allres[tik]['Del R2'] = (res.rsquared - res_wo.rsquared).round(3)
+
+        ## combine results & drop some rows
+        allres = pd.DataFrame.from_dict(allres,orient='index')
+        allres = allres[[el for el in allres.columns if el not in ['const','Del R2']]]
+        allres = allres.sort_values('Oil',ascending=False,
+                                    key=lambda xx: xx.str.replace('*','').astype(float))
+
+        ## rename indexes & reduce to values
+        allres.index = [self.rets_map[el] for el in allres.index]
+        allvals = allres.apply(lambda xx: xx.str.replace('*','').astype(float),axis=1)
+        print(allvals)
+
+        ## plot
+        plt.figure(figsize=(9.5,7))
+        ax = sns.heatmap(allvals,annot=allres,fmt='s')
+        ax.xaxis.tick_top()
+        ax.set_title('Traded securities: factor and oil betas',y=1.06,fontsize=14)
+        ax.text(0,-0.05,transform=ax.transAxes,fontsize=12,
+                s=f'Monthly data {self.rets_mo.index[0].date()} to {self.rets_mo.index[-1].date()}' + \
+                ' | Factor vols normalized to equal Mkt-Rf')
