@@ -6,22 +6,29 @@ __code_dir__ = '~/code/energy/'
 class PortEngine:
 
     def __init__(self):
-
         self.fname_map = {'text':'0-1','nontext':'1-0','both':'1-1'}
         self.select_end = '2009-11-30'
         self.eval_start = '2010-01-01'
 
         ## Shell PLC trades on Euronext Amsterdam; BP is the ADR return; FutRet is return on
-        ## USO ETF; XOM is from NYSE (the data are from Bloomberg). These are daily returns.
+        ## USO ETF; XOM is from NYSE (the data are from Bloomberg). These are daily returns
+        ## including dividends. Gb03 is the 3-month T-bill rate. All data are in percent.
         fname = __code_dir__+'Analysis/support/bbg_energy_with_divd_rets.csv'
         print('Reading',fname)
-        self.rets = pd.read_csv(fname,parse_dates=['Dates'],index_col=0)
+        self.mktd = pd.read_csv(fname,parse_dates=['Dates'],index_col=0)
+        self.dpy = 365.25/self.mktd.index.to_series().diff().dt.days.mean()
 
         ## line up with fwd returns & double check timing
-        self.rets_fwd1d = self.rets.shift(-1)
-        assert self.rets_fwd1d.xomRet['2025-05-08'] == self.rets.xomRet['2025-05-09']
-
+        self.rets_fwd1d = self.mktd.shift(-1)
+        assert self.rets_fwd1d.xomRet['2025-05-08'] == self.mktd.xomRet['2025-05-09']
+        self.rets_fwd1d['gb03'] = self.mktd.gb03/self.dpy ## no shifts to the 3-month T-bill rate
+        
     def read_lasso_file(self,type,var):
+        '''
+        Note: The first forecast in these files is from 2003-05-09 (Fri). This must be because we
+        need three observations to have a tercile classification and with a 5-year lookback these
+        must be the last Friday in April 2023, then Fri 2003-05-02 and 2003-05-09.
+        '''        
 
         assert type in self.fname_map.keys()
         
@@ -34,15 +41,13 @@ class PortEngine:
 
         repstr = ''
         
-        for el in ['fname_map','select_end','eval_start']:
+        for el in ['fname_map','select_end','eval_start','dpy']:
             repstr += f'{el}: {getattr(self,el)}\n'
 
-        for el in ['rets','rets_fwd1d']:
+        for el in ['mktd','rets_fwd1d']:
             repstr += f'{el}: {getattr(self,el).shape}\n'
             
         return repstr
-
-    
     
     ########## portfolio testing ##########
 
@@ -57,7 +62,7 @@ class PortEngine:
         '''
 
         ## sanity checks
-        assert retser in self.rets.columns
+        assert retser in self.mktd.columns
         
         ## get the lasso signals file
         thed = self.read_lasso_file(type,var)
@@ -65,50 +70,66 @@ class PortEngine:
         usesd = thed.true.std()
         assert (level-0.2*usesd) <= thed.true.mean() <= (level+0.2*usesd) ## make sure have the correct level
         
-        ## get weights and merge data
-        portd = pd.DataFrame(self.rets_fwd1d[retser][(self.rets_fwd1d.index >= self.eval_start) &
-                                                     (self.rets_fwd1d.index <= thed.index[-1])])
-        portd['weights'] = 0.
+        ## get the excess returns and then calculate the trading weights
+        ##idx = (self.rets_fwd1d.index >= self.eval_start) & (self.rets_fwd1d.index <= thed.index[-1])
+        idx = (self.rets_fwd1d.index >= thed.index[0]) & (self.rets_fwd1d.index <= thed.index[-1])
+        portd = pd.DataFrame(self.rets_fwd1d[retser][idx] - self.rets_fwd1d.gb03[idx],columns=[retser])
+        portd['weights'] = np.nan
 
-        ## status
+        ## get the signal
+        ## used = thed[thed[f'lookback_tercile_lag_{lag:.1f}yr'] == tercile]
+        portd['signal'] = thed['pred'] - level
+
+        ## print status
         weight_AR = 0.
         print(f'Portfolio simulation for {retser} using {type} model for {var} AR={weight_AR}')
 
         ## set the weights from the selected signals
-        used = thed
-        ## used = thed[thed[f'lookback_tercile_lag_{lag:.1f}yr'] == tercile]
         for ii,tt in enumerate(portd.index):
 
-            change_to_weight = 0
-
             ## if date exists in the signal data, then set the weights from it
-            if tt in used.index:
-                if used.loc[tt,'true'] > level + thresh:
+            if not np.isnan(portd.signal[tt]):
+                if portd.signal[tt] > +thresh:
                     portd.loc[tt,'weights'] = +1
-                elif used.loc[tt,'true'] < level - thresh:
+                elif portd.signal[tt] < -thresh:
                     portd.loc[tt,'weights'] = -1
 
             ## after first period, weight persists at AR=0.9 plus add update
-            if portd.loc[tt,'weights'] == 0 and ii > 0:
-                portd.loc[tt,'weights'] = portd.weights.iloc[ii-1]
+            if np.isnan(portd.loc[tt,'weights']):
+                if ii > 0:
+                    portd.loc[tt,'weights'] = portd.weights.iloc[ii-1]
+                else:
+                    portd.loc[tt,'weights'] = 0
+
             #if ii == 0:
             #    portd.loc[tt,'weights'] = change_to_weight
             #else:
             #    portd.loc[tt,'weights'] = weight_AR * portd.weights.iloc[ii-1] + change_to_weight
 
         ## calculate each day's portfolio return
-        portd.weights = portd.weights.ffill()
+        assert not portd.weights.isna().any()
         port_rets = portd.weights * portd[retser]
 
+        sr = port_rets.mean()/port_rets.std()*np.sqrt(self.dpy)
+        print(f'Port rets SR = {sr}')
+
+        return 1, sr
+        
         ## get the underlying return series
         jnt_rets = pd.DataFrame({retser:portd[retser],'port':port_rets})
-
-        fig, axs = plt.subplots(2,1)
-        (1+jnt_rets/100).cumprod().plot(title=f'Cumulative returns for {retser} using {var}\n' + \
-                                        f'signal {type} with lag={lag} and tercile={tercile}',ax=axs[0])
-        portd.weights.plot(ax=axs[1])
+        cum_rets = (1+jnt_rets/100).cumprod()
+        cum_rets.columns = [f'{el}: {cum_rets[el].iloc[-1]:.2f} ' + \
+                            f'SR: {jnt_rets[el].mean()/jnt_rets[el].std()*np.sqrt(self.dpy):.3f}'
+                            for el in jnt_rets.columns]
         
-        return thed, portd.weights
+        fig, axs = plt.subplots(2,1,figsize=(8,6))
+        cum_rets.plot(title=f'Cumulative excess returns for {retser} using {var}\n' + \
+                      f'signal {type} with lag={lag} and tercile={tercile}',
+                      ax=axs[0],xlabel='')
+        portd[['weights','signal']].ffill().clip(upper=2,lower=-2).plot(ax=axs[1],xlabel='')
+        axs[1].axhline(0,color='lightgrey',linestyle='--')
+        
+        return thed, portd.weights, sr
         
     ########## replicate stuff in paper to make sure data/code are working ##########
     
