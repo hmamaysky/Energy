@@ -51,7 +51,7 @@ class PortEngine:
     
     ########## portfolio testing ##########
 
-    def port_test(self,type,var,retser,lag,tercile,thresh=2):
+    def port_test(self,type,var,retser,lag,tercile,thresh=2,show_plots=True):
         '''
         type -- which signal to use: text, nontext, both
         var -- which variable's lasso model to use, e.g. FutRet, DSpot, etc.
@@ -59,6 +59,7 @@ class PortEngine:
         lag -- which lag tercile to use
         tercile -- value tercile at lag should have to trade
         thresh -- threshold of forecast for taking a position
+        show_plots -- do the visualization or not
         '''
 
         ## sanity checks
@@ -113,21 +114,21 @@ class PortEngine:
         sr = port_rets.mean()/port_rets.std()*np.sqrt(self.dpy)
         print(f'Port rets SR = {sr}')
 
-        return 1, sr
+        if show_plots:
         
-        ## get the underlying return series
-        jnt_rets = pd.DataFrame({retser:portd[retser],'port':port_rets})
-        cum_rets = (1+jnt_rets/100).cumprod()
-        cum_rets.columns = [f'{el}: {cum_rets[el].iloc[-1]:.2f} ' + \
-                            f'SR: {jnt_rets[el].mean()/jnt_rets[el].std()*np.sqrt(self.dpy):.3f}'
-                            for el in jnt_rets.columns]
-        
-        fig, axs = plt.subplots(2,1,figsize=(8,6))
-        cum_rets.plot(title=f'Cumulative excess returns for {retser} using {var}\n' + \
-                      f'signal {type} with lag={lag} and tercile={tercile}',
-                      ax=axs[0],xlabel='')
-        portd[['weights','signal']].ffill().clip(upper=2,lower=-2).plot(ax=axs[1],xlabel='')
-        axs[1].axhline(0,color='lightgrey',linestyle='--')
+            ## get the underlying return series
+            jnt_rets = pd.DataFrame({retser:portd[retser],'port':port_rets})
+            cum_rets = (1+jnt_rets/100).cumprod()
+            cum_rets.columns = [f'{el}: {cum_rets[el].iloc[-1]:.2f} ' + \
+                                f'SR: {jnt_rets[el].mean()/jnt_rets[el].std()*np.sqrt(self.dpy):.3f}'
+                                for el in jnt_rets.columns]
+
+            fig, axs = plt.subplots(2,1,figsize=(8,6))
+            cum_rets.plot(title=f'Cumulative excess returns for {retser} using {var}\n' + \
+                          f'signal {type} with lag={lag} and tercile={tercile}',
+                          ax=axs[0],xlabel='')
+            portd[['weights','signal']].ffill().clip(upper=2,lower=-2).plot(ax=axs[1],xlabel='')
+            axs[1].axhline(0,color='lightgrey',linestyle='--')
         
         return thed, portd.weights, sr
         
