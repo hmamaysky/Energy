@@ -51,7 +51,7 @@ class PortEngine:
     
     ########## portfolio testing ##########
 
-    def port_test(self,type,var,retser,lag,tercile,thresh=2,show_plots=True):
+    def port_test(self,type,var,retser,lag,tercile,thresh=2,signal_var='pred',show_plots=True):
         '''
         type -- which signal to use: text, nontext, both
         var -- which variable's lasso model to use, e.g. FutRet, DSpot, etc.
@@ -60,6 +60,8 @@ class PortEngine:
         tercile -- value tercile at lag should have to trade
         thresh -- threshold of forecast for taking a position
         show_plots -- do the visualization or not
+        signal_var -- one of pred, mean, true (forward looking) as the signal to use in the
+                      trading simulation
         '''
 
         ## sanity checks
@@ -131,7 +133,24 @@ class PortEngine:
             axs[1].axhline(0,color='lightgrey',linestyle='--')
         
         return thed, portd.weights, sr
+
+    def port_test_matrix(self,signal_var):
+        '''
+        signal_var -- the signal (mean, pred, true -- forward looking) to use in trade simulation
+        '''
         
+        forecast_vars = ['FutRet','bpRet','rdsaRet','xomRet','DSpot']
+        dep_vars = ['FutRet','bpRet','rdsaRet','xomRet']
+        res = pd.DataFrame(np.nan,index=forecast_vars,columns=dep_vars)
+        for forecast in forecast_vars:
+            for dep in dep_vars:
+                _, _, sr = self.port_test('text',forecast,dep,4,2,0,signal_var=signal_var,show_plots=False)
+                res.loc[forecast,dep] = sr
+        
+        print(res)
+        
+
+    
     ########## replicate stuff in paper to make sure data/code are working ##########
     
     def get_forecast_and_oosR2(used,wt):
@@ -190,7 +209,7 @@ class PortEngine:
         
         return used
 
-    def check_true_rets(self,var):
+    def check_forward_and_mean_returns(self,var):
         '''
         Sanity check on true returns.
         '''
@@ -205,16 +224,26 @@ class PortEngine:
 
         ## calculate fwd returns to double check
         if var not in ['FutRet','xomRet', 'rdsaRet', 'bpRet']: return
+        level = 100 if var == 'FutRet' else 0 ## adjust levels for FutRet only
 
         ## get the fwd returns to double check
         for tt in thet.index:
             rets_fwd1d = self.rets_fwd1d[var].loc[(tt+pd.Timedelta(4,'w')):(tt+pd.Timedelta(12,'w'))]
-            thet.loc[tt,'Check'] = (1+rets_fwd1d/100).prod()*100
+            thet.loc[tt,'check fwd'] = (1+rets_fwd1d/100).prod()*100 - (100 if var != 'FutRet' else 0)
 
-        ## adjust the level (only FutRet shows gross returns)
-        if var != 'FutRet':
-            thet['Check'] -= 100
-            
-        thet[['true','Check']].plot(title=f'{var}')
-
+        ## get the historical five-year returns to double check
+        ## adjust for: 8 week returns; FutRet level; mean level does not have dividends
+        ## but the series I am using from BBG contain dividends
+        dvdyld = 6
+        thet['check mean'] = self.mktd[var].rolling(248*5).mean()*40 \
+            + (100 if var == 'FutRet' else 0) \
+            - (dvdyld*40/260 if var != 'FutRet' else 0)
         
+        ##
+        ##  plotting
+        ##
+        fig, axs = plt.subplots(2,1,figsize=(7,5))
+        thet[['true','check fwd']].plot(title=f'{var}: Forward 8-week ahead returns',ax=axs[0])
+        thet[['mean','check mean']].plot(title=f'{var}: Backward 5-year mean of 8-week returns' + \
+                                         f' assumed {dvdyld}% divd',ax=axs[1])
+        plt.tight_layout()
