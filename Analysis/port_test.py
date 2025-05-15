@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-__code_dir__ = '~/code/energy/'
+import os
+__code_dir__ = f'c:/users/{os.getenv("USERNAME")}/code/energy/'
 
 class PortEngine:
 
@@ -18,10 +19,12 @@ class PortEngine:
         print('Reading',fname)
         self.mktd = pd.read_csv(fname,parse_dates=['Dates'],index_col=0)
         self.dpy = 365.25/self.mktd.index.to_series().diff().dt.days.mean()
-
+        assert 258 < self.dpy < 262 ## assert returns are daily
+        
         ## line up with fwd returns & double check timing
         self.rets_fwd1d = self.mktd.shift(-1)
         assert self.rets_fwd1d.xomRet['2025-05-08'] == self.mktd.xomRet['2025-05-09']
+        assert self.rets_fwd1d.FutRet['2023-02-20'] == self.mktd.FutRet['2023-02-21']
         self.rets_fwd1d['gb03'] = self.mktd.gb03/self.dpy ## no shifts to the 3-month T-bill rate
         
     def read_lasso_file(self,type,var):
@@ -52,15 +55,16 @@ class PortEngine:
     
     ########## portfolio testing ##########
 
-    def port_test(self,type,signal_var,retser,thresh=0,signal_type='pred',show_plots=True):
+    def port_test(self,type,signal_var,retser,thresh=0,signal_type='pred',show_plots=True,saveout=False):
         '''
         type -- which signal to use: text, nontext, both
         signal_var -- which variable's lasso model to use, e.g. FutRet, DSpot, etc.
         retser -- which market to trade, one of FutRet, xomRet, rdsaRet, and bpRet
         thresh -- threshold of forecast for taking a position
-        show_plots -- do the visualization or not
         signal_type -- one of pred, mean, true (forward looking) as the signal to use in the
-                       trading simulation
+                       trading simulation 
+        show_plots -- do the visualization or not
+        saveout -- save the output to a file?
         '''
 
         ## sanity checks
@@ -73,7 +77,6 @@ class PortEngine:
         assert (level-0.2*usesd) <= thed.true.mean() <= (level+0.2*usesd) ## make sure have the correct level
         
         ## get the excess returns and then calculate the trading weights
-        ##idx = (self.rets_fwd1d.index >= self.eval_start) & (self.rets_fwd1d.index <= thed.index[-1])
         idx = (self.rets_fwd1d.index >= thed.index[0]) & (self.rets_fwd1d.index <= thed.index[-1])
         portd = pd.DataFrame(self.rets_fwd1d[retser][idx] - self.rets_fwd1d.gb03[idx],columns=[retser])
         portd['weights'] = np.nan
@@ -131,12 +134,18 @@ class PortEngine:
             num_trades = portd.weights.diff()[portd.weights.diff() != 0].shape[0]
             axs[1].set_title(f'Number of trades per year = {num_trades/num_years:.1f}')
             plt.tight_layout()
+
+            if saveout:
+                fname = __code_dir__ + f'Analysis/results/port-test-{type}-{signal_var}-{retser}.pdf'
+                print('Saving figure to',fname)
+                plt.savefig(fname,bbox_inches='tight')
             
         return thed, portd.weights, sr(portd[retser]), sr(port_rets)
 
-    def port_test_matrix(self,signal_type):
+    def port_test_matrix(self,signal_type,saveout):
         '''
         signal_type -- the signal (mean, pred, true -- forward looking) to use in trade simulation
+        saveout -- save the output?
         '''
         
         forecast_vars = ['FutRet','bpRet','rdsaRet','xomRet','DSpot']
@@ -147,7 +156,8 @@ class PortEngine:
         resl = pd.Series(np.nan,index=dep_vars)
         for forecast in forecast_vars:
             for dep in dep_vars:
-                _, _, srl, sr = self.port_test('text',forecast,dep,0,signal_type=signal_type,show_plots=False)
+                _, _, srl, sr = self.port_test('text',forecast,dep,thresh=0,
+                                               signal_type=signal_type,show_plots=False)
                 resl[dep] = srl
                 res.loc[forecast,dep] = sr
 
@@ -156,10 +166,16 @@ class PortEngine:
         print(res)
 
         ## f'Signal x Return analysis using signal type {signal_type}',
+        plt.figure()
         ax = sns.heatmap(res,annot=True,fmt='.3f',vmin=-0.2,vmax=0.8,cmap='RdYlGn')
         ax.set_ylabel('Signal')
         ax.set_xlabel('Return series')
         ax.set_title(f'SR of asset classes as function of signal for "{signal_type}"')
+
+        if saveout:
+            fname = __code_dir__ + f'Analysis/results/port-matrix-using-signal-{signal_type}.pdf'
+            print('Saving figure to',fname)
+            plt.savefig(fname,bbox_inches='tight')
 
         return res
         
