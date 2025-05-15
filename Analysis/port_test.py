@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 __code_dir__ = '~/code/energy/'
 
 class PortEngine:
@@ -51,25 +52,23 @@ class PortEngine:
     
     ########## portfolio testing ##########
 
-    def port_test(self,type,var,retser,lag,tercile,thresh=2,signal_var='pred',show_plots=True):
+    def port_test(self,type,signal_var,retser,thresh=0,signal_type='pred',show_plots=True):
         '''
         type -- which signal to use: text, nontext, both
-        var -- which variable's lasso model to use, e.g. FutRet, DSpot, etc.
+        signal_var -- which variable's lasso model to use, e.g. FutRet, DSpot, etc.
         retser -- which market to trade, one of FutRet, xomRet, rdsaRet, and bpRet
-        lag -- which lag tercile to use
-        tercile -- value tercile at lag should have to trade
         thresh -- threshold of forecast for taking a position
         show_plots -- do the visualization or not
-        signal_var -- one of pred, mean, true (forward looking) as the signal to use in the
-                      trading simulation
+        signal_type -- one of pred, mean, true (forward looking) as the signal to use in the
+                       trading simulation
         '''
 
         ## sanity checks
         assert retser in self.mktd.columns
         
         ## get the lasso signals file
-        thed = self.read_lasso_file(type,var)
-        level = 100 if var == 'FutRet' else 0 ## levels across series
+        thed = self.read_lasso_file(type,signal_var)
+        level = 100 if signal_var == 'FutRet' else 0 ## levels across series
         usesd = thed.true.std()
         assert (level-0.2*usesd) <= thed.true.mean() <= (level+0.2*usesd) ## make sure have the correct level
         
@@ -80,12 +79,11 @@ class PortEngine:
         portd['weights'] = np.nan
 
         ## get the signal
-        ## used = thed[thed[f'lookback_tercile_lag_{lag:.1f}yr'] == tercile]
-        portd['signal'] = thed['pred'] - level
+        portd['signal'] = thed[signal_type] - level
 
         ## print status
         weight_AR = 0.
-        print(f'Portfolio simulation for {retser} using {type} model for {var} AR={weight_AR}')
+        print(f'Portfolio simulation for {retser} using {type} model for {signal_var} AR={weight_AR}')
 
         ## set the weights from the selected signals
         for ii,tt in enumerate(portd.index):
@@ -102,55 +100,69 @@ class PortEngine:
                 if ii > 0:
                     portd.loc[tt,'weights'] = portd.weights.iloc[ii-1]
                 else:
-                    portd.loc[tt,'weights'] = 0
-
-            #if ii == 0:
-            #    portd.loc[tt,'weights'] = change_to_weight
-            #else:
-            #    portd.loc[tt,'weights'] = weight_AR * portd.weights.iloc[ii-1] + change_to_weight
+                    portd.loc[tt,'weights'] = 1 ## if not signal, start at weight of 1
 
         ## calculate each day's portfolio return
         assert not portd.weights.isna().any()
         port_rets = portd.weights * portd[retser]
 
-        sr = port_rets.mean()/port_rets.std()*np.sqrt(self.dpy)
-        print(f'Port rets SR = {sr}')
+        ## get Sharpe ratio
+        sr = lambda ser: ser.mean()/ser.std()*np.sqrt(self.dpy)
+        print(f'Long rets SR = {sr(portd[retser])}  Port rets SR = {sr(port_rets)}')
 
         if show_plots:
         
             ## get the underlying return series
             jnt_rets = pd.DataFrame({retser:portd[retser],'port':port_rets})
             cum_rets = (1+jnt_rets/100).cumprod()
-            cum_rets.columns = [f'{el}: {cum_rets[el].iloc[-1]:.2f} ' + \
-                                f'SR: {jnt_rets[el].mean()/jnt_rets[el].std()*np.sqrt(self.dpy):.3f}'
+            cum_rets.columns = [f'{el}: {cum_rets[el].iloc[-1]:.2f}  SR: {sr(jnt_rets[el]):.3f}'
                                 for el in jnt_rets.columns]
 
+            ## show the returns
             fig, axs = plt.subplots(2,1,figsize=(8,6))
-            cum_rets.plot(title=f'Cumulative excess returns for {retser} using {var}\n' + \
-                          f'signal {type} with lag={lag} and tercile={tercile}',
+            cum_rets.plot(title=f'Cumulative excess returns for {retser} using {signal_var}\n' + \
+                          f'signal "{type}" and signal type "{signal_type}"',
                           ax=axs[0],xlabel='')
+
+            ## show the weights
             portd[['weights','signal']].ffill().clip(upper=2,lower=-2).plot(ax=axs[1],xlabel='')
             axs[1].axhline(0,color='lightgrey',linestyle='--')
-        
-        return thed, portd.weights, sr
+            num_years = (portd.weights.index[-1] - portd.weights.index[0]).days / 365.25
+            num_trades = portd.weights.diff()[portd.weights.diff() != 0].shape[0]
+            axs[1].set_title(f'Number of trades per year = {num_trades/num_years:.1f}')
+            plt.tight_layout()
+            
+        return thed, portd.weights, sr(portd[retser]), sr(port_rets)
 
-    def port_test_matrix(self,signal_var):
+    def port_test_matrix(self,signal_type):
         '''
-        signal_var -- the signal (mean, pred, true -- forward looking) to use in trade simulation
+        signal_type -- the signal (mean, pred, true -- forward looking) to use in trade simulation
         '''
         
         forecast_vars = ['FutRet','bpRet','rdsaRet','xomRet','DSpot']
         dep_vars = ['FutRet','bpRet','rdsaRet','xomRet']
+
+        ## get results
         res = pd.DataFrame(np.nan,index=forecast_vars,columns=dep_vars)
+        resl = pd.Series(np.nan,index=dep_vars)
         for forecast in forecast_vars:
             for dep in dep_vars:
-                _, _, sr = self.port_test('text',forecast,dep,4,2,0,signal_var=signal_var,show_plots=False)
+                _, _, srl, sr = self.port_test('text',forecast,dep,0,signal_type=signal_type,show_plots=False)
+                resl[dep] = srl
                 res.loc[forecast,dep] = sr
-        
-        print(res)
-        
 
-    
+        ## display results
+        res.loc['Long'] = resl
+        print(res)
+
+        ## f'Signal x Return analysis using signal type {signal_type}',
+        ax = sns.heatmap(res,annot=True,fmt='.3f',vmin=-0.2,vmax=0.8,cmap='RdYlGn')
+        ax.set_ylabel('Signal')
+        ax.set_xlabel('Return series')
+        ax.set_title(f'SR of asset classes as function of signal for "{signal_type}"')
+
+        return res
+        
     ########## replicate stuff in paper to make sure data/code are working ##########
     
     def get_forecast_and_oosR2(used,wt):

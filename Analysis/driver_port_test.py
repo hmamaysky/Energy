@@ -12,9 +12,13 @@ pe.select_oosR2('text','FutRet')
 ## confirming the results in Table 6
 eo = pe.eval_oosR2(type='text', lag=3, tercile=2, weight=1, var='xomRet')
 # %% port sims
-ld,wts,sr = pe.port_test('text','FutRet','FutRet',lag=4,tercile=2,thresh=0)
-ld,wts,sr = pe.port_test('text','bpRet','bpRet',lag=4,tercile=2,thresh=0)
-ld,wts,sr = pe.port_test('text','rdsaRet','rdsaRet',lag=4,tercile=2,thresh=0)
-ld,wts,sr = pe.port_test('text','xomRet','xomRet',lag=4,tercile=2,thresh=0)
+ld,wts,srl,sr = pe.port_test('text','FutRet','FutRet',thresh=0)
+ld,wts,srl,sr = pe.port_test('text','bpRet','bpRet',thresh=0)
+ld,wts,srl,sr = pe.port_test('text','rdsaRet','rdsaRet',thresh=0)
+ld,wts,srl,sr = pe.port_test('text','xomRet','xomRet',thresh=0)
+# %% test the one weight, i.e., weight always equals one
+pe.port_test('text','One','rdsaRet',thresh=0)
 # %% matrix
-pe.port_test_matrix('pred')
+res = pe.port_test_matrix('pred')
+res = pe.port_test_matrix('mean')
+
