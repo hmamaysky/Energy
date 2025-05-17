@@ -8,10 +8,10 @@ pe.check_forward_and_mean_returns('bpRet')
 pe.check_forward_and_mean_returns('rdsaRet')
 # %% double check some results from paper
 ## a Figure 9 plot
-pe.select_oosR2('text','FutRet')
+thed, oosr2s = pe.calc_selection_oosR2('text','FutRet')
 
 ## confirming the results in Table 6
-eo = pe.eval_oosR2(type='text', lag=3, tercile=2, weight=1, var='xomRet')
+eo = pe.selection_and_evaluation_oosR2(type='text')
 # %% port sims
 ld,wts,srl,sr = pe.port_test('text','FutRet','FutRet',thresh=0,saveout=saveout)
 ld,wts,srl,sr = pe.port_test('text','bpRet','bpRet',thresh=0,saveout=saveout)

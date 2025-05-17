@@ -181,16 +181,25 @@ class PortEngine:
         
     ########## replicate stuff in paper to make sure data/code are working ##########
     
-    def get_forecast_and_oosR2(used,wt):
+    def get_forecast_and_oosR2(used,wt,baseline=None):
         '''
         Use blending weight to construct the blended signal and then calls the SSE-based
         OOS R2.
+
+        baseline -- If this is not None, the use this instead of the rolling mean in the
+                    OOS R2 calculation.
         '''
         
         blend = wt * used.pred + (1-wt) * used['mean']
-        return 100 - 100*((blend-used.true)**2).sum()/((used['mean']-used.true)**2).sum()
 
-    def select_oosR2(self,type,var):
+        if baseline is None:
+            use_mean = used['mean']
+        else:
+            use_mean = baseline
+
+        return 100 - 100*((blend-used.true)**2).sum()/((use_mean-used.true)**2).sum()
+
+    def calc_selection_oosR2(self,type,var,show_output=True):
         '''
         Replicate the in-sample model selection charts from Figure 8, the one with
         rows corresponding to each dependent variable, i.e., FutRet, DSpot, DOilVol,
@@ -200,43 +209,90 @@ class PortEngine:
         thed = self.read_lasso_file(type,var)
         
         oosR2s = {}
-        wts = np.arange(0,1.05,0.05)
+        eps = 0.01
+        wts = np.arange(0,1+eps,eps)
 
-        for terc in [1,2,3]:
+        for lookback in [3,3.5,4,4.5,5]:
 
-            oosR2 = pd.Series(0.,index=wts)
+            oosR2s_look = {}
+            for terc in [1,2,3]:
             
-            for wt in wts:
-        
-                subd = thed[(thed.index <= self.select_end) &
-                            (thed['lookback_tercile_lag_4.0yr']==terc)]
-                oosR2[wt] = PortEngine.get_forecast_and_oosR2(subd,wt)
+                oosR2 = pd.Series(0.,index=wts)
+                for wt in wts:
+                    subd = thed[(thed.index <= self.select_end) &
+                                (thed[f'lookback_tercile_lag_{lookback:.1f}yr']==terc)]
+                    oosR2[wt] = PortEngine.get_forecast_and_oosR2(subd,wt)
+                                                                  #baseline=100 if var == 'FutRet' else 0)
+                oosR2s_look[terc] = oosR2
 
-            oosR2s[terc] = oosR2
+            ## collect the data
+            oosR2s[lookback] = pd.DataFrame(oosR2s_look)
+                
+        if show_output:
+            ax = oosR2s[4].plot(title=f'Forecasting model selection for {var} and {type}')
+            ax.set_ylim(max(-5,oosR2s[4].min().min()),oosR2s[4].max().max()*1.02)
+            ax.grid(color='lightgrey',alpha=0.5)
 
-        oosR2s = pd.DataFrame(oosR2s)
-        ax = oosR2s.plot(title=f'Forecasting model selection for {var} and {type}')
-        ax.set_ylim(max(-5,oosR2s.min().min()),oosR2s.max().max()*1.02)
-        ax.grid(color='lightgrey',alpha=0.5)
+        return thed, oosR2s
 
-    def eval_oosR2(self,type,lag,tercile,weight,var):
+    def selection_and_evaluation_oosR2(self,type='text'):
         '''
-        Get the evaluation set out-of-sample R2s, as in Table 6. For each dependent
-        variable, e.g., FutRet, DSpot, etc., and a given lookback window, tercile level,
-        and weight, find the OOS R2s (which is completely out-of-sample). Only keep the
-        observation if the lagged tercile was in the right bucket.
+        Reproduce the text part of Table 6 in the original FAJ submission and extend
+        this to allow for the zero (instead of mean) benchmark.
         '''
 
-        thed = self.read_lasso_file(type,var)
+        rows = []
+        opt_idxs = []
+        for var in ['FutRet','DSpot','DOilVol','xomRet','bpRet','rdsaRet','DInv','DProd']:
 
-        ## XXXHM: what is the timing of this date? Does the "true" return start on this date?
-        used = thed[(thed.index >= self.eval_start) &
-                    (thed[f'lookback_tercile_lag_{lag:.1f}yr'] == tercile)]
-        oosR2 = PortEngine.get_forecast_and_oosR2(used,weight)
-        print(f'Evaluation OOS R2 for {var} {type} = {oosR2:.4f}\n')
+            ## get the three tercile OOSR2 curves (as a function of weight) for each of the
+            ## lookbacks
+            thed, oosR2s = self.calc_selection_oosR2(type,var,show_output=False)
+
+            row, opt_idx = {'Var':var}, {'Var':var}
+            
+            for lookback, val in oosR2s.items():
+
+                ## get the maximum R2 points
+                max_wt = val.idxmax() ## this gives back a weight for earch tercile (column)
+                max_terc = max_wt.idxmax()
+                max_wt = max_wt[max_terc]
+
+                row[lookback] = val.loc[max_wt,max_terc]
+                opt_idx[lookback] = (max_terc,max_wt)
+                
+            rows.append(row)
+            opt_idxs.append(opt_idx)
+            
+        rows, opt_idxs = pd.DataFrame(rows), pd.DataFrame(opt_idxs)
+        rows.set_index('Var',inplace=True)
+        opt_idxs.set_index('Var',inplace=True)
         
-        return used
+        ## get optimal lookback for each row
+        rows['L'] = rows.idxmax(axis=1)
+        for idx, row in rows.iterrows():
+            rows.loc[idx,'Phi'] = opt_idxs.loc[idx,row['L']][0]
+            rows.loc[idx,'Wt'] = opt_idxs.loc[idx,row['L']][1]
 
+        ## Get the evaluation set out-of-sample R2s, as in Table 6. For each dependent
+        ## variable, e.g., FutRet, DSpot, etc., and a given lookback window, tercile level,
+        ## and weight, find the OOS R2s (which is completely out-of-sample). Only keep the
+        ## observation if the lagged tercile was in the right bucket.
+        print(f'\nGetting evaluation window OOS R2s >= {self.eval_start}:')
+        for var in rows.index:
+
+            thed = self.read_lasso_file(type,var)
+        
+            ## The "true" return starts on the date indicated by index and the pred and mean
+            ## use information prior to and including this date.
+            used = thed[(thed.index >= self.eval_start) &
+                        (thed[f'lookback_tercile_lag_{rows.loc[var,"L"]:.1f}yr'] == rows.loc[var,'Phi'])]
+            oosR2 = PortEngine.get_forecast_and_oosR2(used,rows.loc[var,'Wt'])
+            rows.loc[var,'OOS R2'] = oosR2
+
+        print(rows.round(2))
+        return rows
+        
     def check_forward_and_mean_returns(self,var):
         '''
         Sanity check on true returns.
