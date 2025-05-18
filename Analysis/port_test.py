@@ -180,32 +180,47 @@ class PortEngine:
         return res
         
     ########## replicate stuff in paper to make sure data/code are working ##########
+
+    def get_benchmark(oos_benchmark,var):
+
+        assert oos_benchmark in ['rolling','zero']
+
+        if oos_benchmark == 'rolling':
+            return None
+        else:
+            return 100 if var == 'FutRet' else 0
     
-    def get_forecast_and_oosR2(used,wt,baseline=None):
+    def get_forecast_and_oosR2(used,wt,benchmark=None):
         '''
         Use blending weight to construct the blended signal and then calls the SSE-based
         OOS R2.
 
-        baseline -- If this is not None, the use this instead of the rolling mean in the
-                    OOS R2 calculation.
+        benchmark -- If this is not None, the use this instead of the rolling mean in the
+                     OOS R2 calculation.
         '''
-        
+
+        ## determine the benchmark (i.e., either the rolling mean, or the passed-in level)
+        if benchmark is None:
+            benchmark = used['mean']
+
+        ## get the OOS R2
         blend = wt * used.pred + (1-wt) * used['mean']
+        return 100 - 100*((blend-used.true)**2).sum()/((benchmark-used.true)**2).sum()
 
-        if baseline is None:
-            use_mean = used['mean']
-        else:
-            use_mean = baseline
-
-        return 100 - 100*((blend-used.true)**2).sum()/((use_mean-used.true)**2).sum()
-
-    def calc_selection_oosR2(self,type,var,show_output=True):
+    def calc_selection_oosR2(self,type,var,oos_benchmark='rolling',show_output=True):
         '''
         Replicate the in-sample model selection charts from Figure 8, the one with
         rows corresponding to each dependent variable, i.e., FutRet, DSpot, DOilVol,
         etc., and columns corresponding to the text, nontext, and both models.
+
+        oos_benchmark -- one of 'rolling' (rolling mean in lasso estimation window) or 'zero'
+                         (return/change forecast is assumed to be zero)
         '''
+
+        ## determine the appropriate benchmark
+        benchmark = PortEngine.get_benchmark(oos_benchmark,var)
         
+        ## run the analysys
         thed = self.read_lasso_file(type,var)
         
         oosR2s = {}
@@ -220,8 +235,7 @@ class PortEngine:
                 for wt in wts:
                     subd = thed[(thed.index <= self.select_end) &
                                 (thed[f'lookback_tercile_lag_{lookback:.1f}yr']==terc)]
-                    oosR2[wt] = PortEngine.get_forecast_and_oosR2(subd,wt)
-                                                                  #baseline=100 if var == 'FutRet' else 0)
+                    oosR2[wt] = PortEngine.get_forecast_and_oosR2(subd,wt,benchmark)
                 oosR2s_look[terc] = oosR2
 
             ## collect the data
@@ -243,10 +257,13 @@ class PortEngine:
 
         return thed, oosR2s
 
-    def selection_and_evaluation_oosR2(self,type='text'):
+    def selection_and_evaluation_oosR2(self,type='text',oos_benchmark='rolling'):
         '''
         Reproduce the text part of Table 6 in the original FAJ submission and extend
         this to allow for the zero (instead of mean) benchmark.
+
+        oos_benchmark -- one of 'rolling' (rolling mean in lasso estimation window) or 'zero'
+                         (return/change forecast is assumed to be zero)
         '''
 
         rows = []
@@ -255,7 +272,7 @@ class PortEngine:
 
             ## get the three tercile OOSR2 curves (as a function of weight) for each of the
             ## lookbacks
-            thed, oosR2s = self.calc_selection_oosR2(type,var,show_output=False)
+            thed, oosR2s = self.calc_selection_oosR2(type,var,oos_benchmark,show_output=False)
 
             row, opt_idx = {'Var':var}, {'Var':var}
             
@@ -291,12 +308,13 @@ class PortEngine:
         for var in rows.index:
 
             thed = self.read_lasso_file(type,var)
+            benchmark = PortEngine.get_benchmark(oos_benchmark,var)
 
             ## The "true" return starts on the date indicated by index and the pred and mean
             ## use information prior to and including this date.
             used = thed[(thed.index >= self.eval_start) &
                         (thed[f'lookback_tercile_lag_{rows.loc[var,"L"]:.1f}yr'] == rows.loc[var,'Phi'])]
-            oosR2 = PortEngine.get_forecast_and_oosR2(used,rows.loc[var,'Wt'])
+            oosR2 = PortEngine.get_forecast_and_oosR2(used,rows.loc[var,'Wt'],benchmark)
             rows.loc[var,'OOS R2'] = oosR2
 
         print(rows.round(2))
