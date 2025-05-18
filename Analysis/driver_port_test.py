@@ -8,7 +8,8 @@ pe.check_forward_and_mean_returns('bpRet')
 pe.check_forward_and_mean_returns('rdsaRet')
 # %% double check some results from paper
 ## a Figure 9 plot
-thed, oosr2s = pe.calc_selection_oosR2('text','FutRet')
+thed, oosr2s = pe.calc_selection_oosR2('text','xomRet')
+thed, oosr2s = pe.calc_selection_oosR2('text','rdsaRet')
 
 ## confirming the results in Table 6
 eo = pe.selection_and_evaluation_oosR2(type='text')

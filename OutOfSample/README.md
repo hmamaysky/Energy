@@ -42,3 +42,6 @@ NOTE: No need to concat all files
 
 ### Prepare the rolling text variables for OOS analysis
 Go through `train_demo.ipynb` to generate results stored under `./res_Forward_Lasso`. Then run through `Main_Table.ipynb` to generate the tables.
+
+### Generated tables for paper
+Run code in `Analysis/Main_Table.ipynb`

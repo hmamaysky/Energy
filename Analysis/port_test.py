@@ -9,7 +9,7 @@ class PortEngine:
 
     def __init__(self):
         self.fname_map = {'text':'0-1','nontext':'1-0','both':'1-1'}
-        self.select_end = '2009-11-30'
+        self.select_end = pd.Timestamp('2010-01-01') - pd.DateOffset(weeks=8)
         self.eval_start = '2010-01-01'
 
         ## Shell PLC trades on Euronext Amsterdam; BP is the ADR return; FutRet is return on
@@ -209,8 +209,7 @@ class PortEngine:
         thed = self.read_lasso_file(type,var)
         
         oosR2s = {}
-        eps = 0.01
-        wts = np.arange(0,1+eps,eps)
+        wts = np.linspace(0,1,100)
 
         for lookback in [3,3.5,4,4.5,5]:
 
@@ -227,9 +226,18 @@ class PortEngine:
 
             ## collect the data
             oosR2s[lookback] = pd.DataFrame(oosR2s_look)
-                
+
+        ## show output for the 4-year lookback for terciles
         if show_output:
-            ax = oosR2s[4].plot(title=f'Forecasting model selection for {var} and {type}')
+
+            ## label the series for each tercile
+            locR2 = oosR2s[4].copy()
+            wt_idx = locR2.idxmax()
+            locR2.columns = [f'$\phi$={el} R2={locR2.loc[wt_idx[el],el]:.1f} w={wt_idx[el]:.2f}'
+                             for el in locR2.columns]
+            
+            ## plotting            
+            ax = locR2.plot(title=f'Forecasting model selection for {var} and {type}')
             ax.set_ylim(max(-5,oosR2s[4].min().min()),oosR2s[4].max().max()*1.02)
             ax.grid(color='lightgrey',alpha=0.5)
 
@@ -252,10 +260,11 @@ class PortEngine:
             row, opt_idx = {'Var':var}, {'Var':var}
             
             for lookback, val in oosR2s.items():
-
+            
                 ## get the maximum R2 points
-                max_wt = val.idxmax() ## this gives back a weight for earch tercile (column)
-                max_terc = max_wt.idxmax()
+                max_wt = val.idxmax() ## this gives back the max weight for earch tercile (column)
+                max_oosR2 = val.max() ## this is the maximum OOS R2
+                max_terc = max_oosR2.idxmax()
                 max_wt = max_wt[max_terc]
 
                 row[lookback] = val.loc[max_wt,max_terc]
@@ -282,7 +291,7 @@ class PortEngine:
         for var in rows.index:
 
             thed = self.read_lasso_file(type,var)
-        
+
             ## The "true" return starts on the date indicated by index and the pred and mean
             ## use information prior to and including this date.
             used = thed[(thed.index >= self.eval_start) &
