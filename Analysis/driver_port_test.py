@@ -25,3 +25,14 @@ ld,wts,srl,sr = pe.port_test('text','xomRet','xomRet',thresh=0,saveout=saveout)
 # %% matrix
 res = pe.port_test_matrix('pred',saveout=saveout)
 res = pe.port_test_matrix('mean',saveout=saveout)
+# %% rdsa example
+thed = pd.read_csv('c:/users/harry/code/energy/outofsample/res_Forward_lasso/0-1_rdsaRet.csv',
+                   parse_dates=True,index_col=0)
+
+## 2010-01-01 cutoff
+used = thed[(thed.index >= '2010-01-01') & (thed['lookback_tercile_lag_4.0yr']==2)]
+print(np.round(100 - 100*((used.true-used.pred)**2).sum()/((used.true-used['mean'])**2).sum(),2))
+
+## 2009-11-06 cutoff
+used = thed[(thed.index > '2009-11-06') & (thed['lookback_tercile_lag_4.0yr']==2)]
+print(np.round(100 - 100*((used.true-used.pred)**2).sum()/((used.true-used['mean'])**2).sum(),2))
