@@ -224,7 +224,7 @@ class PortEngine:
         thed = self.read_lasso_file(type,var)
         
         oosR2s = {}
-        wts = np.linspace(0,1,100)
+        wts = np.linspace(0,1,101)
 
         for lookback in [3,3.5,4,4.5,5]:
 
