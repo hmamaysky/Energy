@@ -20,8 +20,7 @@ Outputs in "./futures_rea/":
 ***************************
 *We take Friday measure. 
 *If Friday price is missing, we use Thurs/Wed subsequently. 
-
-import delimited /Users/Economist/Dropbox/Research/ncm_research/data/fame/fame_raw.d.csv, clear
+import delimited /Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/fame/fame_raw.d.csv, clear
 
 * Convert date series from string to date
 gen date = date( v1, "DMY", 2020)
@@ -32,7 +31,7 @@ keep date clc01_rd clc02_rd clc03_rd
 * Same starting point for easy merges using week index
 drop if date < daily("04/08/1998", "MDY")
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/daily_prices.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/daily_prices.dta", replace
 
 * ------------------------------------------------------------------------------
 * FRIDAY PRICES
@@ -63,12 +62,12 @@ rename monthly monthly_fri
 order week, before(date_fri)
 drop dow day month 
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", replace
 
 * ------------------------------------------------------------------------------
 * THURSDAY PRICES
 * ------------------------------------------------------------------------------
-use "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/daily_prices.dta", clear
+use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/daily_prices.dta", clear
 
 gen dow = dow(date)
 keep if dow == 4
@@ -94,15 +93,15 @@ rename clc03_rd clc03_thu
 order week, before(date_thu)
 drop dow day month monthly
 
-merge 1:1 week using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", nogen
+merge 1:1 week using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", nogen
 order date_fri, before(date_thu)
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", replace
 
 * ------------------------------------------------------------------------------
 * WEDNESDAY PRICES
 * ------------------------------------------------------------------------------
-use "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/daily_prices.dta", clear
+use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/daily_prices.dta", clear
 
 gen dow = dow(date)
 keep if dow == 3
@@ -129,12 +128,12 @@ rename clc03_rd clc03_wed
 order week, before(date_wed)
 drop dow day month monthly
 
-merge 1:1 week using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", nogen
+merge 1:1 week using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", nogen
 order date_fri, before(date_wed)
 order date_thu, before(date_wed)
 drop if week > 1147
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", replace
 * ------------------------------------------------------------------------------
 * MERGE DIFFERENT TIMINGS
 * ------------------------------------------------------------------------------
@@ -189,14 +188,14 @@ replace FutRet = (clc02 - L.clc02)/L.clc02 if newContract == 1
 rename FutRet Return
 gen FutRet = (1 + Return) * (1 + L.Return) * (1 + L2.Return) * (1 + L3.Return) * 100
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/futures_rea_prices_indep.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/futures_rea_prices_indep.dta", replace
 
 *-------------------------------------------------------------------------------------------------------*
 * Baumeister and Hamilton's monthly World Industrial Production Index  		  							* 
 *-------------------------------------------------------------------------------------------------------*
 
 * Import Baumeister and Hamilton's World IP Index 
-import excel "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/Baumeister_Hamilton_WIPI.xlsx", sheet("Sheet1") firstrow clear
+import excel "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/Baumeister_Hamilton_WIPI.xlsx", sheet("Sheet1") firstrow clear
 
 * Generate date variables 
 rename monthly date
@@ -230,14 +229,14 @@ format monthly_52wk %tm
 drop if monthly < monthly("1998m1", "YM") | monthly > monthly("2020m3", "YM")
 
 * Save the calculated data for later merging
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta", replace 
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/WIPIyoy_v2.dta", replace 
 
 *-------------------------------------------------------------------------------------------------------*
 *                             Add WIPIyoy with lags into the whole dataset    	  					    * 
 *-------------------------------------------------------------------------------------------------------*
 
 * Expand monthly WIPI variables by merging with returns computed above
-use "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/futures_rea_prices_indep.dta", clear
+use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/futures_rea_prices_indep.dta", clear
 
 * Generate monthly tag for 4wk analysis
 gen date_4wk = date_fri-28
@@ -276,30 +275,28 @@ drop date_52wk
 drop monthly_52wks
 
 * Merge WIPIyoy for 4wk analysis
-merge m:1 monthly_4wk using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
+merge m:1 monthly_4wk using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
 drop wipi-WIPI
 drop _merge
 rename WIPImom WIPImom_4wk
 
 * Merge WIPIyoy for 8wk analysis
-merge m:1 monthly_8wk using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
+merge m:1 monthly_8wk using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
 drop wipi-WIPI
 drop _merge
 rename WIPImom WIPImom_8wk
 
 * Update: Merge WIPIyoy for 26wk analysis
-merge m:1 monthly_26wk using
-"/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
+merge m:1 monthly_26wk using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
 drop wipi-WIPI
 drop _merge
-rename WIPImom WIPImom_8wk
+rename WIPImom WIPImom_26wk
 
 * Update: Merge WIPIyoy for 52wk analysis
-merge m:1 monthly_52wk using
-"/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
+merge m:1 monthly_52wk using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
 drop wipi-WIPI
 drop _merge
-rename WIPImom WIPImom_8wk
+rename WIPImom WIPImom_52wk
 
 sort date_fri
 order date_fri, after(monthly)
@@ -310,7 +307,7 @@ drop monthly_4wk-monthly_52wk
 drop WIPIyoy
 drop if missing(date_fri)
 * Save .dta
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/futures_rea_prices_indep.dta", replace 
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/futures_rea_prices_indep.dta", replace 
 
 ***************************
 **INDEPENDENT**************
@@ -319,7 +316,7 @@ save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/futures_re
 *We take Tuesday measure. 
 *If Tuesday price is missing, we use prior Mon/Fri subsequently. 
 
-import delimited /Users/Economist/Dropbox/Research/ncm_research/data/fame/fame_raw.d.csv, clear
+import delimited /Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/fame/fame_raw.d.csv, clear
 
 * Convert date series from string to date
 gen date = date( v1, "DMY", 2020)
@@ -330,7 +327,7 @@ keep date clc01_rd clc02_rd clc03_rd
 * Same starting point for easy merges using week index
 drop if date < daily("04/03/1998", "MDY")
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/daily_prices.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/daily_prices.dta", replace
 
 * ------------------------------------------------------------------------------
 * TUESDAY PRICES
@@ -361,12 +358,12 @@ rename monthly monthly_tue
 order week, before(date_tue)
 drop dow day month 
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", replace
 
 * ------------------------------------------------------------------------------
 * MONDAY PRICES
 * ------------------------------------------------------------------------------
-use "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/daily_prices.dta", clear
+use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/daily_prices.dta", clear
 
 gen dow = dow(date)
 keep if dow == 1
@@ -410,15 +407,15 @@ rename clc03_rd clc03_mon
 order week, before(date_mon)
 drop dow day month monthly year leap_year
 
-merge 1:1 week using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", nogen
+merge 1:1 week using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", nogen
 order date_tue, before(date_mon)
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", replace
 
 * ------------------------------------------------------------------------------
 * FRIDAY PRICES
 * ------------------------------------------------------------------------------
-use "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/daily_prices.dta", clear
+use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/daily_prices.dta", clear
 
 gen dow = dow(date)
 keep if dow == 5
@@ -445,12 +442,12 @@ rename clc03_rd clc03_fri
 order week, before(date_fri)
 drop dow day month monthly
 
-merge 1:1 week using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", nogen
+merge 1:1 week using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", nogen
 order date_tue, before(date_fri)
 order date_mon, before(date_fri)
 drop if week > 1147
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", replace
 * ------------------------------------------------------------------------------
 * MERGE DIFFERENT TIMINGS
 * ------------------------------------------------------------------------------
@@ -508,14 +505,14 @@ gen FutRet = (1 + Return) * (1 + L.Return) * (1 + L2.Return) * (1 + L3.Return) *
 
 drop date_mon date_fri
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/futures_rea_physical_indep.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/futures_rea_physical_indep.dta", replace
 
 *-------------------------------------------------------------------------------------------------------*
 * Baumeister and Hamilton's monthly World Industrial Production Index  		  							* 
 *-------------------------------------------------------------------------------------------------------*
 
 * Import Baumeister and Hamilton's World IP Index 
-import excel "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/Baumeister_Hamilton_WIPI.xlsx", sheet("Sheet1") firstrow clear
+import excel "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/Baumeister_Hamilton_WIPI.xlsx", sheet("Sheet1") firstrow clear
 
 * Generate date variables 
 rename monthly date
@@ -541,7 +538,7 @@ format monthly_8wk %tm
 
 * Update: Gen 26wk & 52wk monthly variable for later merging
 gen monthly_26wk=monthly
-formate monthly_26wk %tm
+format monthly_26wk %tm
 gen monthly_52wk=monthly
 format monthly_52wk %tm
 
@@ -549,14 +546,14 @@ format monthly_52wk %tm
 drop if monthly < monthly("1998m1", "YM") | monthly > monthly("2020m3", "YM")
 
 * Save the calculated data for later merging
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta", replace 
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/WIPIyoy_v2.dta", replace 
 
 *-------------------------------------------------------------------------------------------------------*
 *                             Add WIPIyoy with lags into the whole dataset    	  					    * 
 *-------------------------------------------------------------------------------------------------------*
 
 * Expand monthly WIPI variables by merging with returns computed above
-use "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/futures_rea_physical_indep.dta", clear
+use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/futures_rea_physical_indep.dta", clear
 
 * Generate monthly tag for 4wk analysis
 gen date_4wk = date_tue-28
@@ -595,25 +592,25 @@ drop date_52wk
 drop monthly_52wks
 
 * Merge WIPIyoy for 4wk analysis
-merge m:1 monthly_4wk using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
+merge m:1 monthly_4wk using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
 drop wipi-WIPI
 drop _merge
 rename WIPImom WIPImom_4wk
 
 * Merge WIPIyoy for 8wk analysis
-merge m:1 monthly_8wk using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
+merge m:1 monthly_8wk using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
 drop wipi-WIPI
 drop _merge
 rename WIPImom WIPImom_8wk
 
 * Update: Merge WIPIyoy for 26wk analysis
-merge m:1 monthly_26wk using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
+merge m:1 monthly_26wk using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
 drop wipi-WIPI
 drop _merge
 rename WIPImom WIPImom_26wk
 
 * Update: Merge WIPIyoy for 52wk analysis
-merge m:1 monthly_52wk using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
+merge m:1 monthly_52wk using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
 drop wipi-WIPI
 drop _merge
 rename WIPImom WIPImom_52wk
@@ -627,7 +624,7 @@ drop monthly_4wk-monthly_52wk
 drop WIPIyoy
 drop if missing(date)
 * Save .dta
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/futures_rea_physical_indep.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/futures_rea_physical_indep.dta", replace
 
 
 ***************************
@@ -637,7 +634,7 @@ save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/futures_re
 *If Friday price is missing, we use next Mon/Tue subsequently. 
 ***************************
 
-import delimited /Users/Economist/Dropbox/Research/ncm_research/data/fame/fame_raw.d.csv, clear
+import delimited /Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/fame/fame_raw.d.csv, clear
 
 * Convert date series from string to date
 gen date = date( v1, "DMY", 2020)
@@ -648,7 +645,7 @@ keep date clc01_rd clc02_rd
 * Same starting point for easy merges using week index
 drop if date < daily("04/10/1998", "MDY")
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/daily_prices.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/daily_prices.dta", replace
 
 * ------------------------------------------------------------------------------
 * FRIDAY PRICES
@@ -678,12 +675,12 @@ rename monthly monthly_fri
 order week, before(date_fri)
 drop dow day month 
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", replace
 
 * ------------------------------------------------------------------------------
 * MONDAY PRICES
 * ------------------------------------------------------------------------------
-use "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/daily_prices.dta", clear
+use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/daily_prices.dta", clear
 
 gen dow = dow(date)
 keep if dow == 1
@@ -726,16 +723,16 @@ rename clc02_rd clc02_mon
 order week, before(date_mon)
 drop dow day month monthly year leap_year
 
-merge 1:1 week using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", nogen
+merge 1:1 week using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", nogen
 order date_fri, before(date_mon)
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", replace
 
 * ------------------------------------------------------------------------------
 * TUESDAY PRICES - ONLY NEED THIS FOR JANUARY 4 PRICE
 * THUS, NO NEED FOR NUANCED NEWCONTRACT_TUES SERIES 
 * ------------------------------------------------------------------------------
-use "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/daily_prices.dta", clear
+use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/daily_prices.dta", clear
 
 gen dow = dow(date)
 keep if dow == 2
@@ -760,12 +757,12 @@ rename clc02_rd clc02_tue
 order week, before(date_tue)
 drop dow day month monthly year
 
-merge 1:1 week using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", nogen
+merge 1:1 week using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", nogen
 order date_fri, before(date_tue)
 order date_mon, before(date_tue)
 drop if week > 1147
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/temp.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/temp.dta", replace
 * ------------------------------------------------------------------------------
 * MERGE DIFFERENT TIMINGS
 * ------------------------------------------------------------------------------
@@ -828,7 +825,7 @@ gen FutRet_t52 = FutRet_t26 * (1 + L26.FutRet_dep) * (1 + L27.FutRet_dep) * (1 +
 				
 drop date_mon date_tue
 
-save "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/futures_rea_prices_dep.dta", replace
+save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/futures_rea/futures_rea_prices_dep.dta", replace
 		
 
 
