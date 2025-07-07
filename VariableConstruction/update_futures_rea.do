@@ -220,12 +220,6 @@ format monthly_4wk %tm
 gen monthly_8wk=monthly
 format monthly_8wk %tm
 
-* Update: Add longer horizons (26wk & 52wk)
-gen monthly_26wk=monthly
-format monthly_26wk %tm
-gen monthly_52wk=monthly
-format monthly_52wk %tm
-
 * Drop observations outside our sample's range (note that we save the lagged months at the beginning)
 drop if monthly < monthly("1998m1", "YM") | monthly > monthly("2020m3", "YM")
 
@@ -257,24 +251,6 @@ format monthly_8wk %tm
 drop date_8wk
 drop monthly_8wks
 
-* Update: Generate monthly tag for 26wk analysis
-gen date_26wk = date_fri-182
-format date_26wk %td
-gen monthly_26wks = mofd(date_26wk)
-gen monthly_26wk = monthly_26wks-1
-format monthly_26wk %tm
-drop date_26wk
-drop monthly_26wks
-
-* Update: Generate monthly tag for 52wk analysis
-gen date_52wk = date_fri-364
-format date_52wk %td
-gen monthly_52wks = mofd(date_52wk)
-gen monthly_52wk = monthly_52wks-1
-format monthly_52wk %tm
-drop date_52wk
-drop monthly_52wks
-
 * Merge WIPIyoy for 4wk analysis
 merge m:1 monthly_4wk using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
 drop wipi-WIPI
@@ -287,25 +263,10 @@ drop wipi-WIPI
 drop _merge
 rename WIPImom WIPImom_8wk
 
-* Update: Merge WIPIyoy for 26wk analysis
-merge m:1 monthly_26wk using
-"/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
-drop wipi-WIPI
-drop _merge
-rename WIPImom WIPImom_8wk
-
-* Update: Merge WIPIyoy for 52wk analysis
-merge m:1 monthly_52wk using
-"/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
-drop wipi-WIPI
-drop _merge
-rename WIPImom WIPImom_8wk
-
 sort date_fri
 order date_fri, after(monthly)
 order week, after(date_fri)
-* Update: drop range expand to 52wk
-drop monthly_4wk-monthly_52wk
+drop monthly_4wk-monthly_8wk
 
 drop WIPIyoy
 drop if missing(date_fri)
@@ -539,12 +500,6 @@ format monthly_4wk %tm
 gen monthly_8wk=monthly
 format monthly_8wk %tm
 
-* Update: Gen 26wk & 52wk monthly variable for later merging
-gen monthly_26wk=monthly
-formate monthly_26wk %tm
-gen monthly_52wk=monthly
-format monthly_52wk %tm
-
 * Drop observations outside our sample's range (note that we save the lagged months at the beginning)
 drop if monthly < monthly("1998m1", "YM") | monthly > monthly("2020m3", "YM")
 
@@ -576,24 +531,6 @@ format monthly_8wk %tm
 drop date_8wk
 drop monthly_8wks
 
-* Update: Generate monthly tag for 26wk analysis
-gen date_26wk = date_tue-182
-format date_26wk %td
-gen monthly_26wks = mofd(date_26wk)
-gen monthly_26wk = monthly_26wks-1
-format monthly_26wk %tm
-drop date_26wk
-drop monthly_26wks
-
-* Update: Generate monthly tag for 52wk analysis
-gen date_52wk = date_tue-364
-format date_52wk %td
-gen monthly_52wks = mofd(date_52wk)
-gen monthly_52wk = monthly_52wks-1
-format monthly_52wk %tm
-drop date_52wk
-drop monthly_52wks
-
 * Merge WIPIyoy for 4wk analysis
 merge m:1 monthly_4wk using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
 drop wipi-WIPI
@@ -606,23 +543,10 @@ drop wipi-WIPI
 drop _merge
 rename WIPImom WIPImom_8wk
 
-* Update: Merge WIPIyoy for 26wk analysis
-merge m:1 monthly_26wk using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
-drop wipi-WIPI
-drop _merge
-rename WIPImom WIPImom_26wk
-
-* Update: Merge WIPIyoy for 52wk analysis
-merge m:1 monthly_52wk using "/Users/Economist/Dropbox/Research/ncm_research/data/futures_rea/WIPIyoy_v2.dta"
-drop wipi-WIPI
-drop _merge
-rename WIPImom WIPImom_52wk
-
 sort date
 order date, after(monthly)
 order week, after(date)
-* Update: drop range expand to 52wk
-drop monthly_4wk-monthly_52wk
+drop monthly_4wk-monthly_8wk
 
 drop WIPIyoy
 drop if missing(date)
@@ -819,12 +743,6 @@ gen FutRet_t4 = (1 + FutRet_dep) * (1 + L.FutRet_dep) * (1 + L2.FutRet_dep) * (1
 * 8 weeks ahead (670 obs)
 gen FutRet_t8 = (1 + FutRet_dep) * (1 + L.FutRet_dep) * (1 + L2.FutRet_dep) * (1 + L3.FutRet_dep) * (1 + L4.FutRet_dep) * ///
 			    (1 + L5.FutRet_dep) * (1 + L6.FutRet_dep) * (1 + L7.FutRet_dep) * 100
-				
-* Update: 26 weeks ahead
-gen FutRet_t26 = FutRet_t8 * (1 + L8.FutRet_dep) * (1 + L9.FutRet_dep) * (1 + L10.FutRet_dep) * (1 + L11.FutRet_dep) * (1 + L12.FutRet_dep) * (1 + L13.FutRet_dep) * (1 + L14.FutRet_dep) * (1 + L15.FutRet_dep) * (1 + L16.FutRet_dep) * (1 + L17.FutRet_dep) * (1 + L18.FutRet_dep) * (1 + L19.FutRet_dep) * (1 + L20.FutRet_dep) * (1 + L21.FutRet_dep) * (1 + L22.FutRet_dep) * (1 + L23.FutRet_dep) * (1 + L24.FutRet_dep) * (1 + L25.FutRet_dep)
-
-* Update: 52 weeks ahead
-gen FutRet_t52 = FutRet_t26 * (1 + L26.FutRet_dep) * (1 + L27.FutRet_dep) * (1 + L28.FutRet_dep) * (1 + L29.FutRet_dep) * (1 + L30.FutRet_dep) * (1 + L31.FutRet_dep) * (1 + L32.FutRet_dep) * (1 + L33.FutRet_dep) * (1 + L34.FutRet_dep) * (1 + L35.FutRet_dep) * (1 + L36.FutRet_dep) * (1 + L37.FutRet_dep) * (1 + L38.FutRet_dep) * (1 + L39.FutRet_dep) * (1 + L40.FutRet_dep) * (1 + L41.FutRet_dep) * (1 + L42.FutRet_dep) * (1 + L43.FutRet_dep) * (1 + L44.FutRet_dep) * (1 + L45.FutRet_dep) * (1 + L46.FutRet_dep) * (1 + L47.FutRet_dep) * (1 + L48.FutRet_dep) * (1 + L49.FutRet_dep) * (1 + L50.FutRet_dep) * (1 + L51.FutRet_dep)
 				
 drop date_mon date_tue
 
