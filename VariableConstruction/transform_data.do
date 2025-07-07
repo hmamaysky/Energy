@@ -17,7 +17,7 @@ Outputs in "./clean_data/":
 * ------------------- *
 * Dependent variables *
 * ------------------- *
-use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/merged_data_prices_dep.dta", clear 
+use "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/merged_data_prices_dep.dta", clear 
 
 * Set time variable to use L. to lag vars 
 tsset week 
@@ -25,64 +25,42 @@ tsset week
 rename FutRet_t4 FutRet_t4_Fri
 rename FutRet_t8 FutRet_t8_Fri
 
-* Update: Adding 26 & 52 wks FutRet
-rename FutRet_t26 FutRet_t26_Fri
-rename FutRet_t52 FutRet_t52_Fri
-
 * Oil spot price % change(we get the same result when using clc01 instead of price. They are the same series.)
 
 gen DSpot_t4_Fri = log(price/L4.price) * 100
 gen DSpot_t8_Fri = log(price/L8.price) * 100
-* Update: Adding 26 & 52 wks Dspot
-gen DSpot_t26_Fri = log(price/L26.price) * 100
-gen DSpot_t52_Fri = log(price/L52.price) * 100
 
 * Exxon stock return
 
 gen xomRet_t4_Fri = log(xomus/L4.xomus) * 100
 gen xomRet_t8_Fri = log(xomus/L8.xomus) * 100
-* Update: Adding 26 & 52 wks xomRet
-gen xomRet_t26_Fri = log(xomus/L26.xomus) * 100
-gen xomRet_t52_Fri = log(xomus/L52.xomus) * 100
 
 * BP stock return
 
 gen bpRet_t4_Fri = log(bpus/L4.bpus)  * 100
 gen bpRet_t8_Fri = log(bpus/L8.bpus)  * 100
-* Update: Adding 26 & 52 wks bpRet
-gen bpRet_t26_Fri = log(bpus/L26.bpus) * 100
-gen bpRet_t52_Fri = log(bpus/L52.bpus) * 100
 
 * RDSA stock return 
 
 gen rdsaRet_t4_Mon = log(rdsaus/L4.rdsaus) * 100
 gen rdsaRet_t8_Mon = log(rdsaus/L8.rdsaus) * 100
-* Update: Adding 26 & 52 wks rdsaRet
-gen rdsaRet_t26_Mon = log(rdsaus/L26.rdsaus) * 100
-gen rdsaRet_t52_Mon = log(rdsaus/L52.rdsaus) * 100
 
 * Oil price volatility difference 
 
 gen DOilVol_t4_Fri = vol_30d - L4.vol_30d  
 gen DOilVol_t8_Fri = vol_30d - L8.vol_30d  
-* Update: Adding 26 & 52 wks DOilVol
-gen DOilVol_t26_Fri = vol_30d - L26.vol_30d
-gen DOilVol_t52_Fri = vol_30d - L52.vol_30d
 
-save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/temp.dta", replace
+save "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/temp.dta", replace
 
 * --------------------- *
 * Independent variables *
 * --------------------- *
-use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/merged_data_prices_indep.dta", clear 
+use "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/merged_data_prices_indep.dta", clear 
 
 * FutRet series are calcualted separately in update_futures_rea_v8.do.
 rename FutRet FutRet_Fri
 rename WIPImom_4wk WIPI_4wk_monthly
 rename WIPImom_8wk WIPI_8wk_monthly
-* Update: rename 26 & 52 wks WIPI
-rename WIPImom_26wk WIPI_26wk_monthly
-rename WIPImom_52wk WIPI_52wk_monthly
 
 * Oil price return
 gen DSpot_Fri = log(price/L4.price) * 100 
@@ -144,7 +122,7 @@ forvalues i = 1/7 {
 }
 
 * Save in excel file to use as PCA input
-export excel artcount_4wk entropy_4wk stopic1_4wk stopic2_4wk stopic3_4wk stopic4_4wk stopic5_4wk stopic6_4wk stopic7_4wk using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/text_measures/text_measures_prices_4wk.fri_v3.xls", firstrow(variables) replace
+export excel artcount_4wk entropy_4wk stopic1_4wk stopic2_4wk stopic3_4wk stopic4_4wk stopic5_4wk stopic6_4wk stopic7_4wk using "/Users/Economist/Dropbox/Research/ncm_research/data/text_measures/text_measures_prices_4wk.fri_v3.xls", firstrow(variables) replace
 
 * Text measures: entropy
 rename entropy Entropy
@@ -171,7 +149,7 @@ egen fEp_Fri 	  = std(ftopic7_4wk)
 
 rename (entropy_4wk artcount_4wk stopic1_4wk ftopic1_4wk stopic2_4wk ftopic2_4wk stopic3_4wk ftopic3_4wk stopic4_4wk ftopic4_4wk stopic5_4wk ftopic5_4wk stopic6_4wk ftopic6_4wk stopic7_4wk ftopic7_4wk) (entropy_4wk_Fri artcount_4wk_Fri stopic1_4wk_Fri ftopic1_4wk_Fri stopic2_4wk_Fri ftopic2_4wk_Fri stopic3_4wk_Fri ftopic3_4wk_Fri stopic4_4wk_Fri ftopic4_4wk_Fri stopic5_4wk_Fri ftopic5_4wk_Fri stopic6_4wk_Fri ftopic6_4wk_Fri stopic7_4wk_Fri ftopic7_4wk_Fri)
 
-merge 1:1 week using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/temp.dta", nogen
+merge 1:1 week using "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/temp.dta", nogen
 drop date
 rename date_wed date_Wed 
 rename date_thu date_Thu 
@@ -187,11 +165,11 @@ keep date_Tue-date_Mon monthly week FutRet_Fri-WIPI_8wk_monthly tnote_10y DSpot_
 order tnote_10y_Thu, after(VIX_Thu)
 
 * Save progress so far
-save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/transformed_data_prices_v19.dta", replace 
+save "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/transformed_data_prices_v19.dta", replace 
 
 * Read in PCA series created in Python to merge with our dataset.
 
-use /Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/transformed_data_prices_pca_v18, clear 
+use /Users/Economist/Dropbox/Research/ncm_research/data/clean_data/transformed_data_prices_pca_v18, clear 
 
 * Convert date_Fri to stata date format because date variable in python is imported as string variable in stata.
 * just change date_Fri as we need just one date series to merge with transformed_data_physical_v19.dta.
@@ -202,17 +180,17 @@ drop date_Tue - date_Mon
 rename date_Fri1 date_Fri
 
 
-save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/temp.dta", replace 
+save "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/temp.dta", replace 
 
 
 * Merge with transformed_data_prices_pca_v18.dta.
 
-use /Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/transformed_data_prices_v19, clear
+use /Users/Economist/Dropbox/Research/ncm_research/data/clean_data/transformed_data_prices_v19, clear
 
-merge 1:1 date_Fri using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/temp.dta", nogen
+merge 1:1 date_Fri using "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/temp.dta", nogen
 
 * Save progress so far
-save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/transformed_data_prices_v19.dta", replace 
+save "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/transformed_data_prices_v19.dta", replace 
 
 ********************************************************************************
 * Data Transformations: physical regressions 
@@ -222,7 +200,7 @@ save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/transforme
 * Dependent variables *
 * ------------------- *
  
-use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/merged_data_physical_dep.dta", clear
+use "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/merged_data_physical_dep.dta", clear
 
 * Set time variable to use L. to lag vars 
 tsset week 
@@ -231,44 +209,19 @@ tsset week
 
 gen DProd_t8_Wed  = log((prod + L.prod + L2.prod + L3.prod + L4.prod + L5.prod + L6.prod + L7.prod)/((L8.prod+ L9.prod + L10.prod+ L11.prod)*2)) * 100
 gen DProd_t4_Wed  = log((prod + L.prod + L2.prod + L3.prod)/(L4.prod+ L5.prod + L6.prod+ L7.prod)) * 100
-* Update: Adding 26 & 52 wks DProd
-gen DProd_t26_Wed = log(                                               ///
-    (prod   + L.prod   + L2.prod  + L3.prod  + L4.prod  + L5.prod  +    ///
-     L6.prod + L7.prod + L8.prod  + L9.prod  + L10.prod + L11.prod +    ///
-     L12.prod + L13.prod + L14.prod + L15.prod + L16.prod + L17.prod +  ///
-     L18.prod + L19.prod + L20.prod + L21.prod + L22.prod + L23.prod +  ///
-     L24.prod + L25.prod)                                               ///
-  /                                                                     ///
-    ((L26.prod + L27.prod + L28.prod + L29.prod) * 6.5)                 ///
-) * 100
-gen DProd_t52_Wed = log(                                               ///
-    (prod   + L.prod   + L2.prod   + L3.prod   + L4.prod   + L5.prod   +  ///
-     L6.prod + L7.prod + L8.prod   + L9.prod   + L10.prod  + L11.prod  +  ///
-     L12.prod + L13.prod + L14.prod  + L15.prod  + L16.prod  + L17.prod  +  ///
-     L18.prod + L19.prod + L20.prod  + L21.prod  + L22.prod  + L23.prod  +  ///
-     L24.prod + L25.prod + L26.prod  + L27.prod  + L28.prod  + L29.prod  +  ///
-     L30.prod + L31.prod + L32.prod  + L33.prod  + L34.prod  + L35.prod  +  ///
-     L36.prod + L37.prod + L38.prod  + L39.prod  + L40.prod  + L41.prod  +  ///
-     L42.prod + L43.prod + L44.prod  + L45.prod  + L46.prod  + L47.prod  +  ///
-     L48.prod + L49.prod + L50.prod  + L51.prod)                           ///
-  /                                                                     ///
-    ((L52.prod + L53.prod + L54.prod + L55.prod) * 13)                  ///
-) * 100
+
 
 * Oil inventory growth rate 
 
 gen DInv_t4_Wed  = log(inv/L4.inv)  * 100
 gen DInv_t8_Wed  = log(inv/L8.inv)  * 100
-* Update: Adding 26 & 52 wks DInv
-gen DInv_t26_Wed = log(inv/L26.inv) * 100
-gen DInv_t52_Wed = log(inv/L52.inv) * 100
 
-save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/temp.dta", replace
+save "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/temp.dta", replace
 
 * --------------------- *
 * Independent variables *
 * --------------------- *
-use "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/merged_data_physical_indep.dta", clear
+use "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/merged_data_physical_indep.dta", clear
 
 * Set time variable to use L. to lag vars 
 tsset week 
@@ -277,8 +230,6 @@ tsset week
 rename FutRet FutRet_Tue
 rename WIPImom_4wk WIPI_4wk_monthly
 rename WIPImom_8wk WIPI_8wk_monthly
-rename WIPImom_26wk WIPI_26wk_monthly
-rename WIPImom_52wk WIPI_52wk_monthly
 
 
 * Oil price return
@@ -340,7 +291,7 @@ forvalues i = 1/7 {
 }
 
 * Save in excel file to use as PCA input
-export excel artcount_4wk entropy_4wk stopic1_4wk stopic2_4wk stopic3_4wk stopic4_4wk stopic5_4wk stopic6_4wk stopic7_4wk using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/text_measures/text_measures_physical_4wk.tue_v3.xls", firstrow(variables) replace
+export excel artcount_4wk entropy_4wk stopic1_4wk stopic2_4wk stopic3_4wk stopic4_4wk stopic5_4wk stopic6_4wk stopic7_4wk using "/Users/Economist/Dropbox/Research/ncm_research/data/text_measures/text_measures_physical_4wk.tue_v3.xls", firstrow(variables) replace
 
 * Text measures: entropy
 rename entropy Entropy
@@ -367,7 +318,7 @@ egen fEp_Tue 	  = std(ftopic7_4wk)
 
 rename (entropy_4wk artcount_4wk stopic1_4wk ftopic1_4wk stopic2_4wk ftopic2_4wk stopic3_4wk ftopic3_4wk stopic4_4wk ftopic4_4wk stopic5_4wk ftopic5_4wk stopic6_4wk ftopic6_4wk stopic7_4wk ftopic7_4wk) (entropy_4wk_Tue artcount_4wk_Tue stopic1_4wk_Tue ftopic1_4wk_Tue stopic2_4wk_Tue ftopic2_4wk_Tue stopic3_4wk_Tue ftopic3_4wk_Tue stopic4_4wk_Tue ftopic4_4wk_Tue stopic5_4wk_Tue ftopic5_4wk_Tue stopic6_4wk_Tue ftopic6_4wk_Tue stopic7_4wk_Tue ftopic7_4wk_Tue)
 
-merge 1:1 week using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/temp.dta", nogen
+merge 1:1 week using "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/temp.dta", nogen
 
 drop date
 rename date_tue date_Tue
@@ -382,11 +333,11 @@ keep date_Tue date_Wed monthly week FutRet_Tue-WIPI_8wk_monthly tnote_10y_Tue DS
 drop if week>1147
 
 * Save progress so far
-save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/transformed_data_physical_v19.dta", replace
+save "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/transformed_data_physical_v19.dta", replace
 
 * Read in PCA series created in Python to merge with our dataset.
 
-use /Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/transformed_data_physical_pca_v18, clear 
+use /Users/Economist/Dropbox/Research/ncm_research/data/clean_data/transformed_data_physical_pca_v18, clear 
 
 * Convert date_Tue to stata date format because date variable in python is imported as string variable in stata.
 * just change date_Tue as we need just one date series to merge with transformed_data_physical_v19.dta.
@@ -397,15 +348,15 @@ drop date_Tue - date_Wed
 rename date_Tue1 date_Tue
 
 
-save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/temp.dta", replace 
+save "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/temp.dta", replace 
 
 
 * Merge with transformed_data_prices_pca_v18.dta.
 
-use /Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/transformed_data_physical_v19, clear
+use /Users/Economist/Dropbox/Research/ncm_research/data/clean_data/transformed_data_physical_v19, clear
 
-merge 1:1 date_Tue using "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/temp.dta", nogen
+merge 1:1 date_Tue using "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/temp.dta", nogen
 
 * Save progress so far
-save "/Users/13917/Desktop/CBS/Energy-RA/ncm_research/data/clean_data/transformed_data_physical_v19.dta", replace 
+save "/Users/Economist/Dropbox/Research/ncm_research/data/clean_data/transformed_data_physical_v19.dta", replace 
 
