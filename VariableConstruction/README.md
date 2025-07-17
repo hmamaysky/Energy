@@ -4,6 +4,10 @@
 
 The variable construction code is described here.
 
+**
+Note that after the variable construction steps, the varaibles in our final dataset are all at the same time stamp (i.e. RHS varaibles haven't been lagged yet) except for the  ```WIPI``` varaibles. ```WIPI``` variables are lagged within the variable construction steps. The reason for this is because its raw value is monthly and in order to prevent look-ahead bias, we need to manually lag them with addtiional step in variable constructions.
+**
+
 ### Descriptions for Codes
 - ```update_bloomberg.do``` reads in daily Bloomberg data saved in data/bloomberg/bloomberg raw.d.xlsx, and creates follwoing four output files with weekly data for price and physical regressions, following the two time conventions used in the project. Before running this script, make sure you update the daily raw data excel file to cover the desired time period.
 
@@ -128,6 +132,13 @@ Next, run python code ```va_beta.py``` to create InflaBeta and DolBeta
   		1. transformed_data_physical_v19.dta
   		2. transformed_data_prices_v19.dta
 
+- ```longerHorizonDatasetConstruction.do``` constructs 24-/52- week longer horizon LHS and ```WIPI``` variables based on the ```Construction_of_Longer_Horizon_Variables.pdf```.
+
+	- Output:
+		1. transformed_data_prices_v19.4_mod_full_sample.dta
+		2. transformed_data_prices_v19.4_mod_restricted_sample.dta
+		3. transformed_data_physical_v19.4_mod_full_sample.dta
+		4. transformed_data_physical_v19.4_mod_restricted_sample.dta
 
 ### Notes before Running Codes
 - Please change the working directory and the saving directory in each file appropriately before running the program.
