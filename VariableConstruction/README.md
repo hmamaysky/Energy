@@ -4,9 +4,7 @@
 
 The variable construction code is described here.
 
-**
-Note that after the variable construction steps, the varaibles in our final dataset are all at the same time stamp (i.e. RHS varaibles haven't been lagged yet) except for the  ```WIPI``` varaibles. ```WIPI``` variables are lagged within the variable construction steps. The reason for this is because its raw value is monthly and in order to prevent look-ahead bias, we need to manually lag them with addtiional step in variable constructions.
-**
+**Note that after the variable construction steps, the varaibles in our final dataset are all at the same time stamp (i.e. RHS varaibles haven't been lagged yet) except for the  ```WIPI``` varaibles. ```WIPI``` variables are lagged within the variable construction steps. The reason for this is because its raw value is monthly and in order to prevent look-ahead bias, we need to manually lag them with addtiional step in variable constructions.**
 
 ### Descriptions for Codes
 - ```update_bloomberg.do``` reads in daily Bloomberg data saved in data/bloomberg/bloomberg raw.d.xlsx, and creates follwoing four output files with weekly data for price and physical regressions, following the two time conventions used in the project. Before running this script, make sure you update the daily raw data excel file to cover the desired time period.
