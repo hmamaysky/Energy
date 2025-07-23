@@ -8,7 +8,14 @@ __code_dir__ = f'c:/users/{os.getenv("USERNAME")}/code/energy/'
 class PortEngine:
 
     def __init__(self):
+        ## from Kaiwen Hou email on 5/16/2025:
+        ## 1) Is 0-1 the text model and 1-0 the nontext model?
+        ## Yes. 
+        ## In https://github.com/hmamaysky/Energy/blob/master/OutOfSample/train_demo.ipynb:
+        ## df.to_csv(f"res_Forward_Lasso/{num_nontext_var}-{num_text_var}_{d_var}.csv")
         self.fname_map = {'text':'0-1','nontext':'1-0','both':'1-1'}
+
+        ## other params to match the original FAJ submission OOS analysis
         self.select_end = pd.Timestamp('2010-01-01') - pd.DateOffset(weeks=8)
         self.eval_start = '2010-01-01'
 
@@ -69,7 +76,8 @@ class PortEngine:
 
         ## sanity checks
         assert retser in self.mktd.columns
-        
+        print(f'\nPortfolio simulation for {retser} using {type} model for {signal_var}')
+
         ## get the lasso signals file
         thed = self.read_lasso_file(type,signal_var)
         level = 100 if signal_var == 'FutRet' else 0 ## levels across series
@@ -84,10 +92,6 @@ class PortEngine:
         ## get the signal
         portd['signal'] = thed[signal_type] - level
 
-        ## print status
-        weight_AR = 0.
-        print(f'Portfolio simulation for {retser} using {type} model for {signal_var} AR={weight_AR}')
-
         ## set the weights from the selected signals
         for ii,tt in enumerate(portd.index):
 
@@ -98,7 +102,7 @@ class PortEngine:
                 elif portd.signal[tt] < -thresh:
                     portd.loc[tt,'weights'] = -1
 
-            ## after first period, weight persists at AR=0.9 plus add update
+            ## wights persist from the last signal
             if np.isnan(portd.loc[tt,'weights']):
                 if ii > 0:
                     portd.loc[tt,'weights'] = portd.weights.iloc[ii-1]
@@ -128,7 +132,8 @@ class PortEngine:
                           ax=axs[0],xlabel='')
 
             ## show the weights
-            portd[['weights','signal']].ffill().clip(upper=2,lower=-2).plot(ax=axs[1],xlabel='')
+            portd[['signal','weights']].clip(upper=2,lower=-2).ffill().plot(ax=axs[1],xlabel='')
+            portd['signal'].clip(upper=2,lower=-2).plot(ax=axs[1],xlabel='',marker='.',color='C0')
             axs[1].axhline(0,color='lightgrey',linestyle='--')
             num_years = (portd.weights.index[-1] - portd.weights.index[0]).days / 365.25
             num_trades = portd.weights.diff()[portd.weights.diff() != 0].shape[0]
@@ -142,11 +147,14 @@ class PortEngine:
             
         return thed, portd.weights, sr(portd[retser]), sr(port_rets)
 
-    def port_test_matrix(self,signal_type,saveout):
+    def port_test_matrix(self,type,signal_type,saveout):
         '''
+        type -- which signal to use: text, nontext, both (this is not used for signal_type=='mean')
         signal_type -- the signal (mean, pred, true -- forward looking) to use in trade simulation
         saveout -- save the output?
         '''
+
+        assert type in ['text','nontext','both']
         
         forecast_vars = ['FutRet','bpRet','rdsaRet','xomRet','DSpot']
         dep_vars = ['FutRet','bpRet','rdsaRet','xomRet']
@@ -156,7 +164,7 @@ class PortEngine:
         resl = pd.Series(np.nan,index=dep_vars)
         for forecast in forecast_vars:
             for dep in dep_vars:
-                _, _, srl, sr = self.port_test('text',forecast,dep,thresh=0,
+                _, _, srl, sr = self.port_test(type,forecast,dep,thresh=0,
                                                signal_type=signal_type,show_plots=False)
                 resl[dep] = srl
                 res.loc[forecast,dep] = sr
@@ -165,15 +173,16 @@ class PortEngine:
         res.loc['Long'] = resl
         print(res)
 
-        ## f'Signal x Return analysis using signal type {signal_type}',
+        ## plot the return matrix
         plt.figure()
-        ax = sns.heatmap(res,annot=True,fmt='.3f',vmin=-0.2,vmax=0.8,cmap='RdYlGn')
+        ax = sns.heatmap(res,annot=True,fmt='.3f',vmin=-0.2,vmax=0.8,cmap='RdYlGn',annot_kws={'size':12})
         ax.set_ylabel('Signal')
         ax.set_xlabel('Return series')
-        ax.set_title(f'SR of asset classes as function of signal for "{signal_type}"')
+        signal_str = '"mean" signal' if signal_type=='mean' else f'{type} model signal'
+        ax.set_title(f'SR of asset classes as function of {signal_str}')
 
         if saveout:
-            fname = __code_dir__ + f'Analysis/results/port-matrix-using-signal-{signal_type}.pdf'
+            fname = __code_dir__ + f'Analysis/results/port-matrix-using-signal-{type}-{signal_type}.pdf'
             print('Saving figure to',fname)
             plt.savefig(fname,bbox_inches='tight')
 

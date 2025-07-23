@@ -2,7 +2,7 @@ from Energy.Analysis import port_test as pt
 saveout = False
 # %% read data
 pe = pt.PortEngine()
-pe.check_forward_and_mean_returns('FutRet')
+pe.check_forward_and_mean_returns('FutRet') ## double check data integrity vs. external data
 pe.check_forward_and_mean_returns('xomRet')
 pe.check_forward_and_mean_returns('bpRet')
 pe.check_forward_and_mean_returns('rdsaRet')
@@ -19,12 +19,15 @@ eo = pe.selection_and_evaluation_oosR2('text','zero')
 eo = pe.selection_and_evaluation_oosR2('both','zero')
 # %% port sims
 ld,wts,srl,sr = pe.port_test('text','FutRet','FutRet',thresh=0,saveout=saveout)
+ld,wts,srl,sr = pe.port_test('text','DSpot','FutRet',thresh=0,saveout=saveout)
 ld,wts,srl,sr = pe.port_test('text','bpRet','bpRet',thresh=0,saveout=saveout)
 ld,wts,srl,sr = pe.port_test('text','rdsaRet','rdsaRet',thresh=0,saveout=saveout)
 ld,wts,srl,sr = pe.port_test('text','xomRet','xomRet',thresh=0,saveout=saveout)
 # %% matrix
-res = pe.port_test_matrix('pred',saveout=saveout)
-res = pe.port_test_matrix('mean',saveout=saveout)
+res = pe.port_test_matrix('text','pred',saveout=saveout)
+res = pe.port_test_matrix('nontext','pred',saveout=saveout)
+res = pe.port_test_matrix('both','pred',saveout=saveout)
+res = pe.port_test_matrix('text','mean',saveout=saveout)
 # %% rdsa example
 thed = pd.read_csv('c:/users/harry/code/energy/outofsample/res_Forward_lasso/0-1_rdsaRet.csv',
                    parse_dates=True,index_col=0)
