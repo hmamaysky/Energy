@@ -3,6 +3,7 @@ saveout = False
 # %% read data
 pe = pt.PortEngine()
 pe.check_forward_and_mean_returns('FutRet') ## double check data integrity vs. external data
+pe.check_forward_and_mean_returns('DSpot')
 pe.check_forward_and_mean_returns('xomRet')
 pe.check_forward_and_mean_returns('bpRet')
 pe.check_forward_and_mean_returns('rdsaRet')
@@ -23,11 +24,18 @@ ld,wts,srl,sr = pe.port_test('text','DSpot','FutRet',thresh=0,saveout=saveout)
 ld,wts,srl,sr = pe.port_test('text','bpRet','bpRet',thresh=0,saveout=saveout)
 ld,wts,srl,sr = pe.port_test('text','rdsaRet','rdsaRet',thresh=0,saveout=saveout)
 ld,wts,srl,sr = pe.port_test('text','xomRet','xomRet',thresh=0,saveout=saveout)
+## momentum signal
+ld,wts,srl,sr = pe.port_test('text','FutRet','FutRet',thresh=0,signal_type='cagr_l12',saveout=saveout)
 # %% matrix
 res = pe.port_test_matrix('text','pred',saveout=saveout)
 res = pe.port_test_matrix('nontext','pred',saveout=saveout)
 res = pe.port_test_matrix('both','pred',saveout=saveout)
 res = pe.port_test_matrix('text','mean',saveout=saveout)
+## momentum strategies
+res = pe.port_test_matrix('text','cagr_l3',saveout=saveout)
+res = pe.port_test_matrix('text','cagr_l6',saveout=saveout)
+res = pe.port_test_matrix('text','cagr_l12',saveout=saveout)
+res = pe.port_test_matrix('text','cagr_l12m1',saveout=saveout)
 # %% rdsa example
 thed = pd.read_csv('c:/users/harry/code/energy/outofsample/res_Forward_lasso/0-1_rdsaRet.csv',
                    parse_dates=True,index_col=0)

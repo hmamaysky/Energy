@@ -21,12 +21,15 @@ class PortEngine:
 
         ## Shell PLC trades on Euronext Amsterdam; BP is the ADR return; FutRet is return on
         ## USO ETF; XOM is from NYSE (the data are from Bloomberg). These are daily returns
-        ## including dividends. Gb03 is the 3-month T-bill rate. All data are in percent.
+        ## including dividends. And gb03 is the 3-month T-bill rate. All data are in percent.
         fname = __code_dir__+'Analysis/support/bbg_energy_with_divd_rets.csv'
         print('Reading',fname)
         self.mktd = pd.read_csv(fname,parse_dates=['Dates'],index_col=0)
         self.dpy = 365.25/self.mktd.index.to_series().diff().dt.days.mean()
         assert 258 < self.dpy < 262 ## assert returns are daily
+
+        ## convert DSpot from a level to a percent return series
+        self.mktd.DSpot = self.mktd.DSpot.pct_change(1)*100
         
         ## line up with fwd returns & double check timing
         self.rets_fwd1d = self.mktd.shift(-1)
@@ -46,13 +49,37 @@ class PortEngine:
         ## read the data
         fname = __code_dir__ + 'outofsample/res_Forward_lasso/' + self.fname_map[type] + '_' + var + '.csv'
         print('Reading',fname)
-        return pd.read_csv(fname,parse_dates=True,index_col=0)
+        thed = pd.read_csv(fname,parse_dates=True,index_col=0)
+
+        ## get the historical five-year returns to double check
+        ## adjust for: 8 week (40 biz day) returns; FutRet level; mean level does not
+        ## have dividends but the series I am using from BBG contain dividends
+        self.dvdyld = 6
+        eight_wks = 40
+        thed['mean_check'] = self.mktd[var].rolling(248*5).mean()*eight_wks \
+            - (self.dvdyld*eight_wks/260 if var not in ['FutRet','DSpot'] else 0)
+
+        ## add momentum measures
+        one_year = 252
+        def cagr(xx,lag=None): return (1+xx[:lag]/100).prod()*100-100
+        thed['cagr_l3'] = self.mktd[var].rolling(int(one_year/4)).apply(cagr,raw=True)
+        thed['cagr_l6'] = self.mktd[var].rolling(int(one_year/2)).apply(cagr,raw=True)
+        thed['cagr_l12'] = self.mktd[var].rolling(one_year).apply(cagr,raw=True)
+        thed['cagr_l12m1'] = self.mktd[var].rolling(one_year).apply(lambda xx: cagr(xx,-21),raw=True)
+
+        ## make futures adjustment
+        if var == 'FutRet':
+            for el in thed.columns:
+                if el[:5] in ['mean_','cagr_']:
+                    thed[el] += 100
+        
+        return thed
 
     def __repr__(self):
 
         repstr = ''
         
-        for el in ['fname_map','select_end','eval_start','dpy']:
+        for el in ['fname_map','select_end','eval_start','dpy','dvdyld']:
             repstr += f'{el}: {getattr(self,el)}\n'
 
         for el in ['mktd','rets_fwd1d']:
@@ -178,7 +205,8 @@ class PortEngine:
         ax = sns.heatmap(res,annot=True,fmt='.3f',vmin=-0.2,vmax=0.8,cmap='RdYlGn',annot_kws={'size':12})
         ax.set_ylabel('Signal')
         ax.set_xlabel('Return series')
-        signal_str = '"mean" signal' if signal_type=='mean' else f'{type} model signal'
+        signal_str = f'"{signal_type}" signal' if signal_type[:4] in ['mean','cagr'] \
+            else f'"{type}" model signal'
         ax.set_title(f'SR of asset classes as function of {signal_str}')
 
         if saveout:
@@ -343,27 +371,23 @@ class PortEngine:
         assert (thet.true == theb.true).all()
 
         ## calculate fwd returns to double check
-        if var not in ['FutRet','xomRet', 'rdsaRet', 'bpRet']: return
+        if var not in ['FutRet','DSpot','xomRet','rdsaRet','bpRet']:
+            print(f'Variable [{var}] not recognized. Returning.')
+            return
         level = 100 if var == 'FutRet' else 0 ## adjust levels for FutRet only
 
         ## get the fwd returns to double check
         for tt in thet.index:
             rets_fwd1d = self.rets_fwd1d[var].loc[(tt+pd.Timedelta(4,'w')):(tt+pd.Timedelta(12,'w'))]
-            thet.loc[tt,'check fwd'] = (1+rets_fwd1d/100).prod()*100 - (100 if var != 'FutRet' else 0)
+            thet.loc[tt,'fwd_check'] = (1+rets_fwd1d/100).prod()*100 - (100 if var != 'FutRet' else 0)
 
-        ## get the historical five-year returns to double check
-        ## adjust for: 8 week returns; FutRet level; mean level does not have dividends
-        ## but the series I am using from BBG contain dividends
-        dvdyld = 6
-        thet['check mean'] = self.mktd[var].rolling(248*5).mean()*40 \
-            + (100 if var == 'FutRet' else 0) \
-            - (dvdyld*40/260 if var != 'FutRet' else 0)
-        
         ##
         ##  plotting
         ##
-        fig, axs = plt.subplots(2,1,figsize=(7,5))
-        thet[['true','check fwd']].plot(title=f'{var}: Forward 8-week ahead returns',ax=axs[0])
-        thet[['mean','check mean']].plot(title=f'{var}: Backward 5-year mean of 8-week returns' + \
-                                         f' assumed {dvdyld}% divd',ax=axs[1])
+        fig, axs = plt.subplots(3,1,figsize=(9,7.5))
+        thet[['true','fwd_check']].plot(title=f'{var}: Forward 8-week ahead returns',ax=axs[0])
+        thet[['mean','mean_check']].plot(title=f'{var}: Backward 5-year mean of 8-week returns' + \
+                                         (f' assume {self.dvdyld}% divd' if var not in ['FutRet','DSpot'] else ''),
+                                         ax=axs[1])
+        thet[['cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']].plot(ax=axs[2])
         plt.tight_layout()
