@@ -102,6 +102,7 @@ class PortEngine:
         '''
 
         ## sanity checks
+        assert signal_type in ['pred','true','mean','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']                               
         assert retser in self.mktd.columns
         print(f'\nPortfolio simulation for {retser} using {type} model for {signal_var}')
 
@@ -139,6 +140,7 @@ class PortEngine:
         ## calculate each day's portfolio return
         assert not portd.weights.isna().any()
         port_rets = portd.weights * portd[retser]
+        port_rets.name = 'port_rets'
 
         ## get Sharpe ratio
         sr = lambda ser: ser.mean()/ser.std()*np.sqrt(self.dpy)
@@ -172,7 +174,7 @@ class PortEngine:
                 print('Saving figure to',fname)
                 plt.savefig(fname,bbox_inches='tight')
             
-        return thed, portd.weights, sr(portd[retser]), sr(port_rets)
+        return thed, pd.concat([portd.weights,port_rets],axis=1), sr(portd[retser]), sr(port_rets)
 
     def port_test_matrix(self,type,signal_type,saveout):
         '''
@@ -215,6 +217,44 @@ class PortEngine:
             plt.savefig(fname,bbox_inches='tight')
 
         return res
+
+    def port_test_signals(self,type,signal_var,retser,saveout):
+        '''
+        type -- one of 'text','nontext','both'
+        signal_var -- the variable from which to get the signal
+        retser -- the variable to trade
+        saveout -- save output?
+        '''
+        
+        allres = {}
+        for sigtype in ['pred','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']:
+            ld,res,_,_ = self.port_test('text',signal_var,retser,thresh=0,signal_type=sigtype,show_plots=False)
+            allres[sigtype]= res.port_rets
+        allres = pd.DataFrame(allres)
+
+        ## plotting
+        ax = (1+allres/100).cumprod().dropna().plot(title=f'Signals from {signal_var} to {retser}',
+                                                    xlabel='')
+        ax.legend(ncol=2)
+        if saveout:
+            addstr = f'{type}-{signal_var}-for-{retser}'
+            fname = __code_dir__ + f'Analysis/results/port-test-signals-{addstr}.pdf'
+            print('\nSaving figure to',fname)
+            plt.savefig(fname,bbox_inches='tight')
+
+        
+        ## correlations
+        plt.figure()
+        ax = sns.heatmap(allres.corr(),annot=True,fmt='.3f')
+        ax.set_title(f'Correlation of return signals from {signal_var} for {retser}')
+        ax.text(-0.15, -0.15, f'Data from {allres.dropna().index[0].date()} '+ \
+                f'to {allres.dropna().index[-1].date()}', transform=ax.transAxes)
+
+        if saveout:
+            fname = __code_dir__ + f'Analysis/results/port-test-signals-{addstr}-corrs.pdf'
+            print('Saving figure to',fname,'\n')
+            plt.savefig(fname,bbox_inches='tight')
+
         
     ########## replicate stuff in paper to make sure data/code are working ##########
 
@@ -370,6 +410,31 @@ class PortEngine:
         assert (thet.true == then.true).all()
         assert (thet.true == theb.true).all()
 
+        ## manually check the cagrs
+        print('Checking cagr calculations:',end=' ')
+        one_year = 252
+        for nm in thet.columns:
+            if nm in ['cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']:
+                print(nm,end=' ')
+                idx_test = self.mktd.index.tolist().index(thet.index[-1])
+                if nm[-4:] != '12m1':
+                    lag = int(nm.replace('cagr_l',''))
+                    skip = 0
+                else:
+                    lag = 12
+                    skip = 21
+
+                ## the +1 is to make inclusive
+                start = idx_test-int(one_year*(lag/12))+1
+                end = idx_test - skip + 1
+                test = (1+self.mktd[var].iloc[start:end]/100).prod()*100
+                if var != 'FutRet':
+                    test -= 100
+
+                ## check values match
+                assert abs(thet[nm].iloc[-1]-test) < 1e-15
+        print()
+                
         ## calculate fwd returns to double check
         if var not in ['FutRet','DSpot','xomRet','rdsaRet','bpRet']:
             print(f'Variable [{var}] not recognized. Returning.')
@@ -391,3 +456,5 @@ class PortEngine:
                                          ax=axs[1])
         thet[['cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']].plot(ax=axs[2])
         plt.tight_layout()
+
+        return thet

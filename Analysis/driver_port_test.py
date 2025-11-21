@@ -2,11 +2,11 @@ from Energy.Analysis import port_test as pt
 saveout = False
 # %% read data
 pe = pt.PortEngine()
-pe.check_forward_and_mean_returns('FutRet') ## double check data integrity vs. external data
-pe.check_forward_and_mean_returns('DSpot')
-pe.check_forward_and_mean_returns('xomRet')
-pe.check_forward_and_mean_returns('bpRet')
-pe.check_forward_and_mean_returns('rdsaRet')
+thed = pe.check_forward_and_mean_returns('FutRet') ## double check data integrity vs. external data
+_ = pe.check_forward_and_mean_returns('DSpot')
+_ = pe.check_forward_and_mean_returns('xomRet')
+_ = pe.check_forward_and_mean_returns('bpRet')
+_ = pe.check_forward_and_mean_returns('rdsaRet')
 # %% double check some results from paper
 ## a Figure 9 plot
 thed, oosr2s = pe.calc_selection_oosR2('text','FutRet','zero')
@@ -19,13 +19,16 @@ eo = pe.selection_and_evaluation_oosR2('text','rolling')
 eo = pe.selection_and_evaluation_oosR2('text','zero')
 eo = pe.selection_and_evaluation_oosR2('both','zero')
 # %% port sims
-ld,wts,srl,sr = pe.port_test('text','FutRet','FutRet',thresh=0,saveout=saveout)
-ld,wts,srl,sr = pe.port_test('text','DSpot','FutRet',thresh=0,saveout=saveout)
-ld,wts,srl,sr = pe.port_test('text','bpRet','bpRet',thresh=0,saveout=saveout)
-ld,wts,srl,sr = pe.port_test('text','rdsaRet','rdsaRet',thresh=0,saveout=saveout)
-ld,wts,srl,sr = pe.port_test('text','xomRet','xomRet',thresh=0,saveout=saveout)
-## momentum signal
-ld,wts,srl,sr = pe.port_test('text','FutRet','FutRet',thresh=0,signal_type='cagr_l12',saveout=saveout)
+ld,strat,srl,sr = pe.port_test('text','FutRet','FutRet',thresh=0,saveout=saveout)
+ld,strat,srl,sr = pe.port_test('text','DSpot','FutRet',thresh=0,saveout=saveout)
+ld,strat,srl,sr = pe.port_test('text','bpRet','bpRet',thresh=0,saveout=saveout)
+ld,strat,srl,sr = pe.port_test('text','rdsaRet','rdsaRet',thresh=0,saveout=saveout)
+ld,strat,srl,sr = pe.port_test('text','xomRet','xomRet',thresh=0,saveout=saveout)
+# %% compare text signal to momentum signals
+pe.port_test_signals('text','FutRet','FutRet',saveout=saveout)
+pe.port_test_signals('text','bpRet','bpRet',saveout=saveout)
+pe.port_test_signals('text','rdsaRet','rdsaRet',saveout=saveout)
+pe.port_test_signals('text','xomRet','xomRet',saveout=saveout)
 # %% matrix
 res = pe.port_test_matrix('text','pred',saveout=saveout)
 res = pe.port_test_matrix('nontext','pred',saveout=saveout)
