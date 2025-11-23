@@ -22,7 +22,7 @@ class PortEngine:
         ## Shell PLC trades on Euronext Amsterdam; BP is the ADR return; FutRet is return on
         ## USO ETF; XOM is from NYSE (the data are from Bloomberg). These are daily returns
         ## including dividends. And gb03 is the 3-month T-bill rate. All data are in percent.
-        fname = __code_dir__+'Analysis/support/bbg_energy_with_divd_rets.csv'
+        fname = __code_dir__+'Analysis/support/bbg_energy_with_divd_rets 2025-11-19.csv'
         print('Reading',fname)
         self.mktd = pd.read_csv(fname,parse_dates=['Dates'],index_col=0)
         self.dpy = 365.25/self.mktd.index.to_series().diff().dt.days.mean()
@@ -31,7 +31,7 @@ class PortEngine:
         ## convert DSpot from a level to a percent return series
         self.mktd.DSpot = self.mktd.DSpot.pct_change(1)*100
         
-        ## line up with fwd returns & double check timing
+        ## line up with fwd returns & double check timing <-- these come from the MKTD data
         self.rets_fwd1d = self.mktd.shift(-1)
         assert self.rets_fwd1d.xomRet['2025-05-08'] == self.mktd.xomRet['2025-05-09']
         assert self.rets_fwd1d.FutRet['2023-02-20'] == self.mktd.FutRet['2023-02-21']
@@ -60,12 +60,13 @@ class PortEngine:
             - (self.dvdyld*eight_wks/260 if var not in ['FutRet','DSpot'] else 0)
 
         ## add momentum measures
-        one_year = 252
+        one_month = 21
         def cagr(xx,lag=None): return (1+xx[:lag]/100).prod()*100-100
-        thed['cagr_l3'] = self.mktd[var].rolling(int(one_year/4)).apply(cagr,raw=True)
-        thed['cagr_l6'] = self.mktd[var].rolling(int(one_year/2)).apply(cagr,raw=True)
-        thed['cagr_l12'] = self.mktd[var].rolling(one_year).apply(cagr,raw=True)
-        thed['cagr_l12m1'] = self.mktd[var].rolling(one_year).apply(lambda xx: cagr(xx,-21),raw=True)
+        thed['cagr_l1']    = self.mktd[var].rolling(one_month* 1).apply(cagr,raw=True)
+        thed['cagr_l3']    = self.mktd[var].rolling(one_month* 3).apply(cagr,raw=True)
+        thed['cagr_l6']    = self.mktd[var].rolling(one_month* 6).apply(cagr,raw=True)
+        thed['cagr_l12']   = self.mktd[var].rolling(one_month*12).apply(cagr,raw=True)
+        thed['cagr_l12m1'] = self.mktd[var].rolling(one_month*12).apply(lambda xx: cagr(xx,-one_month),raw=True)
 
         ## make futures adjustment
         if var == 'FutRet':
@@ -102,9 +103,9 @@ class PortEngine:
         '''
 
         ## sanity checks
-        assert signal_type in ['pred','true','mean','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']                               
+        assert signal_type in ['pred','true','mean','cagr_l1','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']
         assert retser in self.mktd.columns
-        print(f'\nPortfolio simulation for {retser} using {type} model for {signal_var}')
+        print(f'\nPortfolio simulation for {retser} using {type}/{signal_type} model for {signal_var}')
 
         ## get the lasso signals file
         thed = self.read_lasso_file(type,signal_var)
@@ -227,14 +228,14 @@ class PortEngine:
         '''
         
         allres = {}
-        for sigtype in ['pred','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']:
-            ld,res,_,_ = self.port_test('text',signal_var,retser,thresh=0,signal_type=sigtype,show_plots=False)
-            allres[sigtype]= res.port_rets
+        for sigtype in ['pred','cagr_l1','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']:
+            ld,res,_,sr = self.port_test('text',signal_var,retser,thresh=0,signal_type=sigtype,show_plots=False)
+            allres[sigtype+f' SR: {sr:.3f}']= res.port_rets
         allres = pd.DataFrame(allres)
 
         ## plotting
         ax = (1+allres/100).cumprod().dropna().plot(title=f'Signals from {signal_var} to {retser}',
-                                                    xlabel='')
+                                                    xlabel='',figsize=(9,6))
         ax.legend(ncol=2)
         if saveout:
             addstr = f'{type}-{signal_var}-for-{retser}'
@@ -242,12 +243,14 @@ class PortEngine:
             print('\nSaving figure to',fname)
             plt.savefig(fname,bbox_inches='tight')
 
-        
+        ## for correlation plot, rename cols to dtop SRs
+        allres.columns = [el.split(' SR:')[0] for el in allres.columns]
+            
         ## correlations
         plt.figure()
         ax = sns.heatmap(allres.corr(),annot=True,fmt='.3f')
         ax.set_title(f'Correlation of return signals from {signal_var} for {retser}')
-        ax.text(-0.15, -0.15, f'Data from {allres.dropna().index[0].date()} '+ \
+        ax.text(-0.20, -0.30, f'Data from {allres.dropna().index[0].date()} '+ \
                 f'to {allres.dropna().index[-1].date()}', transform=ax.transAxes)
 
         if saveout:
@@ -412,9 +415,9 @@ class PortEngine:
 
         ## manually check the cagrs
         print('Checking cagr calculations:',end=' ')
-        one_year = 252
+        one_month = 21
         for nm in thet.columns:
-            if nm in ['cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']:
+            if nm in ['cagr_l1','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']:
                 print(nm,end=' ')
                 idx_test = self.mktd.index.tolist().index(thet.index[-1])
                 if nm[-4:] != '12m1':
@@ -425,7 +428,7 @@ class PortEngine:
                     skip = 21
 
                 ## the +1 is to make inclusive
-                start = idx_test-int(one_year*(lag/12))+1
+                start = idx_test-int(one_month*lag)+1
                 end = idx_test - skip + 1
                 test = (1+self.mktd[var].iloc[start:end]/100).prod()*100
                 if var != 'FutRet':
@@ -454,7 +457,7 @@ class PortEngine:
         thet[['mean','mean_check']].plot(title=f'{var}: Backward 5-year mean of 8-week returns' + \
                                          (f' assume {self.dvdyld}% divd' if var not in ['FutRet','DSpot'] else ''),
                                          ax=axs[1])
-        thet[['cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']].plot(ax=axs[2])
+        thet[['cagr_l1','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']].plot(ax=axs[2])
         plt.tight_layout()
 
         return thet
