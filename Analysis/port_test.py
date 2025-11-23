@@ -103,7 +103,8 @@ class PortEngine:
         '''
 
         ## sanity checks
-        assert signal_type in ['pred','true','mean','cagr_l1','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']
+        assert signal_type in ['pred','true','mean','cagr_l1','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1',
+                               'text_and_cagr']
         assert retser in self.mktd.columns
         print(f'\nPortfolio simulation for {retser} using {type}/{signal_type} model for {signal_var}')
 
@@ -119,7 +120,10 @@ class PortEngine:
         portd['weights'] = np.nan
 
         ## get the signal
-        portd['signal'] = thed[signal_type] - level
+        if signal_type == 'text_and_cagr':
+            portd['signal'] = 0.9*thed['pred'] + 0.1*thed['cagr_l12m1'] - level
+        else:
+            portd['signal'] = thed[signal_type] - level
 
         ## set the weights from the selected signals
         for ii,tt in enumerate(portd.index):
@@ -228,7 +232,7 @@ class PortEngine:
         '''
         
         allres = {}
-        for sigtype in ['pred','cagr_l1','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1']:
+        for sigtype in ['pred','cagr_l1','cagr_l3','cagr_l6','cagr_l12','cagr_l12m1','text_and_cagr']:
             ld,res,_,sr = self.port_test('text',signal_var,retser,thresh=0,signal_type=sigtype,show_plots=False)
             allres[sigtype+f' SR: {sr:.3f}']= res.port_rets
         allres = pd.DataFrame(allres)
